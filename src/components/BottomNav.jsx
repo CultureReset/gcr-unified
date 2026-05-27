@@ -6,9 +6,9 @@ export default function BottomNav() {
   const path = location.pathname
 
   const items = [
-    { path: '/home', label: 'Discover', icon: <CompassIcon /> },
-    { path: '/list', label: 'My List', icon: <HeartIcon /> },
-    { path: '/itinerary', label: 'Trip', icon: <MapIcon /> },
+    { path: '/home', label: 'Home', icon: <HomeIcon /> },
+    { path: '/browse', label: 'Search', icon: <SearchIcon /> },
+    { path: '/swipe/all', label: 'Swipe', icon: <SwipeIcon /> },
     { path: '/profile', label: 'Profile', icon: <UserIcon /> },
   ]
 
@@ -28,27 +28,26 @@ export default function BottomNav() {
   )
 }
 
-function CompassIcon() {
+function HomeIcon() {
   return (
     <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-      <circle cx="12" cy="12" r="10" />
-      <polygon points="16.24,7.76 14.12,14.12 7.76,16.24 9.88,9.88" fill="currentColor" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-3m0 0l7-4 7 4M5 9v10a1 1 0 001 1h12a1 1 0 001-1V9m-9 11v-5h2v5m-6-3h.01M9 17h.01M15 17h.01" />
     </svg>
   )
 }
 
-function HeartIcon() {
+function SearchIcon() {
   return (
     <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
     </svg>
   )
 }
 
-function MapIcon() {
+function SwipeIcon() {
   return (
     <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6-10l6-3m0 13l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M7 16V4m0 0L3 8m4-4l4 4h10a1.5 1.5 0 010 3H7" />
     </svg>
   )
 }

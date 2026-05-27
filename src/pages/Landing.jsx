@@ -6,28 +6,6 @@ export default function Landing() {
 
   return (
     <div className="landing-page">
-      {/* HEADER - Same as launching-GCR */}
-      <header className="gcr-header">
-        <div className="gcr-header-top">
-          <a href="#" className="gcr-logo-row" onClick={() => navigate('/')}>
-            <div className="gcr-logo-circle">🌊</div>
-            <div className="gcr-logo-text">GULF<span>COAST</span>RADAR</div>
-          </a>
-        </div>
-
-        <div className="gcr-cat-tabs">
-          <a href="#" onClick={() => navigate('/browse')} className="gcr-cat-tab">🍽️ Restaurants</a>
-          <a href="#" onClick={() => navigate('/browse')} className="gcr-cat-tab">☕ Coffee & Sweets</a>
-          <a href="#" onClick={() => navigate('/browse')} className="gcr-cat-tab">🍻 Happy Hours</a>
-          <a href="#" onClick={() => navigate('/browse')} className="gcr-cat-tab">🎉 Events</a>
-          <a href="#" onClick={() => navigate('/browse')} className="gcr-cat-tab">🎯 Things To Do</a>
-          <a href="#" onClick={() => navigate('/browse')} className="gcr-cat-tab">🛠️ Services</a>
-          <a href="#" onClick={() => navigate('/browse')} className="gcr-cat-tab">✨ Public Spots</a>
-          <a href="#" onClick={() => navigate('/browse')} className="gcr-cat-tab">🛍️ Shopping</a>
-          <a href="#" onClick={() => navigate('/browse')} className="gcr-cat-tab">🏨 Staying</a>
-        </div>
-      </header>
-
       {/* HERO SECTION */}
       <section className="landing-hero">
         <img

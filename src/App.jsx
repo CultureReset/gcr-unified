@@ -38,9 +38,8 @@ function AppRoutes() {
   const location = useLocation()
   const navigate = useNavigate()
   const { logout } = useApp()
-  const hideNav = ['/', '/auth', '/building', '/browse'].some(p => location.pathname === p) ||
-    location.pathname.startsWith('/setup') ||
-    location.pathname.startsWith('/category')
+  const hideNav = ['/', '/auth'].some(p => location.pathname === p) ||
+    location.pathname.startsWith('/setup')
 
   useEffect(() => {
     function onUnauth() {
