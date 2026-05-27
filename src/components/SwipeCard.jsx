@@ -76,6 +76,8 @@ export default function SwipeCard({ item, onSwipe, onSave }) {
   const opacity = Math.max(0, 1 - Math.abs(translateX) / 200)
   const rotation = (translateX / 500) * 20
 
+  const imageUrl = item.photos?.[0]?.image_url || item.hero_image_url || item.image_url
+
   return (
     <div
       ref={cardRef}
@@ -84,30 +86,54 @@ export default function SwipeCard({ item, onSwipe, onSave }) {
         transform: `translateX(${translateX}px) rotate(${rotation}deg)`,
         opacity: opacity > 0.1 ? 1 : 0.1,
         cursor: isDragging ? 'grabbing' : 'grab',
+        backgroundImage: imageUrl ? `url(${imageUrl})` : undefined,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
       }}
       onMouseDown={handleMouseDown}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
     >
-      {/* Image container */}
-      {item.image_url && (
-        <img src={item.image_url} alt={item.name || item.item_name} className="swipe-card-img" />
-      )}
-
       {/* Overlay gradient */}
       <div className="swipe-card-overlay" />
 
       {/* Content */}
       <div className="swipe-card-content">
         <h3 className="swipe-card-title">{item.name || item.item_name}</h3>
-        {item.description && <p className="swipe-card-desc">{item.description}</p>}
+
+        {/* Location */}
+        {item.city && (
+          <p className="swipe-card-meta">📍 {item.city}, {item.state || 'AL'}</p>
+        )}
+
+        {/* Rating */}
+        {item.rating && (
+          <p className="swipe-card-rating">
+            ⭐ {item.rating.toFixed(1)} {item.review_count ? `(${item.review_count})` : ''}
+          </p>
+        )}
+
+        {/* Description */}
+        {item.description && (
+          <p className="swipe-card-desc">{item.description.slice(0, 100)}{item.description.length > 100 ? '...' : ''}</p>
+        )}
 
         {/* Floating price badge */}
+        {item.price_range && (
+          <div className="swipe-card-price-badge">
+            💰 From {item.price_range}
+          </div>
+        )}
         {item.price && (
           <div className="swipe-card-price-badge">
             ${item.price}/night
           </div>
+        )}
+
+        {/* Happy Hour */}
+        {item.hh_days && (
+          <div className="swipe-card-hh-badge">🍺 {item.hh_days}</div>
         )}
 
         {/* Room details if rental */}
@@ -119,13 +145,23 @@ export default function SwipeCard({ item, onSwipe, onSave }) {
           </div>
         )}
 
-        {/* Features list */}
+        {/* Tags/Amenities */}
+        {item.tags?.length > 0 && (
+          <div className="swipe-card-features">
+            {item.tags.slice(0, 4).map((tag, i) => (
+              <span key={i} className="swipe-card-feature">
+                {typeof tag === 'string' ? tag : tag.tag_name}
+              </span>
+            ))}
+          </div>
+        )}
+
+        {/* Features list for activities */}
         {item.features?.length > 0 && (
           <div className="swipe-card-features">
             {item.features.slice(0, 3).map((f, i) => (
               <span key={i} className="swipe-card-feature">{f}</span>
             ))}
-            {item.features.length > 3 && <span className="swipe-card-feature">+{item.features.length - 3}</span>}
           </div>
         )}
       </div>
