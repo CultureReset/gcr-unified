@@ -1,0 +1,188 @@
+.swipe-card {
+  position: relative;
+  width: 100%;
+  height: 500px;
+  background: #1a1a1a;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  transition: all 0.1s ease-out;
+  touch-action: none;
+  user-select: none;
+}
+
+.swipe-card-img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.swipe-card-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0) 0%,
+    rgba(0, 0, 0, 0.4) 60%,
+    rgba(0, 0, 0, 0.8) 100%
+  );
+  pointer-events: none;
+}
+
+.swipe-card-content {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 20px;
+  color: #fff;
+  z-index: 2;
+}
+
+.swipe-card-title {
+  margin: 0 0 8px 0;
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.swipe-card-desc {
+  margin: 0 0 12px 0;
+  font-size: 13px;
+  opacity: 0.85;
+  line-height: 1.4;
+}
+
+.swipe-card-price-badge {
+  display: inline-block;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: #fff;
+}
+
+.swipe-card-details {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 10px;
+  font-size: 12px;
+  opacity: 0.9;
+}
+
+.swipe-card-details span {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+
+.swipe-card-features {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.swipe-card-feature {
+  display: inline-block;
+  background: rgba(255, 255, 255, 0.08);
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.swipe-indicator {
+  position: absolute;
+  top: 20px;
+  font-weight: 700;
+  font-size: 18px;
+  opacity: 0;
+  transition: opacity 0.2s;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  z-index: 3;
+}
+
+.swipe-indicator.left {
+  left: 20px;
+  color: #ff6b6b;
+}
+
+.swipe-indicator.right {
+  right: 20px;
+  color: #51cf66;
+}
+
+.swipe-indicator.active {
+  opacity: 1;
+}
+
+.swipe-card-actions {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  right: 20px;
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  z-index: 4;
+}
+
+.swipe-btn {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  border: none;
+  font-size: 22px;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex: 1;
+  max-width: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.swipe-btn-pass {
+  background: rgba(255, 107, 107, 0.2);
+  color: #ff6b6b;
+  border: 2px solid #ff6b6b;
+}
+
+.swipe-btn-pass:hover {
+  background: rgba(255, 107, 107, 0.3);
+  transform: scale(1.1);
+}
+
+.swipe-btn-save {
+  background: rgba(255, 193, 7, 0.2);
+  color: #ffc107;
+  border: 2px solid #ffc107;
+}
+
+.swipe-btn-save:hover {
+  background: rgba(255, 193, 7, 0.3);
+  transform: scale(1.1);
+}
+
+.swipe-btn-like {
+  background: rgba(81, 207, 102, 0.2);
+  color: #51cf66;
+  border: 2px solid #51cf66;
+}
+
+.swipe-btn-like:hover {
+  background: rgba(81, 207, 102, 0.3);
+  transform: scale(1.1);
+}

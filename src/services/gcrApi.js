@@ -1,0 +1,466 @@
+import { API_BASE } from '../config'
+
+export function calcDistance(lat1, lng1, lat2, lng2) {
+  if (lat1 == null || lng1 == null || lat2 == null || lng2 == null) return null
+  const R = 3958.8
+  const dLat = (lat2 - lat1) * Math.PI / 180
+  const dLng = (lng2 - lng1) * Math.PI / 180
+  const a = Math.sin(dLat / 2) ** 2 +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLng / 2) ** 2
+  return R * 2 * Math.asin(Math.sqrt(a))
+}
+
+export function formatDistance(miles) {
+  if (miles == null) return null
+  if (miles < 0.1) return 'Here'
+  if (miles < 10) return `${miles.toFixed(1)} mi`
+  return `${Math.round(miles)} mi`
+}
+
+const GCR_API = `${API_BASE}/api/gcr`
+
+function mapCategory(entityType, tags = [], entitySubtype = '') {
+  const check = s => (s || '').toLowerCase()
+  const t = check(entityType)
+  const sub = check(entitySubtype)
+  const tagStr = (tags || []).join(' ').toLowerCase()
+  const combined = t + ' ' + sub
+  if (combined.includes('hotel') || combined.includes('resort') || combined.includes('rental') ||
+      combined.includes('condo') || combined.includes('vacation') || combined.includes('accommodation') ||
+      combined.includes('motel') || combined.includes('lodge') || combined.includes('cabin') ||
+      combined.includes('airbnb') || combined.includes('vrbo'))
+    return 'stay'
+  if (combined.includes('restaurant') || combined.includes('coffee') || combined.includes('food') ||
+      combined.includes('sweet') || combined.includes('cafe') || combined.includes('bakery') ||
+      combined.includes('seafood') || combined.includes('pizza') || combined.includes('burger') ||
+      combined.includes('sushi') || combined.includes('bbq') || combined.includes('grill') ||
+      combined.includes('diner') || combined.includes('eatery') || combined.includes('kitchen'))
+    return 'food'
+  if (combined.includes('nightlife') || combined.includes('bar') || combined.includes('club') ||
+      combined.includes('lounge') || combined.includes('brewery') || combined.includes('winery') ||
+      combined.includes('distillery') || combined.includes('tavern') || combined.includes('pub') ||
+      tagStr.includes('live music'))
+    return 'nightlife'
+  if (combined.includes('shop') || combined.includes('retail') || combined.includes('boutique') ||
+      combined.includes('clothing') || combined.includes('store') || combined.includes('market') ||
+      combined.includes('gallery') || combined.includes('souvenir') || combined.includes('gift'))
+    return 'shopping'
+  return 'activities'
+}
+
+function formatAddress(e) {
+  const parts = [e.address_line_1, e.city, e.state].filter(Boolean)
+  return parts.join(', ')
+}
+
+function formatHappyHour(e) {
+  if (!e.hh_start || !e.hh_end) return null
+  const t = (t24) => {
+    if (!t24) return ''
+    const [h, m] = t24.split(':')
+    const hr = parseInt(h, 10)
+    const ampm = hr >= 12 ? 'PM' : 'AM'
+    const h12 = hr === 0 ? 12 : hr > 12 ? hr - 12 : hr
+    return `${h12}:${m} ${ampm}`
+  }
+  return `${t(e.hh_start)} - ${t(e.hh_end)}`
+}
+
+function toCard(entity, photos = []) {
+  const tags = Array.isArray(entity.tags)
+    ? entity.tags.map(t => typeof t === 'string' ? t : t.label || t.name || t.tag).filter(Boolean)
+    : []
+  const fixUrl = u => {
+    if (!u) return null
+    if (u.startsWith('//')) u = 'https:' + u
+    if (u.includes('googleapis.com') && u.includes('maxwidth=')) {
+      u = u.replace(/maxwidth=\d+/, 'maxwidth=800')
+    }
+    return u
+  }
+  const gallery = [...new Set((photos || []).map(p => fixUrl(p.image_url)).filter(Boolean))]
+  const hero = fixUrl(entity.hero_image_url) || gallery[0] || null
+  const hasLiveMusic = tags.some(t => /live\s*music/i.test(t))
+  return {
+    id: entity.id,
+    slug: entity.slug,
+    name: entity.name,
+    subtitle: entity.subtitle || '',
+    category: mapCategory(entity.entity_type, tags, entity.entity_subtype),
+    type: entity.entity_subtype || entity.entity_type || '',
+    rating: entity.rating || null,
+    review_count: entity.review_count || 0,
+    price_range: entity.price_range || '',
+    hero_image_url: hero,
+    photos: gallery,
+    tags,
+    tagline: entity.subtitle || '',
+    happy_hour: formatHappyHour(entity),
+    hh_description: entity.hh_description || '',
+    live_music: hasLiveMusic,
+    city: [entity.city, entity.state].filter(Boolean).join(', '),
+    address: formatAddress(entity),
+    latitude: entity.latitude,
+    longitude: entity.longitude,
+    phone: entity.phone || '',
+    website_url: entity.website_url || '',
+    booking_url: entity.booking_url || entity.reservation_url || entity.order_url || '',
+    directions_url: entity.directions_url || '',
+    description: entity.description || '',
+    verified: !!entity.featured,
+    duration: entity.duration_text || null,
+    price_per_person: (entity.price_from && entity.price_unit)
+      ? `$${entity.price_from}${entity.price_to && entity.price_to !== entity.price_from ? `-$${entity.price_to}` : ''} ${entity.price_unit}`
+      : null,
+    social: {
+      instagram: entity.social_instagram || '',
+      facebook: entity.social_facebook || '',
+      tiktok: entity.social_tiktok || '',
+    },
+    raw: entity,
+  }
+}
+
+// Match GCR public's filters — test entities out, dedupe -1 duplicates
+function isTestEntity(b) {
+  const s = (b.slug || b.subdomain || '').toLowerCase()
+  const n = (b.name || '').toLowerCase()
+  const a = (b.address_line_1 || b.address || '').toLowerCase()
+  return s.startsWith('gcr-upload-test') || s.startsWith('888') ||
+         n.includes('upload test') || n.startsWith('888') ||
+         a.includes('test lane')
+}
+
+function dedupeBusinesses(raw) {
+  const slugSet = new Set()
+  return raw.filter(b => {
+    const s = b.slug || b.subdomain || ''
+    if (slugSet.has(s)) return false
+    if (s.match(/-1$/) && raw.some(o => (o.slug || o.subdomain) === s.replace(/-1$/, ''))) return false
+    slugSet.add(s)
+    return true
+  })
+}
+
+export async function fetchBusinesses({ limit = 50 } = {}) {
+  const r = await fetch(`${GCR_API}/entities?limit=${limit}`)
+  if (!r.ok) throw new Error(`Failed to load businesses (HTTP ${r.status})`)
+  const d = await r.json()
+  const entities = d.entities || d.businesses || []
+  const clean = dedupeBusinesses(entities.filter(e => e && e.id && e.name && !isTestEntity(e)))
+  const cards = clean.map(e => toCard(e, e.photos || []))
+
+  const API = import.meta.env.VITE_API_BASE || 'https://gcr-api-gules.vercel.app'
+
+  // Merge TripSwipe-specific overrides and fetch tonight cards in parallel
+  let mergedCards = cards
+  try {
+    const [sr, pr, sponsoredR] = await Promise.all([
+      fetch(`${API}/api/admin/tripswipe/settings`).catch(() => null),
+      fetch(`${API}/api/admin/tripswipe/promo-cards`).catch(() => null),
+      fetch(`${API}/api/admin/tripswipe/sponsored`).catch(() => null),
+    ])
+
+    // Apply business settings (enabled flag, custom images)
+    if (sr?.ok) {
+      const sd = await sr.json()
+      const list = Array.isArray(sd?.settings) ? sd.settings : Array.isArray(sd) ? sd : []
+      if (list.length > 0) {
+        const settings = {}
+        list.forEach(s => { if (s?.slug) settings[s.slug] = s })
+        mergedCards = mergedCards
+          .filter(c => settings[c.slug]?.enabled !== false)
+          .map(c => {
+            const s = settings[c.slug]
+            if (!s) return c
+            return {
+              ...c,
+              hero_image_url: s.hero_image || c.hero_image_url,
+              photos: Array.isArray(s.extra_images) && s.extra_images.length ? [...s.extra_images, ...(c.photos || [])] : c.photos,
+            }
+          })
+      }
+    }
+
+    // Inject tonight's promo cards at the front of the deck
+    if (pr?.ok) {
+      const pd = await pr.json()
+      const today = new Date().toISOString().slice(0, 10)
+      const promos = (pd.cards || [])
+        .filter(p => p.active && (!p.show_date || p.show_date === today))
+        .map(p => ({
+          id: 'promo-' + p.id,
+          slug: 'promo-' + p.id,
+          _isPromo: true,
+          name: p.title,
+          subtitle: p.cta_label || '',
+          description: p.description || '',
+          hero_image_url: p.image_url || null,
+          photos: p.image_url ? [p.image_url] : [],
+          tags: [],
+          city: p.city || '',
+          category: p.category || 'all',
+          rating: null,
+          verified: false,
+          linked_slug: p.linked_slug || null,
+          cta_label: p.cta_label || 'Learn More',
+          booking_url: p.cta_url || null,
+        }))
+      // Promos go at the END of the array = top of the deck (TinderCard renders last element on top)
+      mergedCards = [...mergedCards, ...promos]
+    }
+
+    // Inject sponsored cards every N positions throughout the deck
+    if (sponsoredR?.ok) {
+      const sd = await sponsoredR.json()
+      const sponsors = (sd.sponsored || [])
+        .filter(s => s.active && Array.isArray(s.images) && s.images.length > 0)
+        .sort((a, b) => (b.priority || 0) - (a.priority || 0))
+
+      if (sponsors.length > 0) {
+        const imgCursors = {}
+        const result = []
+        let regularCount = 0
+        let sponsorTurn = 0
+
+        for (const card of mergedCards) {
+          result.push(card)
+          if (!card._isPromo) regularCount++
+
+          const sponsor = sponsors[sponsorTurn % sponsors.length]
+          const freq = sponsor.frequency || 10
+          if (regularCount > 0 && !card._isPromo && regularCount % freq === 0) {
+            const imgIdx = imgCursors[sponsor.slug] || 0
+            imgCursors[sponsor.slug] = imgIdx + 1
+            const img = sponsor.images[imgIdx % sponsor.images.length]
+            const realCard = mergedCards.find(c => c.slug === sponsor.slug) || null
+            result.push({
+              ...(realCard || {}),
+              id: `sponsored-${sponsor.slug}-${imgIdx}`,
+              slug: `sponsored-${sponsor.slug}-${imgIdx}`,
+              name: realCard?.name || sponsor.business_name || sponsor.slug,
+              hero_image_url: img,
+              photos: [img, ...(realCard?.photos || []).filter(p => p !== img)],
+              tags: realCard?.tags || [],
+              category: realCard?.category || 'all',
+              city: realCard?.city || '',
+              rating: realCard?.rating || null,
+              verified: realCard?.verified || false,
+              description: realCard?.description || '',
+              subtitle: realCard?.subtitle || '',
+              _isSponsored: true,
+              _sponsorSlug: sponsor.slug,
+            })
+            sponsorTurn++
+          }
+        }
+        mergedCards = result
+      }
+    }
+  } catch (e) {}
+
+  // Expand each business into multiple cards (one per image, randomized order)
+  const expandedCards = []
+  for (const card of mergedCards) {
+    if (!card.photos || card.photos.length === 0) {
+      // No photos, add as single card
+      expandedCards.push(card)
+    } else {
+      // Shuffle image indices for random order
+      const indices = Array.from({ length: card.photos.length }, (_, i) => i)
+      for (let j = indices.length - 1; j > 0; j--) {
+        const k = Math.floor(Math.random() * (j + 1));
+        [indices[j], indices[k]] = [indices[k], indices[j]]
+      }
+
+      // Create one card instance per photo (in randomized order)
+      for (let i = 0; i < indices.length; i++) {
+        const photoIdx = indices[i]
+        expandedCards.push({
+          ...card,
+          photos: [], // Empty photos array - each card has only its single hero_image_url
+          id: `${card.id}-img${i}`,
+          _image_index: i,
+          _total_images: card.photos.length,
+          hero_image_url: card.photos[photoIdx] || card.hero_image_url,
+        })
+      }
+    }
+  }
+
+  return expandedCards
+}
+
+// Fetch live-now businesses — happy hours active, events tonight, specials
+// Pass touristId to personalize sort order by preference match
+export async function fetchLiveNow(touristId = null) {
+  const qs = touristId ? `?tourist_id=${touristId}&limit=20` : '?limit=20'
+  try {
+    const r = await fetch(`${GCR_API}/live-now${qs}`)
+    if (!r.ok) return []
+    const d = await r.json()
+    return d.results || []
+  } catch {
+    return []
+  }
+}
+
+// Fetch this user's preference scores — returns a tag→score map
+export async function fetchPreferences() {
+  const token = localStorage.getItem('gcr_access_token')
+  if (!token) return {}
+  try {
+    const r = await fetch(`${API_BASE}/api/tourist/preferences`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    if (!r.ok) return {}
+    const d = await r.json()
+    const map = {}
+    for (const s of [...(d.loves || []), ...(d.likes || []), ...(d.dislikes || [])]) {
+      map[s.tag.toLowerCase().trim()] = s.score
+    }
+    return map
+  } catch {
+    return {}
+  }
+}
+
+// Score a card against user preference map — higher = better match
+// Returns a number: positive = good match, negative = bad match, 0 = no data
+export function scoreCard(card, prefMap) {
+  if (!prefMap || !Object.keys(prefMap).length) return 0
+  let score = 0
+  const cardTags = new Set([
+    ...(card.tags || []).map(t => t.toLowerCase().trim()),
+    card.category?.toLowerCase().trim(),
+    card.type?.toLowerCase().trim(),
+  ].filter(Boolean))
+
+  for (const tag of cardTags) {
+    if (prefMap[tag] != null) score += prefMap[tag]
+  }
+  return score
+}
+
+// Sort deck by preference match — blends personalization with discovery randomness
+// Top 60% of deck sorted by match score, bottom 40% random (keeps discovery alive)
+export function personalizeAndSort(cards, prefMap) {
+  if (!prefMap || !Object.keys(prefMap).length) return cards
+
+  const scored = cards.map(c => ({ card: c, score: scoreCard(c, prefMap) }))
+
+  // Separate: has a preference signal vs no signal
+  const hasSignal = scored.filter(s => s.score !== 0)
+  const noSignal  = scored.filter(s => s.score === 0)
+
+  // Sort by score descending (best match first)
+  hasSignal.sort((a, b) => b.score - a.score)
+
+  // Shuffle the no-signal cards for discovery
+  for (let j = noSignal.length - 1; j > 0; j--) {
+    const k = Math.floor(Math.random() * (j + 1));
+    [noSignal[j], noSignal[k]] = [noSignal[k], noSignal[j]]
+  }
+
+  // Interleave: for every 2 matched cards, inject 1 discovery card
+  // This keeps the top of the deck feeling personalized without killing discovery
+  const result = []
+  let mi = 0, ni = 0
+  while (mi < hasSignal.length || ni < noSignal.length) {
+    if (mi < hasSignal.length) result.push(hasSignal[mi++])
+    if (mi < hasSignal.length) result.push(hasSignal[mi++])
+    if (ni < noSignal.length)  result.push(noSignal[ni++])
+  }
+
+  return result.map(s => ({
+    ...s.card,
+    _matchScore: s.score,
+  }))
+}
+
+export async function fetchBusinessBySlug(slug) {
+  const r = await fetch(`${GCR_API}/entity/${encodeURIComponent(slug)}`)
+  if (!r.ok) throw new Error(`Failed to load ${slug}`)
+  const d = await r.json()
+  const entity = d.entity || {}
+  const photos = d.photos || []
+  const card = toCard(entity, photos)
+
+  // entity_tags table has the real tags — entity.tags column is often empty
+  const enrichedTags = (d.tags || []).map(t => {
+    try { const p = JSON.parse(t.tag); return p?.tag || t.tag } catch { return t.tag }
+  }).filter(Boolean)
+
+  return {
+    ...card,
+    tags:            enrichedTags.length ? enrichedTags : card.tags,
+    sections:        d.sections        || [],
+    hours:           d.hours           || [],
+    features:        d.features        || [],
+    perfect_for:     d.perfect_for     || [],
+    about_bullets:   d.about_bullets   || [],
+    specials:        d.specials        || [],
+    events:          d.events          || [],
+    menu:            d.menu            || { sections: [], sub_sections: [], items: [] },
+    drinks:          d.drinks          || { sections: [], items: [] },
+    happy_hour:      d.happy_hour      || { sections: [], items: [] },
+    happy_hour_items:(d.happy_hour && d.happy_hour.items) || [],
+    booking_slots:   d.booking_slots   || [],
+    // activities / experiences
+    activities:      d.activities      || [],
+    pricing:         d.pricing         || [],
+    whats_included:  d.whats_included  || [],
+    requirements:    d.requirements    || [],
+    addons:          d.addons          || [],
+    fleet:           d.fleet           || [],
+    policies:        d.policies        || [],
+    meeting_points:  d.meeting_points  || [],
+    qna:             d.qna             || [],
+    // shopping
+    shopping:        d.shopping        || { sections: [], sub_sections: [], items: [] },
+  }
+}
+
+// Fetch child rental units for a parent property
+export async function fetchChildRentals(parentSlug, filters = {}) {
+  try {
+    const params = new URLSearchParams()
+    if (filters.beds) params.append('beds', filters.beds)
+    if (filters.baths) params.append('baths', filters.baths)
+    if (filters.price_min) params.append('price_min', filters.price_min)
+    if (filters.price_max) params.append('price_max', filters.price_max)
+
+    const qs = params.toString() ? '?' + params.toString() : ''
+    const r = await fetch(`${GCR_API}/entities/${encodeURIComponent(parentSlug)}/children${qs}`)
+    if (!r.ok) return []
+
+    const d = await r.json()
+    const children = d.children || []
+
+    // Convert each child to a card
+    return children.map(entity => toCard(entity, []))
+  } catch {
+    return []
+  }
+}
+
+// Search for properties/hotels by name for autocomplete
+export async function searchProperties(query) {
+  if (!query || query.length < 1) return []
+  try {
+    const r = await fetch(`${GCR_API}/entities?search=${encodeURIComponent(query)}&limit=10`)
+    if (!r.ok) return []
+    const d = await r.json()
+    const entities = d.entities || []
+    // Return basic info for autocomplete
+    return entities.map(e => ({
+      id: e.id,
+      slug: e.slug,
+      name: e.name,
+      city: e.city || 'Gulf Coast',
+      type: e.entity_subtype || e.entity_type || 'Property'
+    }))
+  } catch {
+    return []
+  }
+}
