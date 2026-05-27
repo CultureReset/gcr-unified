@@ -1,7 +1,10 @@
 import { useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { useApp } from './context/AppContext'
+import { DEFAULT_MODE } from './config'
 import Landing from './pages/Landing'
+import Browse from './pages/Browse'
+import CategoryListings from './pages/CategoryListings'
 import Auth from './pages/Auth'
 import Reset from './pages/Reset'
 import Invite from './pages/Invite'
@@ -35,8 +38,9 @@ function AppRoutes() {
   const location = useLocation()
   const navigate = useNavigate()
   const { logout } = useApp()
-  const hideNav = ['/', '/auth', '/building'].some(p => location.pathname === p) ||
-    location.pathname.startsWith('/setup')
+  const hideNav = ['/', '/auth', '/building', '/browse'].some(p => location.pathname === p) ||
+    location.pathname.startsWith('/setup') ||
+    location.pathname.startsWith('/category')
 
   useEffect(() => {
     function onUnauth() {
@@ -73,6 +77,8 @@ function AppRoutes() {
     <div className="app-shell">
       <Routes>
         <Route path="/" element={<Landing />} />
+        <Route path="/browse" element={<Browse />} />
+        <Route path="/category/:category" element={<CategoryListings />} />
         <Route path="/auth" element={<Auth />} />
         <Route path="/reset" element={<Reset />} />
         <Route path="/join" element={<Invite />} />

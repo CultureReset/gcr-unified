@@ -1,10 +1,18 @@
+import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
+import { DEFAULT_MODE } from '../config'
 import './Landing.css'
 
 export default function Landing() {
   const navigate = useNavigate()
   const { tourist } = useApp()
+
+  useEffect(() => {
+    if (DEFAULT_MODE === 'browse') {
+      navigate('/browse', { replace: true })
+    }
+  }, [])
 
   return (
     <div className="landing">
