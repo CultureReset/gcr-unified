@@ -22,8 +22,8 @@ export default function RestaurantDetail() {
         const res = await fetch(`${API_BASE}/api/gcr/entity/${encodeURIComponent(slug)}`)
         if (!res.ok) throw new Error('Failed to load business')
         const data = await res.json()
-        if (!data.entity) throw new Error('Business not found')
-        setBusiness(data.entity)
+        if (!data || !data.slug) throw new Error('Business not found')
+        setBusiness(data)
         setActiveTab('overview')
       } catch (err) {
         setError(err.message)
@@ -297,8 +297,77 @@ export default function RestaurantDetail() {
           {/* Menu */}
           {activeTab === 'menu' && (
             <section className="content-section">
-              <h2>Menu</h2>
-              <p>Full menu coming soon...</p>
+              <h2>🍽️ Menu</h2>
+              {business.menu_sections && business.menu_sections.length > 0 ? (
+                <div className="menu-container">
+                  {business.menu_sections.map(section => (
+                    <div key={section.id} className="menu-section">
+                      <h3>{section.section_name}</h3>
+                      <div className="menu-items">
+                        {section.items && section.items.map(item => (
+                          <div key={item.id} className="menu-item">
+                            <div className="item-header">
+                              <span className="item-name">{item.item_name}</span>
+                              {item.price && <span className="item-price">${item.price.toFixed(2)}</span>}
+                            </div>
+                            {item.description && <p className="item-desc">{item.description}</p>}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="no-data">No menu available</p>
+              )}
+
+              {business.drink_sections && business.drink_sections.length > 0 && (
+                <>
+                  <h2 style={{marginTop: '32px'}}>🍷 Drinks</h2>
+                  <div className="menu-container">
+                    {business.drink_sections.map(section => (
+                      <div key={section.id} className="menu-section">
+                        <h3>{section.section_name}</h3>
+                        <div className="menu-items">
+                          {section.items && section.items.map(item => (
+                            <div key={item.id} className="menu-item">
+                              <div className="item-header">
+                                <span className="item-name">{item.item_name}</span>
+                                {item.price && <span className="item-price">${item.price.toFixed(2)}</span>}
+                              </div>
+                              {item.description && <p className="item-desc">{item.description}</p>}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+
+              {business.happy_hour_sections && business.happy_hour_sections.length > 0 && (
+                <>
+                  <h2 style={{marginTop: '32px'}}>🍺 Happy Hour Specials</h2>
+                  <div className="menu-container">
+                    {business.happy_hour_sections.map(section => (
+                      <div key={section.id} className="menu-section">
+                        <h3>{section.section_name}</h3>
+                        <div className="menu-items">
+                          {section.items && section.items.map(item => (
+                            <div key={item.id} className="menu-item">
+                              <div className="item-header">
+                                <span className="item-name">{item.item_name}</span>
+                                {item.price && <span className="item-price">${item.price.toFixed(2)}</span>}
+                              </div>
+                              {item.description && <p className="item-desc">{item.description}</p>}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
             </section>
           )}
         </main>
