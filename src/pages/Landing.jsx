@@ -1,60 +1,108 @@
-import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useApp } from '../context/AppContext'
-import { DEFAULT_MODE } from '../config'
 import './Landing.css'
 
 export default function Landing() {
   const navigate = useNavigate()
-  const { tourist } = useApp()
-
-  useEffect(() => {
-    if (DEFAULT_MODE === 'browse') {
-      navigate('/browse', { replace: true })
-    }
-  }, [])
 
   return (
-    <div className="landing">
-      <div className="landing-bg">
+    <div className="landing-page">
+      {/* HEADER - Same as launching-GCR */}
+      <header className="gcr-header">
+        <div className="gcr-header-top">
+          <a href="#" className="gcr-logo-row" onClick={() => navigate('/')}>
+            <div className="gcr-logo-circle">🌊</div>
+            <div className="gcr-logo-text">GULF<span>COAST</span>RADAR</div>
+          </a>
+        </div>
+
+        <div className="gcr-cat-tabs">
+          <a href="#" onClick={() => navigate('/browse')} className="gcr-cat-tab">🍽️ Restaurants</a>
+          <a href="#" onClick={() => navigate('/browse')} className="gcr-cat-tab">☕ Coffee & Sweets</a>
+          <a href="#" onClick={() => navigate('/browse')} className="gcr-cat-tab">🍻 Happy Hours</a>
+          <a href="#" onClick={() => navigate('/browse')} className="gcr-cat-tab">🎉 Events</a>
+          <a href="#" onClick={() => navigate('/browse')} className="gcr-cat-tab">🎯 Things To Do</a>
+          <a href="#" onClick={() => navigate('/browse')} className="gcr-cat-tab">🛠️ Services</a>
+          <a href="#" onClick={() => navigate('/browse')} className="gcr-cat-tab">✨ Public Spots</a>
+          <a href="#" onClick={() => navigate('/browse')} className="gcr-cat-tab">🛍️ Shopping</a>
+          <a href="#" onClick={() => navigate('/browse')} className="gcr-cat-tab">🏨 Staying</a>
+        </div>
+      </header>
+
+      {/* HERO SECTION */}
+      <section className="landing-hero">
         <img
-          src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&q=80"
+          src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1200&q=80"
           alt="Beach"
-          className="landing-img"
+          className="hero-img"
         />
-        <div className="landing-overlay" />
-      </div>
+        <div className="hero-overlay" />
 
-      <div className="landing-content">
-        <div className="landing-logo">
-          <span>Gulf Coast Radar</span>
-        </div>
+        <div className="hero-content">
+          <h1>Discover Orange Beach & Gulf Shores</h1>
+          <p>Restaurants, hotels, activities, and experiences all in one place.</p>
 
-        <div className="landing-hero">
-          <h1>Swipe, Plan &<br />Explore the<br /><span className="gradient-text">Gulf Coast</span></h1>
-          <p>Discover the best restaurants, activities, and experiences — built around what YOU love.</p>
-        </div>
-
-        <div className="landing-features">
-          {['Swipe to discover', 'Plan your trip'].map(f => (
-            <div key={f} className="landing-feature">
-              <div className="feature-dot" />
-              <span>{f}</span>
-            </div>
-          ))}
-        </div>
-
-        <div className="landing-actions">
-          <button className="btn-primary" onClick={() => navigate('/auth')}>
-            Get Started — It's Free
-          </button>
-          {tourist?.setupComplete && (
-            <button className="btn-outline" onClick={() => navigate('/home')}>
-              Continue My Trip
+          <div className="action-buttons">
+            <button className="btn-primary" onClick={() => navigate('/category/restaurants')}>
+              🔍 Search & Browse
             </button>
-          )}
+            <button className="btn-secondary" onClick={() => navigate('/swipe/restaurants')}>
+              👆 Swipe Mode
+            </button>
+            <button className="btn-tertiary" onClick={() => navigate('/auth')}>
+              📱 Sign In / Sign Up
+            </button>
+          </div>
         </div>
-      </div>
+      </section>
+
+      {/* ACTION STRIP */}
+      <section className="gcr-action-strip">
+        <button className="gcr-strip-btn gcr-strip-gold" onClick={() => navigate('/auth')}>
+          ⭐ Join Our Loyalty Program 🎁
+        </button>
+        <button className="gcr-strip-btn gcr-strip-teal" onClick={() => navigate('/browse')}>
+          📅 Explore Categories 🎉
+        </button>
+      </section>
+
+      {/* FEATURES */}
+      <section className="landing-features">
+        <div className="feature-card">
+          <div className="feature-icon">🍽️</div>
+          <h3>Browse Everything</h3>
+          <p>Restaurants, hotels, events, and more</p>
+        </div>
+        <div className="feature-card">
+          <div className="feature-icon">👆</div>
+          <h3>Swipe to Discover</h3>
+          <p>Find what you love with our card-based interface</p>
+        </div>
+        <div className="feature-card">
+          <div className="feature-icon">📱</div>
+          <h3>Save & Plan</h3>
+          <p>Build your perfect trip itinerary</p>
+        </div>
+      </section>
+
+      {/* FOOTER */}
+      <footer className="site-footer">
+        <div className="footer-content">
+          <div className="footer-brand">
+            <div className="logo">Gulf<span>Coast</span>Radar</div>
+            <p>The local search engine for Orange Beach, Gulf Shores & the Alabama Gulf Coast.</p>
+          </div>
+          <div className="footer-links">
+            <h5>Quick Links</h5>
+            <a href="#" onClick={() => navigate('/browse')}>Browse</a>
+            <a href="#" onClick={() => navigate('/auth')}>Sign In</a>
+            <a href="#">About</a>
+            <a href="#">Privacy</a>
+          </div>
+        </div>
+        <div className="footer-bottom">
+          <p>© 2026 Gulf Coast Radar. Orange Beach · Gulf Shores, AL</p>
+        </div>
+      </footer>
     </div>
   )
 }

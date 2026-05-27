@@ -19,12 +19,16 @@ export default function Browse() {
         console.error('Error loading categories:', err)
         setCategories([
           { name: 'Restaurants', slug: 'restaurants' },
-          { name: 'Coffee & Desserts', slug: 'coffee' },
+          { name: 'Coffee & Sweets', slug: 'coffee' },
+          { name: 'Happy Hours', slug: 'happy-hours' },
           { name: 'Events', slug: 'events' },
-          { name: 'Activities', slug: 'activities' },
-          { name: 'Hotels & Rentals', slug: 'staying' },
+          { name: 'Things To Do', slug: 'activities' },
+          { name: 'Services', slug: 'services' },
+          { name: 'Public Spots', slug: 'public-spots' },
           { name: 'Shopping', slug: 'shopping' },
+          { name: 'Hotels & Rentals', slug: 'staying' },
           { name: 'Artists', slug: 'artists' },
+          { name: 'Feed', slug: 'feed' },
         ])
       } finally {
         setLoading(false)
