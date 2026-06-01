@@ -7,6 +7,7 @@ import Browse from './pages/Browse'
 import CategoryListings from './pages/CategoryListings'
 import CategoryPage from './pages/CategoryPage'
 import Events from './pages/Events'
+import Search from './pages/Search'
 import Auth from './pages/Auth'
 import Reset from './pages/Reset'
 import Invite from './pages/Invite'
@@ -40,7 +41,7 @@ function AppRoutes() {
   const location = useLocation()
   const navigate = useNavigate()
   const { logout } = useApp()
-  const publicCategoryPages = ['/restaurants', '/coffee', '/happy-hours', '/events', '/things-to-do', '/services', '/public-spots', '/feed', '/shopping', '/staying']
+  const publicCategoryPages = ['/restaurants', '/coffee', '/happy-hours', '/events', '/things-to-do', '/services', '/public-spots', '/feed', '/shopping', '/staying', '/search']
   const hideNav = ['/', '/auth'].some(p => location.pathname === p) ||
     location.pathname.startsWith('/setup') ||
     publicCategoryPages.includes(location.pathname)
@@ -81,6 +82,7 @@ function AppRoutes() {
       <Routes>
         <Route path="/" element={<Landing />} />
         <Route path="/browse" element={<Browse />} />
+        <Route path="/search" element={<Search />} />
         <Route path="/category/:category" element={<CategoryListings />} />
         <Route path="/auth" element={<Auth />} />
         <Route path="/reset" element={<Reset />} />
