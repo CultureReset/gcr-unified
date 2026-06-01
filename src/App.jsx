@@ -80,7 +80,7 @@ function AppRoutes() {
     <div className="app-shell">
       <Routes>
         <Route path="/" element={<Landing />} />
-        <Route path="/browse" element={<Browse />} />
+        <Route path="/browse" element={<Navigate to="/" replace />} />
         <Route path="/search" element={<Search />} />
         <Route path="/category/:category" element={<CategoryListings />} />
         <Route path="/auth" element={<Auth />} />
