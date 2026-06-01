@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import './GCRHeader.css'
 
@@ -17,13 +18,23 @@ const CATEGORIES = [
 export default function GCRHeader() {
   const location = useLocation()
   const navigate = useNavigate()
+  const headerRef = useRef(null)
 
-  // Get current category from route
-  const currentPath = location.pathname.slice(1) // remove leading /
+  const currentPath = location.pathname.slice(1)
   const activeCat = CATEGORIES.find(c => c.id === currentPath)
 
+  useEffect(() => {
+    const el = headerRef.current
+    if (!el) return
+    const update = () => document.documentElement.style.setProperty('--gcr-header-h', el.offsetHeight + 'px')
+    update()
+    const ro = new ResizeObserver(update)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
+
   return (
-    <header className="gcr-header">
+    <header className="gcr-header" ref={headerRef}>
       {/* Row 1: Logo + Install */}
       <div className="gcr-header-top">
         <div className="gcr-logo" onClick={() => navigate('/')}>

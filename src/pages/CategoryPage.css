@@ -39,8 +39,9 @@
   border-bottom: 1px solid #e2e8f0;
   padding: 12px 14px 14px;
   position: sticky;
-  top: 0;
+  top: var(--gcr-header-h, 156px);
   z-index: 50;
+  box-shadow: 0 2px 8px rgba(0,0,0,.06);
 }
 
 .results-title {
@@ -63,23 +64,27 @@
 .chip {
   flex-shrink: 0;
   padding: 7px 14px;
-  border: 1.5px solid #d1dbe6;
-  background: #fff;
+  border: 1.5px solid #b2dfdb;
+  background: #e8f7f5;
   border-radius: 999px;
   font-size: 13px;
   font-weight: 700;
-  color: #446072;
+  color: #0b5e5a;
   cursor: pointer;
   white-space: nowrap;
   transition: all .14s;
 }
 
-.chip:hover { background: #f0f4f8; }
+.chip:hover {
+  background: #c8eeea;
+  border-color: #80cbc4;
+}
 
 .chip.active {
   background: #0b7a75;
   border-color: #0b7a75;
   color: #fff;
+  box-shadow: 0 2px 8px rgba(11,122,117,.3);
 }
 
 /* ── Listings ── */
