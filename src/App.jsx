@@ -19,6 +19,7 @@ import MyList from './pages/MyList'
 import Building from './pages/Building'
 import Itinerary from './pages/Itinerary'
 import Profile from './pages/Profile'
+import Saves from './pages/Saves'
 import Groups from './pages/Groups'
 import Group from './pages/Group'
 import Privacy from './pages/Privacy'
@@ -98,6 +99,7 @@ function AppRoutes() {
         <Route path="/building" element={<RequireAuth><Building /></RequireAuth>} />
         <Route path="/itinerary" element={<RequireAuth><Itinerary /></RequireAuth>} />
         <Route path="/profile" element={<RequireAuth><Profile /></RequireAuth>} />
+        <Route path="/saves" element={<RequireAuth><Saves /></RequireAuth>} />
         <Route path="/groups" element={<RequireAuth><Groups /></RequireAuth>} />
         <Route path="/group/:slug" element={<RequireAuth><Group /></RequireAuth>} />
 
