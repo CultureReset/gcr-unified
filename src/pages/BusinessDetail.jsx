@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import GCRHeader from '../components/GCRHeader'
 import { API_BASE } from '../config'
@@ -12,10 +12,13 @@ export default function RestaurantDetail() {
   const [error, setError] = useState(null)
   const [currentSlide, setCurrentSlide] = useState(0)
   const [activeTab, setActiveTab] = useState(null)
+  const [activeSubSection, setActiveSubSection] = useState(null)
   const [galleryOpen, setGalleryOpen] = useState(false)
   const [reviewsOpen, setReviewsOpen] = useState(false)
   const [galleryPage, setGalleryPage] = useState(0)
   const [reviewsPage, setReviewsPage] = useState(0)
+  const subSectionRefs = useRef({})
+  const observerRef = useRef(null)
 
   useEffect(() => {
     async function loadBusiness() {
@@ -25,7 +28,7 @@ export default function RestaurantDetail() {
         const data = await res.json()
         if (!data || !data.slug) throw new Error('Business not found')
         setBusiness(data)
-        setActiveTab('overview')
+        setActiveTab(data.menu_sections?.length ? 'menu' : 'overview')
       } catch (err) {
         setError(err.message)
       } finally {
@@ -42,6 +45,23 @@ export default function RestaurantDetail() {
     }, 5000)
     return () => clearInterval(timer)
   }, [business?.photos?.length])
+
+  // IntersectionObserver: highlight active sub-section chip as user scrolls
+  useEffect(() => {
+    observerRef.current?.disconnect()
+    const els = Object.entries(subSectionRefs.current)
+    if (!els.length) return
+    const headerH = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--gcr-header-h') || '156')
+    observerRef.current = new IntersectionObserver(
+      entries => {
+        const visible = entries.filter(e => e.isIntersecting)
+        if (visible.length) setActiveSubSection(visible[0].target.dataset.secid)
+      },
+      { rootMargin: `-${headerH + 105}px 0px -60% 0px`, threshold: 0 }
+    )
+    els.forEach(([, el]) => el && observerRef.current.observe(el))
+    return () => observerRef.current?.disconnect()
+  }, [activeTab, business])
 
   if (loading) return <div className="detail-page"><div className="loading">Loading...</div></div>
   if (error) return <div className="detail-page"><div className="error">Error: {error}</div></div>
@@ -68,15 +88,32 @@ export default function RestaurantDetail() {
   const hasActivityExtras = business.highlights?.length || business.known_for?.length || business.good_for?.length || business.what_makes_it_different
 
   const sections = [
-    { id: 'overview',    label: 'Overview',    icon: 'ℹ️'  },
-    ...(hasActivityExtras                ? [{ id: 'experience',  label: 'Experience',  icon: '🎯' }] : []),
     ...(business.menu_sections?.length  ? [{ id: 'menu',        label: 'Menu',        icon: '🍽️' }] : []),
     ...((business.hh_days || business.hh_sections?.length || business.happy_hour_sections?.length) ? [{ id: 'happy-hour', label: 'Happy Hour', icon: '🍺' }] : []),
     ...(hours.length                    ? [{ id: 'hours',       label: 'Hours',       icon: '🕐' }] : []),
     ...(events.length                   ? [{ id: 'events',      label: 'Events',      icon: '🎉' }] : []),
+    { id: 'overview',    label: 'Overview',    icon: 'ℹ️'  },
+    ...(hasActivityExtras                ? [{ id: 'experience',  label: 'Experience',  icon: '🎯' }] : []),
     { id: 'location',    label: 'Location',    icon: '📍'  },
     ...(photos.length                   ? [{ id: 'gallery',     label: 'Photos',      icon: '📸' }] : []),
   ]
+
+  // Sub-sections for current tab
+  const subSections = activeTab === 'menu'
+    ? (business.menu_sections || []).map(s => ({ id: `menu-sec-${s.id || s.section_name}`, label: s.section_name }))
+    : activeTab === 'happy-hour'
+    ? (business.hh_sections || business.happy_hour_sections || []).map(s => ({ id: `hh-sec-${s.id || s.section_name}`, label: s.section_name || s.name }))
+    : []
+
+  const scrollToSubSection = useCallback((id) => {
+    const el = subSectionRefs.current[id]
+    if (!el) return
+    const headerH = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--gcr-header-h') || '156')
+    const tabsH = 100 // main tabs + sub-section chips height
+    const top = el.getBoundingClientRect().top + window.scrollY - headerH - tabsH
+    window.scrollTo({ top, behavior: 'smooth' })
+    setActiveSubSection(id)
+  }, [])
 
   const GALLERY_PER_PAGE = 10
   const REVIEWS_PER_PAGE = 10
@@ -252,12 +289,25 @@ export default function RestaurantDetail() {
             <button
               key={sec.id}
               className={`tab ${activeTab === sec.id ? 'active' : ''}`}
-              onClick={() => setActiveTab(sec.id)}
+              onClick={() => { setActiveTab(sec.id); setActiveSubSection(null) }}
             >
               {sec.icon} {sec.label}
             </button>
           ))}
         </div>
+        {subSections.length > 0 && (
+          <div className="subsection-chips-row">
+            {subSections.map(ss => (
+              <button
+                key={ss.id}
+                className={`subsection-chip ${activeSubSection === ss.id ? 'active' : ''}`}
+                onClick={() => scrollToSubSection(ss.id)}
+              >
+                {ss.label}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Content Layout */}
@@ -448,8 +498,15 @@ export default function RestaurantDetail() {
               <h2>🍽️ Menu</h2>
               {business.menu_sections && business.menu_sections.length > 0 ? (
                 <div className="menu-container">
-                  {business.menu_sections.map(section => (
-                    <div key={section.id} className="menu-section">
+                  {business.menu_sections.map(section => {
+                    const secId = `menu-sec-${section.id || section.section_name}`
+                    return (
+                    <div
+                      key={section.id}
+                      className="menu-section menu-section-anchor"
+                      data-secid={secId}
+                      ref={el => { subSectionRefs.current[secId] = el }}
+                    >
                       <h3>{section.section_name}</h3>
                       <div className="menu-items">
                         {section.items && section.items.map(item => (
@@ -463,7 +520,7 @@ export default function RestaurantDetail() {
                         ))}
                       </div>
                     </div>
-                  ))}
+                  )})}
                 </div>
               ) : (
                 <p className="no-data">No menu available</p>

@@ -407,12 +407,47 @@
 /* Sticky Tabs */
 .sticky-tabs {
   position: sticky;
-  top: 64px;
+  top: var(--gcr-header-h, 156px);
   z-index: 99;
   background: rgba(255,255,255,.97);
   backdrop-filter: blur(8px);
   border-bottom: 1px solid var(--border);
   box-shadow: 0 2px 12px rgba(0,0,0,.10);
+}
+
+.subsection-chips-row {
+  display: flex;
+  overflow-x: auto;
+  gap: 6px;
+  padding: 7px 14px 9px;
+  scrollbar-width: none;
+  border-top: 1px solid #e8f0f8;
+  background: #f7fbff;
+}
+.subsection-chips-row::-webkit-scrollbar { display: none; }
+
+.subsection-chip {
+  flex-shrink: 0;
+  white-space: nowrap;
+  padding: 5px 13px;
+  border-radius: 999px;
+  background: #fff;
+  border: 1.5px solid #b2dfdb;
+  color: #0b5e5a;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .15s;
+}
+.subsection-chip:hover { background: #e8f7f5; }
+.subsection-chip.active {
+  background: #0b7a75;
+  border-color: #0b7a75;
+  color: #fff;
+}
+
+.menu-section-anchor {
+  scroll-margin-top: calc(var(--gcr-header-h, 156px) + 110px);
 }
 
 .tabs-scroll {
