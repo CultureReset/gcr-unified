@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import Toast from '../components/Toast'
+import { SkeletonGrid } from '../components/SkeletonLoader'
 import { CATEGORIES } from '../data/mockBusinesses'
 import { fetchBusinesses, fetchLiveNow, saveItem, unsaveItem } from '../services/gcrApi'
 import * as locationService from '../services/locationService'
@@ -11,6 +12,7 @@ export default function Home() {
   const navigate = useNavigate()
   const { tourist, savedPlaces, itinerary, seenSlugs, locationSharingEnabled, enableLocationSharing, userId } = useApp()
   const [businesses, setBusinesses] = useState([])
+  const [businessesLoading, setBusinessesLoading] = useState(true)
   const [liveNow, setLiveNow] = useState([])
   const [showLocationBanner, setShowLocationBanner] = useState(false)
   const [requestingPermission, setRequestingPermission] = useState(false)
@@ -19,9 +21,15 @@ export default function Home() {
 
   useEffect(() => {
     let cancelled = false
+    setBusinessesLoading(true)
     fetchBusinesses()
       .then(d => { if (!cancelled) setBusinesses(d) })
-      .catch(() => {})
+      .catch(() => {
+        if (!cancelled) setBusinesses([])
+      })
+      .finally(() => {
+        if (!cancelled) setBusinessesLoading(false)
+      })
     return () => { cancelled = true }
   }, [])
 
@@ -219,26 +227,34 @@ export default function Home() {
 
       <h3 className="section-title">What do you want to explore?</h3>
 
-      <div className="category-grid">
-        {CATEGORIES.map(cat => {
-          const count = cat.id === 'all'
-            ? businesses.length
-            : businesses.filter(b => b.category === cat.id).length
-          return (
-            <button
-              key={cat.id}
-              className="category-card"
-              style={{ '--cat-color': cat.color }}
-              onClick={() => navigate(`/swipe/${cat.id}`)}
-            >
-              <span className="cat-emoji">{cat.emoji}</span>
-              <div className="cat-label">{cat.label}</div>
-              <div className="cat-count">{count} spots</div>
-              <div className="cat-glow" />
-            </button>
-          )
-        })}
-      </div>
+      {businessesLoading ? (
+        <div className="skeleton-grid" style={{gridTemplateColumns:'1fr 1fr',gap:'12px'}}>
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="skeleton-card" style={{height:'140px'}} />
+          ))}
+        </div>
+      ) : (
+        <div className="category-grid">
+          {CATEGORIES.map(cat => {
+            const count = cat.id === 'all'
+              ? businesses.length
+              : businesses.filter(b => b.category === cat.id).length
+            return (
+              <button
+                key={cat.id}
+                className="category-card"
+                style={{ '--cat-color': cat.color }}
+                onClick={() => navigate(`/swipe/${cat.id}`)}
+              >
+                <span className="cat-emoji">{cat.emoji}</span>
+                <div className="cat-label">{cat.label}</div>
+                <div className="cat-count">{count} spots</div>
+                <div className="cat-glow" />
+              </button>
+            )
+          })}
+        </div>
+      )}
 
       {savedPlaces.length >= 3 && (
         <div className="build-banner">
@@ -252,7 +268,7 @@ export default function Home() {
         </div>
       )}
 
-      {businesses.length > 0 && (
+      {!businessesLoading && businesses.length > 0 && (
         <>
           <h3 className="section-title">Trending on the Gulf Coast</h3>
           <div className="trending-row">

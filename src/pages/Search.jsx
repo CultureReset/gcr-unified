@@ -3,6 +3,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import GCRHeader from '../components/GCRHeader'
 import Toast from '../components/Toast'
+import { SkeletonBusinessSection } from '../components/SkeletonLoader'
 import { saveItem, unsaveItem } from '../services/gcrApi'
 import { API_BASE } from '../config'
 import './Search.css'
@@ -118,9 +119,23 @@ export default function Search() {
       {/* Results */}
       <div className="search-content">
         {loading ? (
-          <div className="loading">Searching...</div>
+          <div className="search-skeleton">
+            {Array.from({ length: 2 }).map((_, i) => (
+              <SkeletonBusinessSection key={i} />
+            ))}
+          </div>
         ) : error ? (
-          <div className="error">{error}</div>
+          <div className="error">
+            <div style={{fontSize:'28px',marginBottom:'12px'}}>⚠️</div>
+            <div style={{fontWeight:600,marginBottom:'8px'}}>Search Failed</div>
+            <p>{error}</p>
+            <button
+              onClick={() => window.location.reload()}
+              style={{marginTop:'12px',padding:'8px 16px',background:'var(--accent)',color:'white',border:'none',borderRadius:'8px',cursor:'pointer'}}
+            >
+              Try Again
+            </button>
+          </div>
         ) : !query.trim() ? (
           <div className="empty-state">
             <p>Enter a search term to find restaurants, menu items, and more</p>

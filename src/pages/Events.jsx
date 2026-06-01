@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import Toast from '../components/Toast'
 import GCRHeader from '../components/GCRHeader'
+import { SkeletonCard, SkeletonGrid } from '../components/SkeletonLoader'
 import { saveItem, unsaveItem } from '../services/gcrApi'
 import { API_BASE } from '../config'
 import './Events.css'
@@ -16,6 +17,7 @@ export default function Events() {
   const [selectedDate, setSelectedDate] = useState(new Date())
   const [events, setEvents] = useState([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
   const [happyHourModalOpen, setHappyHourModalOpen] = useState(false)
   const [selectedHappyHours, setSelectedHappyHours] = useState(null)
   const [toast, setToast] = useState(null)
@@ -52,6 +54,7 @@ export default function Events() {
     async function loadEvents() {
       try {
         setLoading(true)
+        setError(null)
         const dateStr = formatDateForAPI(selectedDate)
         const res = await fetch(
           `${API_BASE}/api/gcr/entities?type=event&date=${dateStr}&limit=100`
@@ -66,9 +69,14 @@ export default function Events() {
             return timeA.localeCompare(timeB)
           })
           setEvents(evts)
+        } else {
+          setError('Failed to load events. Please try again.')
+          setEvents([])
         }
       } catch (err) {
         console.error('Error loading events:', err)
+        setError('Connection error. Please check your internet and try again.')
+        setEvents([])
       } finally {
         setLoading(false)
       }
@@ -177,10 +185,25 @@ export default function Events() {
         </h2>
 
         {loading ? (
-          <div className="loading">Loading events...</div>
+          <div className="events-skeleton">
+            <SkeletonGrid count={6} />
+          </div>
+        ) : error ? (
+          <div className="empty-state" style={{background:'rgba(239,68,68,0.1)',borderRadius:'12px'}}>
+            <p style={{fontSize:'28px',marginBottom:'12px'}}>⚠️</p>
+            <p style={{fontWeight:600,marginBottom:'8px'}}>Couldn't Load Events</p>
+            <p style={{fontSize:'13px',color:'var(--text2)'}}>{error}</p>
+            <button
+              onClick={() => window.location.reload()}
+              style={{marginTop:'12px',padding:'8px 16px',background:'var(--accent)',color:'white',border:'none',borderRadius:'8px',cursor:'pointer',fontSize:'14px'}}
+            >
+              Try Again
+            </button>
+          </div>
         ) : events.length === 0 ? (
           <div className="empty-state">
-            <p>No events scheduled for this date</p>
+            <p>📭 No events scheduled for this date</p>
+            <p style={{fontSize:'13px',color:'var(--text2)',marginTop:'8px'}}>Try selecting a different date</p>
           </div>
         ) : (
           <div className="events-sections">
