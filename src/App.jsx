@@ -94,7 +94,7 @@ function AppRoutes() {
         <Route path="/setup/*" element={<RequireAuth><Setup /></RequireAuth>} />
         <Route path="/home" element={<RequireAuth><Home /></RequireAuth>} />
         <Route path="/swipe/:category" element={<Swipe />} />
-        <Route path="/business/:slug" element={<RequireAuth><BusinessDetail /></RequireAuth>} />
+        <Route path="/business/:slug" element={<BusinessDetail />} />
         <Route path="/list" element={<RequireAuth><MyList /></RequireAuth>} />
         <Route path="/building" element={<RequireAuth><Building /></RequireAuth>} />
         <Route path="/itinerary" element={<RequireAuth><Itinerary /></RequireAuth>} />

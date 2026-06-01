@@ -6,16 +6,41 @@ import { API_BASE } from '../config'
 import './CategoryPage.css'
 
 const CATEGORY_CONFIG = {
-  restaurants: { label: 'Restaurants', emoji: '🍽️', type: 'restaurant' },
-  coffee: { label: 'Coffee & Sweets', emoji: '☕', type: 'coffee' },
-  'happy-hours': { label: 'Happy Hours', emoji: '🍻', type: 'bar' },
-  events: { label: 'Events', emoji: '🎉', type: 'event' },
-  'things-to-do': { label: 'Things To Do', emoji: '🎯', type: 'activity' },
-  services: { label: 'Services', emoji: '🛠️', type: 'service' },
-  'public-spots': { label: 'Public Spots', emoji: '✨', type: 'park' },
-  feed: { label: 'Live Feed', emoji: '📡', type: 'feed' },
-  shopping: { label: 'Shopping', emoji: '🛍️', type: 'shop' },
-  staying: { label: 'Staying', emoji: '🏨', type: 'hotel' },
+  restaurants:    { label: 'Restaurants',     emoji: '🍽️' },
+  coffee:         { label: 'Coffee & Sweets', emoji: '☕' },
+  'happy-hours':  { label: 'Happy Hours',     emoji: '🍻' },
+  'things-to-do': { label: 'Things To Do',    emoji: '🎯' },
+  services:       { label: 'Services',         emoji: '🛠️' },
+  'public-spots': { label: 'Public Spots',     emoji: '✨' },
+  shopping:       { label: 'Shopping',          emoji: '🛍️' },
+  staying:        { label: 'Staying',           emoji: '🏨' },
+  nightlife:      { label: 'Nightlife',         emoji: '🌙' },
+}
+
+// Maps entity_subtype → category page (mirrors launching-gcr subtype mapping)
+const SUBTYPE_TO_CATEGORY = {
+  restaurant:'restaurants', restaurants:'restaurants',
+  american_restaurant:'restaurants', seafood_restaurant:'restaurants', seafood:'restaurants',
+  pizza_restaurant:'restaurants', bar:'restaurants', bar_grill:'restaurants',
+  bar_and_grill:'restaurants', beach_bar:'restaurants', irish_pub:'restaurants', pub:'restaurants',
+  hybrid_venue:'restaurants', casual_dining:'restaurants', southern:'restaurants',
+  brunch_restaurant:'restaurants', breakfast_restaurant:'restaurants', steakhouse:'restaurants',
+  hamburger_restaurant:'restaurants', sandwich_shop:'restaurants', diner:'restaurants',
+  coffee_shop:'coffee', cafe:'coffee', bakery:'coffee', ice_cream:'coffee',
+  ice_cream_shop:'coffee', donut_shop:'coffee', dessert_shop:'coffee', smoothie:'coffee',
+  boutique:'shopping', souvenir:'shopping', retail:'shopping', shopping:'shopping',
+  surf_shop:'shopping', gift_shop:'shopping', clothing:'shopping', clothing_store:'shopping',
+  art_gallery:'shopping', grocery_store:'shopping', liquor_store:'shopping',
+  parasailing:'things-to-do', dolphin_cruise:'things-to-do', boat_rental:'things-to-do',
+  fishing_charter:'things-to-do', tour:'things-to-do', attraction:'things-to-do',
+  jet_ski:'things-to-do', watersports:'things-to-do', snorkeling:'things-to-do',
+  kayak_rental:'things-to-do', marina:'things-to-do', golf_course:'things-to-do',
+  nightlife:'nightlife', night_club:'nightlife', sports_bar:'nightlife',
+  rooftop_bar:'nightlife', lounge:'nightlife', cocktail_bar:'nightlife',
+  services:'services', salon:'services', spa:'services', photographer:'services',
+  wellness:'services', transportation:'services', concierge:'services',
+  hotel:'staying', resort:'staying', condo:'staying', vacation_rental:'staying',
+  motel:'staying', bed_and_breakfast:'staying', rv_park:'staying',
 }
 
 const HERO_IMAGES = {
@@ -42,6 +67,16 @@ export default function CategoryPage() {
   const [error, setError] = useState(null)
   const [offset, setOffset] = useState(0)
   const [hasMore, setHasMore] = useState(true)
+  const [savedSlugs, setSavedSlugs] = useState(new Set())
+
+  const handleSave = (entity) => {
+    const slug = entity.slug || entity.id
+    setSavedSlugs(prev => {
+      const next = new Set(prev)
+      next.has(slug) ? next.delete(slug) : next.add(slug)
+      return next
+    })
+  }
 
   const config = CATEGORY_CONFIG[category]
   const heroImage = HERO_IMAGES[category]
@@ -58,24 +93,38 @@ export default function CategoryPage() {
     async function loadEntities() {
       try {
         setLoading(true)
-        const res = await fetch(
-          `${API_BASE}/api/gcr/entities?limit=100&offset=0&type=${config.type}`
-        )
-        if (!res.ok) throw new Error('Failed to load entities')
-        const data = await res.json()
-        const ents = data.entities || []
-        setEntities(ents)
-        setHasMore(ents.length >= PAGE_SIZE)
+        setError(null)
 
-        // Extract unique tags from all entities
+        let ents = []
+
+        if (category === 'happy-hours') {
+          // Dedicated happy-hours endpoint
+          const res = await fetch(`${API_BASE}/api/gcr/happy-hours`)
+          if (!res.ok) throw new Error('Failed to load happy hours')
+          const data = await res.json()
+          ents = data.happyHours || data.businesses || []
+        } else {
+          // Fetch all entities, filter client-side by subtype
+          const res = await fetch(`${API_BASE}/api/gcr/entities?limit=500`)
+          if (!res.ok) throw new Error('Failed to load entities')
+          const data = await res.json()
+          const all = data.entities || []
+          ents = all.filter(e => {
+            const raw = (e.entity_subtype || e.entity_type || e.type || '').toLowerCase().replace(/-/g, '_')
+            return SUBTYPE_TO_CATEGORY[raw] === category
+          })
+        }
+
+        setEntities(ents)
+        setHasMore(false)
+
+        // Extract unique tags for filter chips
         const tagsSet = new Set()
         ents.forEach(e => {
-          if (e.tags) {
-            (Array.isArray(e.tags) ? e.tags : []).forEach(t => {
-              if (typeof t === 'string') tagsSet.add(t)
-              else if (t.tag_name) tagsSet.add(t.tag_name)
-            })
-          }
+          ;(Array.isArray(e.tags) ? e.tags : []).forEach(t => {
+            const tag = typeof t === 'string' ? t : (t.tag_name || t.tag || '')
+            if (tag) tagsSet.add(tag)
+          })
         })
         setAllTags(['All', ...Array.from(tagsSet).sort()])
       } catch (err) {
@@ -99,21 +148,8 @@ export default function CategoryPage() {
         })
       })
 
-  const handleLoadMore = async () => {
-    try {
-      const newOffset = offset + PAGE_SIZE
-      const res = await fetch(
-        `${API_BASE}/api/gcr/entities?limit=100&offset=${newOffset}&type=${config.type}`
-      )
-      if (!res.ok) throw new Error('Failed to load more')
-      const data = await res.json()
-      const newEnts = data.entities || []
-      setEntities([...entities, ...newEnts])
-      setOffset(newOffset)
-      setHasMore(newEnts.length >= PAGE_SIZE)
-    } catch (err) {
-      console.error('Error loading more:', err)
-    }
+  const handleLoadMore = () => {
+    // All entities loaded upfront — no pagination needed
   }
 
   if (error && !config) {
@@ -173,7 +209,9 @@ export default function CategoryPage() {
               <GCRCard
                 key={entity.id || entity.slug}
                 entity={entity}
-                onSave={(e) => console.log('Save:', e.slug)}
+                category={category}
+                onSave={handleSave}
+                savedSlugs={savedSlugs}
               />
             ))
           )}

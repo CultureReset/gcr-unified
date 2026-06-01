@@ -1,11 +1,12 @@
 .gcr-header {
-  background: linear-gradient(180deg, #87CEEB 0%, #B0E0E6 20%, #87CEFA 40%, #4A90E2 80%, #3a7bd5 100%);
+  background: linear-gradient(180deg, var(--bg2) 0%, var(--bg3) 100%);
   position: sticky;
   top: 0;
   z-index: 1000;
-  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.5);
   padding: 0;
   margin: 0;
+  border-bottom: 1px solid var(--border);
 }
 
 .gcr-header-top {
@@ -36,7 +37,7 @@
 }
 
 .install-btn {
-  background: #14B8A6;
+  background: var(--primary);
   color: #fff;
   border: none;
   border-radius: 10px;
@@ -48,7 +49,7 @@
 }
 
 .install-btn:hover {
-  background: #0d9b8a;
+  background: var(--primary-dark);
 }
 
 /* Category Tabs */
@@ -79,13 +80,13 @@
   display: flex;
   align-items: center;
   gap: 4px;
-  background: rgba(255, 255, 255, 0.88);
-  border: 1px solid transparent;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--border);
   border-radius: 22px;
   padding: 8px 14px;
   font-size: 13px;
   font-weight: 700;
-  color: #2C5282;
+  color: var(--text2);
   cursor: pointer;
   white-space: nowrap;
   transition: all 0.2s ease;
@@ -93,16 +94,16 @@
 }
 
 .cat-tab:hover {
-  background: #fff;
-  border-color: #14B8A6;
-  color: #14B8A6;
+  background: rgba(255, 255, 255, 0.12);
+  border-color: var(--primary);
+  color: var(--primary);
   transform: translateY(-2px);
 }
 
 .cat-tab.active {
-  background: #fff;
-  border-color: #0b7a75;
-  color: #0b7a75;
+  background: rgba(124, 106, 247, 0.15);
+  border-color: var(--primary);
+  color: var(--primary);
 }
 
 .cat-tab span:first-child {
@@ -129,23 +130,23 @@
 }
 
 .strip-btn.gold {
-  background: linear-gradient(135deg, #FFD700, #FFC200);
-  color: #1a1a1a;
+  background: linear-gradient(135deg, var(--accent), #ea580c);
+  color: #fff;
 }
 
 .strip-btn.gold:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
+  box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);
 }
 
 .strip-btn.teal {
-  background: linear-gradient(135deg, #0b7a75, #14B8A6);
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
   color: #fff;
 }
 
 .strip-btn.teal:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(11, 122, 117, 0.3);
+  box-shadow: 0 4px 12px rgba(124, 106, 247, 0.3);
 }
 
 /* Mobile */
