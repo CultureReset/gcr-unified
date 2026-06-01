@@ -6,6 +6,7 @@ import Landing from './pages/Landing'
 import Browse from './pages/Browse'
 import CategoryListings from './pages/CategoryListings'
 import CategoryPage from './pages/CategoryPage'
+import Events from './pages/Events'
 import Auth from './pages/Auth'
 import Reset from './pages/Reset'
 import Invite from './pages/Invite'
@@ -102,7 +103,7 @@ function AppRoutes() {
         <Route path="/restaurants" element={<CategoryPage />} />
         <Route path="/coffee" element={<CategoryPage />} />
         <Route path="/happy-hours" element={<CategoryPage />} />
-        <Route path="/events" element={<CategoryPage />} />
+        <Route path="/events" element={<Events />} />
         <Route path="/things-to-do" element={<CategoryPage />} />
         <Route path="/services" element={<CategoryPage />} />
         <Route path="/public-spots" element={<CategoryPage />} />
