@@ -4,33 +4,48 @@ import './GCRCard.css'
 
 // ── Tag category mapping (from launching-GCR buildCard) ──────────────────────
 const TAG_CAT = {
-  seafood:'food', fish_tacos:'food', burgers:'food', pizza:'food', sushi:'food',
-  sandwiches:'food', wings:'food', steaks:'food', bbq:'food', southern:'food',
-  american:'food', cajun_creole:'food', mexican:'food', italian:'food',
+  // food
+  seafood:'food', fresh_seafood:'food', raw_bar:'food', fish_tacos:'food', burgers:'food',
+  pizza:'food', sushi:'food', sandwiches:'food', wings:'food', steaks:'food', bbq:'food',
+  southern:'food', american:'food', cajun_creole:'food', mexican:'food', italian:'food',
   breakfast:'food', brunch:'food', lunch:'food', dinner:'food', dessert:'food',
   bakery:'food', ice_cream:'food', snacks:'food', vegan:'food', vegetarian:'food',
-  gluten_free:'food', kids_menu:'food', buffet:'food',
+  gluten_free:'food', kids_menu:'food', buffet:'food', happy_hour_food:'food',
+  catch_of_the_day:'food', gulf_catch:'food', daily_specials:'food',
+  // drink
   beer:'drink', wine:'drink', cocktails:'drink', spirits:'drink', mocktails:'drink',
   coffee:'drink', espresso:'drink', smoothies:'drink', juice:'drink', tea:'drink',
   full_bar:'drink', craft_beer:'drink', local_beer:'drink', draft_beer:'drink',
+  tiki_cocktails:'drink', frozen_drinks:'drink', signature_cocktails:'drink', open_bar:'drink',
+  // vibe
   waterfront:'vibe', outdoor_seating:'vibe', patio:'vibe', rooftop:'vibe',
   live_music:'vibe', live_dj:'vibe', karaoke:'vibe', trivia:'vibe', sports_tv:'vibe',
-  beach_access:'vibe', scenic_views:'vibe', sunset_views:'vibe', pet_friendly:'vibe',
-  romantic:'vibe', family_friendly:'vibe', group_friendly:'vibe', lively:'vibe',
-  casual:'vibe', upscale:'vibe', dive_bar:'vibe', sports_bar:'vibe',
+  beach_access:'vibe', scenic_views:'vibe', sunset_views:'vibe', sunset_view:'vibe',
+  marina_view:'vibe', ocean_view:'vibe', bay_view:'vibe', gulf_view:'vibe',
+  pet_friendly:'vibe', romantic:'vibe', family_friendly:'vibe', group_friendly:'vibe',
+  lively:'vibe', casual:'vibe', upscale:'vibe', dive_bar:'vibe', sports_bar:'vibe',
+  tiki_bar:'vibe', rooftop_bar:'vibe', beachfront:'vibe', dockside:'vibe',
+  // service
   delivery:'service', takeout:'service', dine_in:'service', curbside:'service',
   reservations:'service', private_events:'service', catering:'service',
   wheelchair_accessible:'service', good_for_children:'service', parking:'service',
+  boat_slips:'service', valet:'service', live_entertainment:'service',
 }
 
 const TAG_EMOJI = {
-  seafood:'🦐', fish_tacos:'🌮', burgers:'🍔', pizza:'🍕', sushi:'🍣', wings:'🍗',
-  steaks:'🥩', bbq:'🔥', breakfast:'🍳', brunch:'🥞', dessert:'🍰', ice_cream:'🍦',
-  vegan:'🥗', gluten_free:'✓', beer:'🍺', wine:'🍷', cocktails:'🍸', coffee:'☕',
-  waterfront:'🌊', outdoor_seating:'🌿', patio:'🌿', rooftop:'🌆', live_music:'🎸',
-  karaoke:'🎤', trivia:'🧠', sports_tv:'📺', pet_friendly:'🐾', romantic:'❤️',
-  family_friendly:'👨‍👩‍👧', delivery:'🛵', takeout:'🥡', dine_in:'🍽️',
-  wheelchair_accessible:'♿', good_for_children:'👶', parking:'🅿️',
+  seafood:'🦐', fresh_seafood:'🦐', raw_bar:'🦪', fish_tacos:'🌮', burgers:'🍔',
+  pizza:'🍕', sushi:'🍣', wings:'🍗', steaks:'🥩', bbq:'🔥', breakfast:'🍳',
+  brunch:'🥞', dessert:'🍰', ice_cream:'🍦', vegan:'🥗', gluten_free:'✓',
+  happy_hour_food:'🏷️', catch_of_the_day:'🐟',
+  beer:'🍺', wine:'🍷', cocktails:'🍸', coffee:'☕', full_bar:'🍹',
+  tiki_cocktails:'🌺', frozen_drinks:'🧃', craft_beer:'🍺',
+  waterfront:'🌊', beachfront:'🏖️', dockside:'⚓', outdoor_seating:'🌿',
+  patio:'🌿', rooftop:'🌆', live_music:'🎸', live_dj:'🎧',
+  karaoke:'🎤', trivia:'🧠', sports_tv:'📺', pet_friendly:'🐾',
+  romantic:'❤️', family_friendly:'👨‍👩‍👧', marina_view:'⛵', sunset_view:'🌅',
+  sunset_views:'🌅', ocean_view:'🌊', bay_view:'🌅', gulf_view:'🌊',
+  delivery:'🛵', takeout:'🥡', dine_in:'🍽️',
+  wheelchair_accessible:'♿', good_for_children:'👶', parking:'🅿️', boat_slips:'⛵',
 }
 
 const ACTIVITY_SUBTYPES = new Set([
@@ -110,7 +125,7 @@ export default function GCRCard({ entity, category, onSave, savedSlugs }) {
   const name = entity.name || 'Business'
   const icon = entity.icon || entity.emoji || '📍'
   const sub = entity.subtitle || ''
-  const rawSubtype = (entity.entity_subtype || entity.type || '').toLowerCase()
+  const rawSubtype = (entity.entity_subtype || entity.entity_type || entity.type || '').toLowerCase()
   const subtypeKey = rawSubtype.replace(/-/g, '_')
   const subtype = rawSubtype.replace(/_/g, ' ')
   const city = entity.city || ''
@@ -119,8 +134,10 @@ export default function GCRCard({ entity, category, onSave, savedSlugs }) {
   const addr = entity.address_line_1 || entity.address || ''
   const fullAddr = [addr, city, state].filter(Boolean).join(', ')
 
-  const hero = entity.photos?.[0]?.image_url || entity.photos?.[0]?.url ||
-    entity.hero_image_url || entity.cover_url ||
+  // Find best photo: prefer cover photo, then first photo, then hero/cover fields
+  const coverPhoto = entity.photos?.find(p => p.is_cover) || entity.photos?.[0]
+  const hero = entity.hero_image_url || entity.cover_url ||
+    coverPhoto?.url || coverPhoto?.image_url ||
     `https://images.unsplash.com/photo-1504674900968-08049c043914?w=600&q=80`
 
   const phone = entity.phone || ''
@@ -150,7 +167,7 @@ export default function GCRCard({ entity, category, onSave, savedSlugs }) {
 
   // Tags
   const rawTags = (entity.tags || [])
-    .map(t => (typeof t === 'string' ? t : (t.tag_name || t.tag || '')).toLowerCase().replace(/[\s\-]+/g, '_'))
+    .map(t => (typeof t === 'string' ? t : (t.tag_name || t.tag || '')).trim().toLowerCase().replace(/[\s\-\/]+/g, '_').replace(/[^a-z0-9_]/g, ''))
     .filter(Boolean)
   const allTagKeys = subtypeKey && !rawTags.includes(subtypeKey) ? [subtypeKey, ...rawTags] : rawTags
 
