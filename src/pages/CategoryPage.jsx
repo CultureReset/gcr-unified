@@ -6,16 +6,16 @@ import { API_BASE } from '../config'
 import './CategoryPage.css'
 
 const CATEGORY_CONFIG = {
-  restaurants: { label: 'Restaurants', emoji: '🍽️', type: 'restaurants' },
+  restaurants: { label: 'Restaurants', emoji: '🍽️', type: 'restaurant' },
   coffee: { label: 'Coffee & Sweets', emoji: '☕', type: 'coffee' },
-  'happy-hours': { label: 'Happy Hours', emoji: '🍻', type: 'happy-hours' },
-  events: { label: 'Events', emoji: '🎉', type: 'events' },
-  'things-to-do': { label: 'Things To Do', emoji: '🎯', type: 'activities' },
-  services: { label: 'Services', emoji: '🛠️', type: 'services' },
-  'public-spots': { label: 'Public Spots', emoji: '✨', type: 'public-spots' },
+  'happy-hours': { label: 'Happy Hours', emoji: '🍻', type: 'bar' },
+  events: { label: 'Events', emoji: '🎉', type: 'event' },
+  'things-to-do': { label: 'Things To Do', emoji: '🎯', type: 'activity' },
+  services: { label: 'Services', emoji: '🛠️', type: 'service' },
+  'public-spots': { label: 'Public Spots', emoji: '✨', type: 'park' },
   feed: { label: 'Live Feed', emoji: '📡', type: 'feed' },
-  shopping: { label: 'Shopping', emoji: '🛍️', type: 'shopping' },
-  staying: { label: 'Staying', emoji: '🏨', type: 'staying' },
+  shopping: { label: 'Shopping', emoji: '🛍️', type: 'shop' },
+  staying: { label: 'Staying', emoji: '🏨', type: 'hotel' },
 }
 
 const HERO_IMAGES = {
@@ -58,7 +58,7 @@ export default function CategoryPage() {
       try {
         setLoading(true)
         const res = await fetch(
-          `${API_BASE}/api/gcr/entities?type=${config.type}&limit=${PAGE_SIZE}&offset=0`
+          `${API_BASE}/api/gcr/entities?limit=100&offset=0`
         )
         if (!res.ok) throw new Error('Failed to load entities')
         const data = await res.json()
@@ -102,7 +102,7 @@ export default function CategoryPage() {
     try {
       const newOffset = offset + PAGE_SIZE
       const res = await fetch(
-        `${API_BASE}/api/gcr/entities?type=${config.type}&limit=${PAGE_SIZE}&offset=${newOffset}`
+        `${API_BASE}/api/gcr/entities?limit=100&offset=${newOffset}`
       )
       if (!res.ok) throw new Error('Failed to load more')
       const data = await res.json()
