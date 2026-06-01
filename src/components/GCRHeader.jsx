@@ -41,7 +41,12 @@ export default function GCRHeader() {
           <img src="/gcr-logo.png" alt="Gulf Coast Radar" className="logo-img" onError={e => e.target.style.display='none'} />
           <span className="logo-text">GULF<span className="logo-coast">COAST</span>RADAR</span>
         </div>
-        <button className="install-btn">📲 Install App</button>
+        <div className="gcr-header-right">
+          <button className="trip-swipe-btn" onClick={() => navigate('/swipe/restaurants')}>
+            👆 Trip Swipe →
+          </button>
+          <button className="install-btn">📲 Install App</button>
+        </div>
       </div>
 
       {/* Row 2: Category Tabs */}

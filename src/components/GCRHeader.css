@@ -40,6 +40,29 @@
 
 .logo-coast { color: #e0f7fa; }
 
+.gcr-header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.trip-swipe-btn {
+  background: rgba(255,255,255,.15);
+  color: #fff;
+  border: 1.5px solid rgba(255,255,255,.5);
+  border-radius: 20px;
+  padding: 7px 13px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all .18s;
+}
+.trip-swipe-btn:hover {
+  background: rgba(255,255,255,.28);
+  border-color: #fff;
+}
+
 .install-btn {
   background: rgba(255,255,255,.9);
   color: #2C5282;
