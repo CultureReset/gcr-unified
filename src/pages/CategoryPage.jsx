@@ -59,7 +59,7 @@ export default function CategoryPage() {
       try {
         setLoading(true)
         const res = await fetch(
-          `${API_BASE}/api/gcr/entities?limit=100&offset=0`
+          `${API_BASE}/api/gcr/entities?limit=100&offset=0&type=${config.type}`
         )
         if (!res.ok) throw new Error('Failed to load entities')
         const data = await res.json()
@@ -103,7 +103,7 @@ export default function CategoryPage() {
     try {
       const newOffset = offset + PAGE_SIZE
       const res = await fetch(
-        `${API_BASE}/api/gcr/entities?limit=100&offset=${newOffset}`
+        `${API_BASE}/api/gcr/entities?limit=100&offset=${newOffset}&type=${config.type}`
       )
       if (!res.ok) throw new Error('Failed to load more')
       const data = await res.json()
