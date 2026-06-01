@@ -59,7 +59,7 @@ function AppRoutes() {
 
   // Track route changes — fires on every page navigation
   useEffect(() => {
-    const API = import.meta.env.VITE_API_BASE || 'https://cybercheck-api-database.vercel.app'
+    const API = import.meta.env.VITE_API_BASE || 'https://gcr-api-clean-fresh.vercel.app'
     let sess = sessionStorage.getItem('ts_sess_id')
     if (!sess) { sess = Math.random().toString(36).slice(2) + Date.now().toString(36); sessionStorage.setItem('ts_sess_id', sess) }
     const qs = new URLSearchParams(location.search)

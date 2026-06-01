@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
-import PageHeader from '../components/PageHeader'
+import GCRHeader from '../components/GCRHeader'
 import Toast from '../components/Toast'
 import { SkeletonBusinessSection } from '../components/SkeletonLoader'
 import { saveItem, unsaveItem } from '../services/gcrApi'
@@ -116,7 +116,7 @@ export default function Search() {
 
   return (
     <div className="search-page">
-      <PageHeader title="Search" subtitle="Find restaurants, items, and more" showBack={true} />
+      <GCRHeader />
 
       {/* Hero Section */}
       <div className="search-hero">
