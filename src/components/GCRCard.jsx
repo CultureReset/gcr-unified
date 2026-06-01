@@ -11,7 +11,8 @@ const TAG_COLORS = {
 }
 
 function getTagColor(tag) {
-  const lower = (tag || '').toLowerCase()
+  const tagStr = typeof tag === 'string' ? tag : (tag?.tag_name || '')
+  const lower = (tagStr || '').toLowerCase()
   if (/seafood|fish|shrimp|oyster|crab/.test(lower)) return 'teal'
   if (/food|breakfast|lunch|dinner|cuisine/.test(lower)) return 'orange'
   if (/drink|beer|wine|cocktail|bar/.test(lower)) return 'purple'
@@ -103,11 +104,14 @@ export default function GCRCard({ entity, onSave }) {
         {/* Tags */}
         {displayTags.length > 0 && (
           <div className="gcr-card-tags">
-            {displayTags.map((tag, i) => (
-              <span key={i} className={`gcr-tag tag-${getTagColor(tag)}`}>
-                {tag}
-              </span>
-            ))}
+            {displayTags.map((tag, i) => {
+              const tagName = typeof tag === 'string' ? tag : tag.tag_name
+              return (
+                <span key={i} className={`gcr-tag tag-${getTagColor(tag)}`}>
+                  {tagName}
+                </span>
+              )
+            })}
           </div>
         )}
 

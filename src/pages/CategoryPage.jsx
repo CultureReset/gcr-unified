@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import GCRHeader from '../components/GCRHeader'
 import GCRCard from '../components/GCRCard'
 import { API_BASE } from '../config'
@@ -32,8 +32,9 @@ const HERO_IMAGES = {
 }
 
 export default function CategoryPage() {
-  const { category } = useParams()
+  const location = useLocation()
   const navigate = useNavigate()
+  const category = location.pathname.slice(1) // Remove leading slash
   const [entities, setEntities] = useState([])
   const [allTags, setAllTags] = useState([])
   const [selectedTag, setSelectedTag] = useState(null)
@@ -86,7 +87,7 @@ export default function CategoryPage() {
     }
 
     loadEntities()
-  }, [category, config])
+  }, [category])
 
   const filtered = !selectedTag || selectedTag === 'All'
     ? entities
