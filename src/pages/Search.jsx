@@ -15,11 +15,13 @@ export default function Search() {
   const query = searchParams.get('q') || ''
 
   const [results, setResults] = useState([])
+  const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [searchInput, setSearchInput] = useState(query)
   const [toast, setToast] = useState(null)
   const [savedSlugs, setSavedSlugs] = useState(new Set())
+  const [viewMode, setViewMode] = useState('items')  // 'items' or 'restaurants'
 
   // Load search results
   useEffect(() => {
@@ -44,6 +46,8 @@ export default function Search() {
         if (res.ok) {
           const data = await res.json()
           setResults(data.results || [])
+          setItems(data.items || [])
+          setViewMode(data.items && data.items.length > 0 ? 'items' : 'restaurants')
         } else {
           setError('Search failed. Please try again.')
         }
@@ -169,13 +173,92 @@ export default function Search() {
           <div className="empty-state">
             <p>Enter a search term to find restaurants, menu items, and more</p>
           </div>
-        ) : results.length === 0 ? (
+        ) : results.length === 0 && items.length === 0 ? (
           <div className="empty-state">
             <p>No results found for "<strong>{query}</strong>"</p>
             <p>Try searching for restaurants, dishes, or keywords</p>
           </div>
         ) : (
-          <div className="results-list">
+          <>
+            {/* View Mode Tabs */}
+            <div style={{display:'flex',gap:'8px',padding:'16px 16px 0 16px',borderBottom:'1px solid var(--border)',marginBottom:'16px',justifyContent:'center'}}>
+              <button
+                onClick={() => setViewMode('items')}
+                style={{
+                  padding:'8px 16px',
+                  background: viewMode === 'items' ? 'var(--accent)' : 'transparent',
+                  color: viewMode === 'items' ? 'white' : 'var(--text)',
+                  border: 'none',
+                  borderRadius:'6px',
+                  cursor:'pointer',
+                  fontWeight:600,
+                  fontSize:'14px'
+                }}
+              >
+                🍽️ Items ({items.length})
+              </button>
+              <button
+                onClick={() => setViewMode('restaurants')}
+                style={{
+                  padding:'8px 16px',
+                  background: viewMode === 'restaurants' ? 'var(--accent)' : 'transparent',
+                  color: viewMode === 'restaurants' ? 'white' : 'var(--text)',
+                  border: 'none',
+                  borderRadius:'6px',
+                  cursor:'pointer',
+                  fontWeight:600,
+                  fontSize:'14px'
+                }}
+              >
+                🏪 Restaurants ({results.length})
+              </button>
+            </div>
+
+            {/* Items View */}
+            {viewMode === 'items' && items.length > 0 && (
+              <div className="results-list" style={{paddingTop:'0'}}>
+                {items.map((item, idx) => (
+                  <div key={`item-${idx}`} className="menu-item-result" style={{
+                    padding:'12px 16px',
+                    borderBottom:'1px solid var(--border)',
+                    display:'flex',
+                    justifyContent:'space-between',
+                    alignItems:'start'
+                  }}>
+                    <div style={{flex:1}}>
+                      <h3 style={{margin:'0 0 4px 0',fontSize:'16px',fontWeight:600}}>{item.item_name}</h3>
+                      {item.description && (
+                        <p style={{margin:'0 0 6px 0',fontSize:'13px',color:'var(--text-muted)'}}>{item.description}</p>
+                      )}
+                      <div style={{display:'flex',gap:'16px',fontSize:'12px',color:'var(--text-muted)'}}>
+                        <span>📍 {item.restaurant_name}</span>
+                        {item.restaurant_rating && <span>⭐ {item.restaurant_rating}</span>}
+                        {item.price && <span className="item-price" style={{fontWeight:600,color:'var(--text)'}}>${item.price}</span>}
+                        {item.type === 'special' && <span style={{color:'var(--accent)'}}>✨ Special</span>}
+                        {item.type === 'event' && <span style={{color:'var(--accent)'}}>🎉 Event</span>}
+                      </div>
+                    </div>
+                    <button
+                      style={{
+                        background:'transparent',
+                        border:'none',
+                        fontSize:'20px',
+                        cursor:'pointer',
+                        padding:'0 8px'
+                      }}
+                      onClick={() => navigate(`/business/${item.restaurant_slug}`)}
+                      title="View restaurant"
+                    >
+                      →
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Restaurants View */}
+            {viewMode === 'restaurants' && (
+              <div className="results-list" style={{paddingTop:'0'}}>
             {results.map((business) => (
               <div key={business.slug} className="business-section">
                 {/* Business Header */}
@@ -262,7 +345,9 @@ export default function Search() {
                 )}
               </div>
             ))}
-          </div>
+              </div>
+            )}
+          </>
         )}
       </div>
 
