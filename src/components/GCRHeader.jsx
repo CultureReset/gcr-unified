@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
+import { useApp } from '../context/AppContext'
 import './GCRHeader.css'
 
 const CATEGORIES = [
@@ -18,6 +19,7 @@ const CATEGORIES = [
 export default function GCRHeader() {
   const location = useLocation()
   const navigate = useNavigate()
+  const { userId } = useApp()
   const headerRef = useRef(null)
 
   const currentPath = location.pathname.slice(1)
@@ -45,6 +47,11 @@ export default function GCRHeader() {
           <button className="trip-swipe-btn" onClick={() => navigate('/swipe/restaurants')}>
             👆 Trip Swipe →
           </button>
+          {userId ? (
+            <button className="header-auth-btn" onClick={() => navigate('/profile')}>👤</button>
+          ) : (
+            <button className="header-auth-btn" onClick={() => navigate('/auth')}>Sign In</button>
+          )}
           <button className="install-btn">📲 Install App</button>
         </div>
       </div>

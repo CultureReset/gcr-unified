@@ -12,15 +12,23 @@ export default function BottomNav() {
     return location.pathname.startsWith(path)
   }
 
-  const navItems = [
-    { icon: '🏠', label: 'Home', path: '/' },
-    { icon: '🔍', label: 'Search', path: '/search' },
-    { icon: '🎉', label: 'Events', path: '/events' },
-    { icon: '❤️', label: 'Saves', path: '/saves', requiresAuth: true },
-    { icon: '👤', label: 'Profile', path: '/profile', requiresAuth: true },
-  ]
+  const navItems = userId
+    ? [
+        { icon: '🏠', label: 'Home',    path: '/' },
+        { icon: '🔍', label: 'Search',  path: '/search' },
+        { icon: '🎉', label: 'Events',  path: '/events' },
+        { icon: '❤️', label: 'Saves',   path: '/saves' },
+        { icon: '👤', label: 'Profile', path: '/profile' },
+      ]
+    : [
+        { icon: '🏠', label: 'Home',     path: '/' },
+        { icon: '🔍', label: 'Search',   path: '/search' },
+        { icon: '🎉', label: 'Events',   path: '/events' },
+        { icon: '👆', label: 'Swipe',    path: '/swipe/restaurants' },
+        { icon: '👤', label: 'Sign In',  path: '/auth' },
+      ]
 
-  const visibleItems = navItems.filter(item => !item.requiresAuth || userId)
+  const visibleItems = navItems
 
   const handleNavClick = (path) => {
     navigate(path)

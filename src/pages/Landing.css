@@ -105,6 +105,40 @@
   line-height: 1.1;
 }
 
+/* Hero action buttons */
+.ld-hero-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+.ld-hero-btn-swipe {
+  background: #14B8A6;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 11px 20px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background .2s;
+  box-shadow: 0 3px 10px rgba(20,184,166,.4);
+}
+.ld-hero-btn-swipe:hover { background: #0d9488; }
+.ld-hero-btn-signin {
+  background: rgba(255,255,255,.15);
+  color: #fff;
+  border: 1.5px solid rgba(255,255,255,.5);
+  border-radius: 10px;
+  padding: 11px 20px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background .15s;
+}
+.ld-hero-btn-signin:hover { background: rgba(255,255,255,.25); }
+
 /* Wave */
 .ld-wave {
   position: absolute;

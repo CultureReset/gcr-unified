@@ -149,6 +149,10 @@ export default function Landing() {
           <div className="ld-tagline">
             Search It &nbsp;·&nbsp; Swipe It &nbsp;·&nbsp; Plan It
           </div>
+          <div className="ld-hero-actions">
+            <button className="ld-hero-btn-swipe" onClick={() => navigate('/swipe/restaurants')}>👆 Start Swiping</button>
+            <button className="ld-hero-btn-signin" onClick={() => navigate('/auth')}>Sign In / Sign Up</button>
+          </div>
         </div>
         <div className="ld-wave">
           <svg viewBox="0 0 1440 48" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
