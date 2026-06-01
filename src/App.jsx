@@ -5,6 +5,7 @@ import { DEFAULT_MODE } from './config'
 import Landing from './pages/Landing'
 import Browse from './pages/Browse'
 import CategoryListings from './pages/CategoryListings'
+import CategoryPage from './pages/CategoryPage'
 import Auth from './pages/Auth'
 import Reset from './pages/Reset'
 import Invite from './pages/Invite'
@@ -38,8 +39,10 @@ function AppRoutes() {
   const location = useLocation()
   const navigate = useNavigate()
   const { logout } = useApp()
+  const publicCategoryPages = ['/restaurants', '/coffee', '/happy-hours', '/events', '/things-to-do', '/services', '/public-spots', '/feed', '/shopping', '/staying']
   const hideNav = ['/', '/auth'].some(p => location.pathname === p) ||
-    location.pathname.startsWith('/setup')
+    location.pathname.startsWith('/setup') ||
+    publicCategoryPages.includes(location.pathname)
 
   useEffect(() => {
     function onUnauth() {
@@ -94,6 +97,19 @@ function AppRoutes() {
         <Route path="/profile" element={<RequireAuth><Profile /></RequireAuth>} />
         <Route path="/groups" element={<RequireAuth><Groups /></RequireAuth>} />
         <Route path="/group/:slug" element={<RequireAuth><Group /></RequireAuth>} />
+
+        {/* GCR Category Pages */}
+        <Route path="/restaurants" element={<CategoryPage />} />
+        <Route path="/coffee" element={<CategoryPage />} />
+        <Route path="/happy-hours" element={<CategoryPage />} />
+        <Route path="/events" element={<CategoryPage />} />
+        <Route path="/things-to-do" element={<CategoryPage />} />
+        <Route path="/services" element={<CategoryPage />} />
+        <Route path="/public-spots" element={<CategoryPage />} />
+        <Route path="/feed" element={<CategoryPage />} />
+        <Route path="/shopping" element={<CategoryPage />} />
+        <Route path="/staying" element={<CategoryPage />} />
+
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
       {!hideNav && <BottomNav />}
