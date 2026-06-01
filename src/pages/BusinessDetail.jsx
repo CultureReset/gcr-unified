@@ -64,14 +64,17 @@ export default function RestaurantDetail() {
     return `${(h % 12 || 12)}:${String(m).padStart(2, '0')}${h >= 12 ? 'pm' : 'am'}`
   }
 
+  const hasActivityExtras = business.highlights?.length || business.known_for?.length || business.good_for?.length || business.what_makes_it_different
+
   const sections = [
     { id: 'overview',    label: 'Overview',    icon: 'ℹ️'  },
-    ...(business.menu_sections?.length  ? [{ id: 'menu',       label: 'Menu',       icon: '🍽️' }] : []),
+    ...(hasActivityExtras                ? [{ id: 'experience',  label: 'Experience',  icon: '🎯' }] : []),
+    ...(business.menu_sections?.length  ? [{ id: 'menu',        label: 'Menu',        icon: '🍽️' }] : []),
     ...((business.hh_days || business.hh_sections?.length || business.happy_hour_sections?.length) ? [{ id: 'happy-hour', label: 'Happy Hour', icon: '🍺' }] : []),
-    ...(hours.length                   ? [{ id: 'hours',      label: 'Hours',      icon: '🕐' }] : []),
-    ...(events.length                  ? [{ id: 'events',     label: 'Events',     icon: '🎉' }] : []),
+    ...(hours.length                    ? [{ id: 'hours',       label: 'Hours',       icon: '🕐' }] : []),
+    ...(events.length                   ? [{ id: 'events',      label: 'Events',      icon: '🎉' }] : []),
     { id: 'location',    label: 'Location',    icon: '📍'  },
-    ...(photos.length                  ? [{ id: 'gallery',    label: 'Photos',     icon: '📸' }] : []),
+    ...(photos.length                   ? [{ id: 'gallery',     label: 'Photos',      icon: '📸' }] : []),
   ]
 
   const GALLERY_PER_PAGE = 10
@@ -271,6 +274,51 @@ export default function RestaurantDetail() {
                       <span key={tag.tag_name} className="tag">{tag.tag_name}</span>
                     ))}
                   </div>
+                </div>
+              )}
+            </section>
+          )}
+
+          {/* Experience */}
+          {activeTab === 'experience' && (
+            <section className="content-section">
+              {business.what_makes_it_different && (
+                <div className="exp-block">
+                  <h2>What Makes It Different</h2>
+                  <p>{business.what_makes_it_different}</p>
+                </div>
+              )}
+              {business.highlights?.length > 0 && (
+                <div className="exp-block">
+                  <h2>What You'll See</h2>
+                  <ul className="exp-list">
+                    {business.highlights.map((h, i) => <li key={i}>✓ {h}</li>)}
+                  </ul>
+                </div>
+              )}
+              {business.known_for?.length > 0 && (
+                <div className="exp-block">
+                  <h2>Known For</h2>
+                  <div className="tag-row">
+                    {business.known_for.map((k, i) => <span key={i} className="tag">{k}</span>)}
+                  </div>
+                </div>
+              )}
+              {business.good_for?.length > 0 && (
+                <div className="exp-block">
+                  <h2>Good For</h2>
+                  <div className="tag-row">
+                    {business.good_for.map((g, i) => <span key={i} className="tag">{g}</span>)}
+                  </div>
+                </div>
+              )}
+              {(business.duration_text || business.price_from != null) && (
+                <div className="exp-block">
+                  <h2>Trip Details</h2>
+                  {business.duration_text && <p>⏱ Duration: {business.duration_text}</p>}
+                  {business.price_from != null && (
+                    <p>💵 From ${business.price_from}{business.price_unit ? ` / ${business.price_unit}` : ''}</p>
+                  )}
                 </div>
               )}
             </section>
