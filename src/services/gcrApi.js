@@ -465,3 +465,57 @@ export async function searchProperties(query) {
     return []
   }
 }
+
+// Save an item to tourist's favorites
+export async function saveItem(entitySlug) {
+  const token = localStorage.getItem('gcr_access_token')
+  if (!token) {
+    throw new Error('Not authenticated')
+  }
+
+  try {
+    const r = await fetch(`${API_BASE}/api/tourist/saves`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ entity_slug: entitySlug })
+    })
+
+    if (!r.ok) {
+      const err = await r.json().catch(() => ({}))
+      throw new Error(err.error || 'Failed to save item')
+    }
+
+    return await r.json()
+  } catch (err) {
+    throw err
+  }
+}
+
+// Remove a saved item
+export async function unsaveItem(entitySlug) {
+  const token = localStorage.getItem('gcr_access_token')
+  if (!token) {
+    throw new Error('Not authenticated')
+  }
+
+  try {
+    const r = await fetch(`${API_BASE}/api/tourist/saves/${encodeURIComponent(entitySlug)}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    })
+
+    if (!r.ok) {
+      const err = await r.json().catch(() => ({}))
+      throw new Error(err.error || 'Failed to remove save')
+    }
+
+    return await r.json()
+  } catch (err) {
+    throw err
+  }
+}

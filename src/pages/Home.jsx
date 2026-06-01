@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
+import Toast from '../components/Toast'
 import { CATEGORIES } from '../data/mockBusinesses'
-import { fetchBusinesses, fetchLiveNow } from '../services/gcrApi'
+import { fetchBusinesses, fetchLiveNow, saveItem, unsaveItem } from '../services/gcrApi'
 import * as locationService from '../services/locationService'
 import './Home.css'
 
@@ -13,6 +14,8 @@ export default function Home() {
   const [liveNow, setLiveNow] = useState([])
   const [showLocationBanner, setShowLocationBanner] = useState(false)
   const [requestingPermission, setRequestingPermission] = useState(false)
+  const [toast, setToast] = useState(null)
+  const [savedSlugs, setSavedSlugs] = useState(new Set())
 
   useEffect(() => {
     let cancelled = false
@@ -63,6 +66,34 @@ export default function Home() {
       console.error('Error requesting location:', e)
     } finally {
       setRequestingPermission(false)
+    }
+  }
+
+  const handleSaveItem = async (e, slug) => {
+    e.stopPropagation()
+    if (!userId) {
+      navigate('/auth')
+      return
+    }
+
+    try {
+      const isSaved = savedSlugs.has(slug)
+
+      if (isSaved) {
+        await unsaveItem(slug)
+        setSavedSlugs(prev => {
+          const next = new Set(prev)
+          next.delete(slug)
+          return next
+        })
+        setToast({ message: 'Removed from saved', type: 'info' })
+      } else {
+        await saveItem(slug)
+        setSavedSlugs(prev => new Set(prev).add(slug))
+        setToast({ message: 'Saved!', type: 'success' })
+      }
+    } catch (err) {
+      setToast({ message: err.message || 'Failed to save', type: 'error' })
     }
   }
 
@@ -151,27 +182,36 @@ export default function Home() {
           <h3 className="section-title">⚡ Happening Right Now</h3>
           <div className="live-row">
             {liveNow.map(b => (
-              <button key={b.slug} className="live-card" onClick={() => navigate(`/business/${b.slug}`)}>
-                <div className="live-card-img">
-                  {b.hero_image_url
-                    ? <img src={b.hero_image_url} alt={b.name} onError={e => { e.target.style.display='none' }} />
-                    : <div className="live-card-img-placeholder" />
-                  }
-                  {b.is_match && <div className="live-match-dot">⚡</div>}
-                </div>
-                <div className="live-card-body">
-                  <div className="live-card-name">{b.name}</div>
-                  {b.signals.slice(0, 2).map((sig, i) => (
-                    <div key={i}>
-                      <div className="live-card-signal">{sig.label}</div>
-                      {sig.status && <div className="live-card-status">{sig.status}</div>}
-                    </div>
-                  ))}
-                  {b.signals[0]?.detail && (
-                    <div className="live-card-detail">{b.signals[0].detail}</div>
-                  )}
-                </div>
-              </button>
+              <div key={b.slug} className="live-card-wrapper">
+                <button className="live-card" onClick={() => navigate(`/business/${b.slug}`)}>
+                  <div className="live-card-img">
+                    {b.hero_image_url
+                      ? <img src={b.hero_image_url} alt={b.name} onError={e => { e.target.style.display='none' }} />
+                      : <div className="live-card-img-placeholder" />
+                    }
+                    {b.is_match && <div className="live-match-dot">⚡</div>}
+                  </div>
+                  <div className="live-card-body">
+                    <div className="live-card-name">{b.name}</div>
+                    {b.signals?.slice(0, 2).map((sig, i) => (
+                      <div key={i}>
+                        <div className="live-card-signal">{sig.label}</div>
+                        {sig.status && <div className="live-card-status">{sig.status}</div>}
+                      </div>
+                    ))}
+                    {b.signals?.[0]?.detail && (
+                      <div className="live-card-detail">{b.signals[0].detail}</div>
+                    )}
+                  </div>
+                </button>
+                <button
+                  className={`live-card-save ${savedSlugs.has(b.slug) ? 'saved' : ''}`}
+                  onClick={(e) => handleSaveItem(e, b.slug)}
+                  title={savedSlugs.has(b.slug) ? 'Remove from saved' : 'Save this item'}
+                >
+                  {savedSlugs.has(b.slug) ? '❤️' : '🤍'}
+                </button>
+              </div>
             ))}
           </div>
         </>
@@ -232,6 +272,12 @@ export default function Home() {
           </div>
         </>
       )}
+
+      <Toast
+        message={toast?.message}
+        type={toast?.type}
+        onClose={() => setToast(null)}
+      />
     </div>
   )
 }

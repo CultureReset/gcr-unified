@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import GCRHeader from '../components/GCRHeader'
+import Toast from '../components/Toast'
+import { saveItem, unsaveItem } from '../services/gcrApi'
 import { API_BASE } from '../config'
 import './Search.css'
 
@@ -15,6 +17,8 @@ export default function Search() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [searchInput, setSearchInput] = useState(query)
+  const [toast, setToast] = useState(null)
+  const [savedSlugs, setSavedSlugs] = useState(new Set())
 
   // Load search results
   useEffect(() => {
@@ -60,11 +64,30 @@ export default function Search() {
     }
   }
 
-  const handleSaveItem = (item) => {
+  const handleSaveItem = async (item) => {
     if (!userId) {
       navigate('/auth')
-    } else {
-      console.log('Save item:', item)
+      return
+    }
+
+    try {
+      const isSaved = savedSlugs.has(item.slug || item.entity_slug)
+
+      if (isSaved) {
+        await unsaveItem(item.slug || item.entity_slug)
+        setSavedSlugs(prev => {
+          const next = new Set(prev)
+          next.delete(item.slug || item.entity_slug)
+          return next
+        })
+        setToast({ message: 'Removed from saved', type: 'info' })
+      } else {
+        await saveItem(item.slug || item.entity_slug)
+        setSavedSlugs(prev => new Set(prev).add(item.slug || item.entity_slug))
+        setToast({ message: 'Saved!', type: 'success' })
+      }
+    } catch (err) {
+      setToast({ message: err.message || 'Failed to save', type: 'error' })
     }
   }
 
@@ -152,11 +175,11 @@ export default function Search() {
                           )}
                         </div>
                         <button
-                          className="item-save-btn"
+                          className={`item-save-btn ${savedSlugs.has(item.slug || item.entity_slug) ? 'saved' : ''}`}
                           onClick={() => handleSaveItem(item)}
-                          title="Save this item"
+                          title={savedSlugs.has(item.slug || item.entity_slug) ? 'Remove from saved' : 'Save this item'}
                         >
-                          ❤️
+                          {savedSlugs.has(item.slug || item.entity_slug) ? '❤️' : '🤍'}
                         </button>
                       </div>
                     ))}
@@ -198,6 +221,12 @@ export default function Search() {
           </div>
         )}
       </div>
+
+      <Toast
+        message={toast?.message}
+        type={toast?.type}
+        onClose={() => setToast(null)}
+      />
     </div>
   )
 }

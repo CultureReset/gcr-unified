@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
+import Toast from '../components/Toast'
 import GCRHeader from '../components/GCRHeader'
+import { saveItem, unsaveItem } from '../services/gcrApi'
 import { API_BASE } from '../config'
 import './Events.css'
 
@@ -16,6 +18,8 @@ export default function Events() {
   const [loading, setLoading] = useState(true)
   const [happyHourModalOpen, setHappyHourModalOpen] = useState(false)
   const [selectedHappyHours, setSelectedHappyHours] = useState(null)
+  const [toast, setToast] = useState(null)
+  const [savedSlugs, setSavedSlugs] = useState(new Set())
 
   // Generate next 30 days for calendar
   const getCalendarDays = () => {
@@ -88,11 +92,31 @@ export default function Events() {
     }
   })
 
-  const handleSave = (event) => {
+  const handleSave = async (event) => {
     if (!userId) {
       navigate('/auth')
-    } else {
-      console.log('Save event:', event.slug)
+      return
+    }
+
+    try {
+      const slug = event.slug || event.entity_slug
+      const isSaved = savedSlugs.has(slug)
+
+      if (isSaved) {
+        await unsaveItem(slug)
+        setSavedSlugs(prev => {
+          const next = new Set(prev)
+          next.delete(slug)
+          return next
+        })
+        setToast({ message: 'Removed from saved', type: 'info' })
+      } else {
+        await saveItem(slug)
+        setSavedSlugs(prev => new Set(prev).add(slug))
+        setToast({ message: 'Saved!', type: 'success' })
+      }
+    } catch (err) {
+      setToast({ message: err.message || 'Failed to save', type: 'error' })
     }
   }
 
@@ -203,10 +227,10 @@ export default function Events() {
                               View Details
                             </button>
                             <button
-                              className="event-btn secondary"
+                              className={`event-btn secondary ${savedSlugs.has(event.slug) ? 'saved' : ''}`}
                               onClick={() => handleSave(event)}
                             >
-                              ❤️ Save
+                              {savedSlugs.has(event.slug) ? '❤️' : '🤍'} {savedSlugs.has(event.slug) ? 'Saved' : 'Save'}
                             </button>
                           </div>
                           {event.has_happy_hours && (
@@ -261,6 +285,12 @@ export default function Events() {
           </div>
         </div>
       )}
+
+      <Toast
+        message={toast?.message}
+        type={toast?.type}
+        onClose={() => setToast(null)}
+      />
     </div>
   )
 }
