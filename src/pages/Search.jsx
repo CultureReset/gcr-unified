@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
-import GCRHeader from '../components/GCRHeader'
+import PageHeader from '../components/PageHeader'
 import Toast from '../components/Toast'
 import { SkeletonBusinessSection } from '../components/SkeletonLoader'
 import { saveItem, unsaveItem } from '../services/gcrApi'
@@ -92,14 +92,43 @@ export default function Search() {
     }
   }
 
+  const handleShareSearch = () => {
+    if (!query.trim()) return
+
+    const searchUrl = `${window.location.origin}/search?q=${encodeURIComponent(query)}`
+
+    if (navigator.share) {
+      navigator.share({
+        title: `Search results for "${query}" - Gulf Coast Radar`,
+        text: `Check out these places I found on Gulf Coast Radar`,
+        url: searchUrl
+      }).catch(() => {})
+    } else {
+      // Fallback: copy to clipboard
+      navigator.clipboard.writeText(searchUrl)
+      setToast({ message: 'Link copied to clipboard!', type: 'success' })
+    }
+  }
+
   return (
     <div className="search-page">
-      <GCRHeader />
+      <PageHeader title="Search" subtitle="Find restaurants, items, and more" showBack={true} />
 
       {/* Hero Section */}
       <div className="search-hero">
         <div className="hero-content">
-          <h1>Search</h1>
+          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'12px'}}>
+            <h1 style={{margin:0}}>Search</h1>
+            {query.trim() && (
+              <button
+                onClick={handleShareSearch}
+                style={{background:'rgba(255,255,255,0.3)',border:'none',color:'white',padding:'6px 12px',borderRadius:'6px',cursor:'pointer',fontSize:'13px',fontWeight:600}}
+                title="Share this search"
+              >
+                📤 Share
+              </button>
+            )}
+          </div>
 
           {/* Search Bar */}
           <form className="search-form" onSubmit={handleSearch}>

@@ -28,14 +28,24 @@
   z-index: 100;
 }
 
-.back-btn {
+.back-btn, .share-btn {
   background: none;
   border: none;
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 600;
   color: var(--accent);
   cursor: pointer;
-  padding: 0;
+  padding: 8px 12px;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.back-btn:hover, .share-btn:hover {
+  background: rgba(232, 93, 4, 0.1);
+}
+
+.share-btn {
+  margin-left: auto;
 }
 
 /* Carousel */

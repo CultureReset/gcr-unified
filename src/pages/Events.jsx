@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import Toast from '../components/Toast'
-import GCRHeader from '../components/GCRHeader'
+import PageHeader from '../components/PageHeader'
 import { SkeletonCard, SkeletonGrid } from '../components/SkeletonLoader'
 import { saveItem, unsaveItem } from '../services/gcrApi'
 import { API_BASE } from '../config'
@@ -135,7 +135,7 @@ export default function Events() {
 
   return (
     <div className="events-page">
-      <GCRHeader />
+      <PageHeader title="🎉 Events" subtitle="Live music, karaoke, and more" showBack={true} />
 
       {/* Hero Section */}
       <div

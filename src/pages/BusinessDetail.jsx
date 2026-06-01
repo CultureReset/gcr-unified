@@ -74,11 +74,28 @@ export default function RestaurantDetail() {
   const galleryTotal = Math.ceil((photos?.length || 0) / GALLERY_PER_PAGE)
   const reviewsTotal = 0
 
+  const handleShareBusiness = () => {
+    const businessUrl = `${window.location.origin}/business/${business.slug}`
+
+    if (navigator.share) {
+      navigator.share({
+        title: business.name,
+        text: `Check out ${business.name} on Gulf Coast Radar`,
+        url: businessUrl
+      }).catch(() => {})
+    } else {
+      // Fallback: copy to clipboard
+      navigator.clipboard.writeText(businessUrl)
+      alert('Link copied to clipboard!')
+    }
+  }
+
   return (
     <div className="detail-page">
       {/* Header */}
       <div className="detail-header">
         <button className="back-btn" onClick={() => navigate(-1)}>← Back</button>
+        <button className="share-btn" onClick={handleShareBusiness} title="Share this business">📤 Share</button>
       </div>
 
       {/* Photo Carousel */}

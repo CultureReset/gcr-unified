@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
-import GCRHeader from '../components/GCRHeader'
+import PageHeader from '../components/PageHeader'
 import Toast from '../components/Toast'
 import { SkeletonGrid } from '../components/SkeletonLoader'
 import { unsaveItem } from '../services/gcrApi'
@@ -67,12 +67,7 @@ export default function Saves() {
 
   return (
     <div className="saves-page">
-      <GCRHeader />
-
-      <div className="saves-hero">
-        <h1>❤️ Saved Places</h1>
-        <p>{saves.length} item{saves.length !== 1 ? 's' : ''} saved</p>
-      </div>
+      <PageHeader title="❤️ Saved Places" subtitle={`${saves.length} item${saves.length !== 1 ? 's' : ''} saved`} showBack={true} />
 
       <div className="saves-content">
         {loading ? (
