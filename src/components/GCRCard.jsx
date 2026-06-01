@@ -2,50 +2,35 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import './GCRCard.css'
 
-// ── Tag category mapping (from launching-GCR buildCard) ──────────────────────
-const TAG_CAT = {
-  // food
-  seafood:'food', fresh_seafood:'food', raw_bar:'food', fish_tacos:'food', burgers:'food',
-  pizza:'food', sushi:'food', sandwiches:'food', wings:'food', steaks:'food', bbq:'food',
-  southern:'food', american:'food', cajun_creole:'food', mexican:'food', italian:'food',
-  breakfast:'food', brunch:'food', lunch:'food', dinner:'food', dessert:'food',
-  bakery:'food', ice_cream:'food', snacks:'food', vegan:'food', vegetarian:'food',
-  gluten_free:'food', kids_menu:'food', buffet:'food', happy_hour_food:'food',
-  catch_of_the_day:'food', gulf_catch:'food', daily_specials:'food',
-  // drink
-  beer:'drink', wine:'drink', cocktails:'drink', spirits:'drink', mocktails:'drink',
-  coffee:'drink', espresso:'drink', smoothies:'drink', juice:'drink', tea:'drink',
-  full_bar:'drink', craft_beer:'drink', local_beer:'drink', draft_beer:'drink',
-  tiki_cocktails:'drink', frozen_drinks:'drink', signature_cocktails:'drink', open_bar:'drink',
-  // vibe
-  waterfront:'vibe', outdoor_seating:'vibe', patio:'vibe', rooftop:'vibe',
-  live_music:'vibe', live_dj:'vibe', karaoke:'vibe', trivia:'vibe', sports_tv:'vibe',
-  beach_access:'vibe', scenic_views:'vibe', sunset_views:'vibe', sunset_view:'vibe',
-  marina_view:'vibe', ocean_view:'vibe', bay_view:'vibe', gulf_view:'vibe',
-  pet_friendly:'vibe', romantic:'vibe', family_friendly:'vibe', group_friendly:'vibe',
-  lively:'vibe', casual:'vibe', upscale:'vibe', dive_bar:'vibe', sports_bar:'vibe',
-  tiki_bar:'vibe', rooftop_bar:'vibe', beachfront:'vibe', dockside:'vibe',
-  // service
-  delivery:'service', takeout:'service', dine_in:'service', curbside:'service',
-  reservations:'service', private_events:'service', catering:'service',
-  wheelchair_accessible:'service', good_for_children:'service', parking:'service',
-  boat_slips:'service', valet:'service', live_entertainment:'service',
+// ── Map API tag_category → display section ────────────────────────────────────
+const API_CAT_MAP = {
+  cuisine: 'food', dietary: 'food',
+  drink: 'drink', beverage: 'drink',
+  vibe: 'vibe', atmosphere: 'vibe', activity: 'vibe', experience: 'vibe',
+  feature: 'service', audience: 'service', amenity: 'service',
 }
+
 
 const TAG_EMOJI = {
   seafood:'🦐', fresh_seafood:'🦐', raw_bar:'🦪', fish_tacos:'🌮', burgers:'🍔',
   pizza:'🍕', sushi:'🍣', wings:'🍗', steaks:'🥩', bbq:'🔥', breakfast:'🍳',
-  brunch:'🥞', dessert:'🍰', ice_cream:'🍦', vegan:'🥗', gluten_free:'✓',
-  happy_hour_food:'🏷️', catch_of_the_day:'🐟',
+  brunch:'🥞', sunday_brunch:'🥂', dessert:'🍰', ice_cream:'🍦', vegan:'🥗',
+  gluten_free:'✓', gluten_free_menu:'✓', happy_hour_food:'🏷️', catch_of_the_day:'🐟',
   beer:'🍺', wine:'🍷', cocktails:'🍸', coffee:'☕', full_bar:'🍹',
-  tiki_cocktails:'🌺', frozen_drinks:'🧃', craft_beer:'🍺',
-  waterfront:'🌊', beachfront:'🏖️', dockside:'⚓', outdoor_seating:'🌿',
-  patio:'🌿', rooftop:'🌆', live_music:'🎸', live_dj:'🎧',
-  karaoke:'🎤', trivia:'🧠', sports_tv:'📺', pet_friendly:'🐾',
-  romantic:'❤️', family_friendly:'👨‍👩‍👧', marina_view:'⛵', sunset_view:'🌅',
-  sunset_views:'🌅', ocean_view:'🌊', bay_view:'🌅', gulf_view:'🌊',
-  delivery:'🛵', takeout:'🥡', dine_in:'🍽️',
-  wheelchair_accessible:'♿', good_for_children:'👶', parking:'🅿️', boat_slips:'⛵',
+  tiki_cocktails:'🌺', frozen_drinks:'🧃', craft_beer:'🍺', great_wine_list:'🍷',
+  great_coffee:'☕', bar_onsite:'🍹',
+  waterfront:'🌊', waterfront_dining:'🌊', beachfront:'🏖️', dockside:'⚓',
+  outdoor_seating:'🌿', patio:'🌿', rooftop:'🌆', live_music:'🎸', live_dj:'🎧',
+  karaoke:'🎤', trivia:'🧠', sports_tv:'📺', pet_friendly:'🐾', dogs_allowed:'🐾',
+  romantic:'❤️', family_friendly:'👨‍👩‍👧', casual:'😎', upscale:'✨', trendy:'🔥',
+  marina_view:'⛵', sunset_view:'🌅', sunset_views:'🌅', sunset_cruise:'🌅',
+  ocean_view:'🌊', bay_view:'🌅', gulf_view:'🌊',
+  dolphin_cruise:'🐬', glass_bottom_boat:'🚢', boat_tours:'⛵',
+  wildlife_tours:'🦜', water_activities:'🌊', unique_experience:'⭐',
+  delivery:'🛵', takeout:'🥡', dine_in:'🍽️', wheelchair_accessible:'♿',
+  good_for_kids:'👶', good_for_groups:'👥', parking:'🅿️', free_parking:'🅿️',
+  boat_slips:'⛵', boat_access:'⚓', catering_available:'🍽️',
+  private_dining_room:'🚪', wi_fi:'📶', high_chairs:'👶',
 }
 
 const ACTIVITY_SUBTYPES = new Set([
@@ -165,32 +150,46 @@ export default function GCRCard({ entity, category, onSave, savedSlugs }) {
   // Hours line
   const hoursLine = computeHoursLine(entity.hours || [])
 
-  // Tags
+  // Tags — fully dynamic: display whatever is in the DB, use tag_category from API
+  const SKIP_CATS = new Set(['location'])
+  const sections = { food: [], drink: [], vibe: [], service: [], other: [] }
+  const seenLabels = new Set()
+
+  const addChip = (label, cat, emojiOverride) => {
+    const section = cat && sections[cat] ? cat : 'other'
+    if (sections[section].length >= 10) return
+    if (seenLabels.has(label.toLowerCase())) return
+    seenLabels.add(label.toLowerCase())
+    const key = label.toLowerCase().replace(/[\s\-\/]+/g, '_').replace(/[^a-z0-9_]/g, '')
+    const emoji = emojiOverride || TAG_EMOJI[key] || ''
+    sections[section].push({ emoji, label, cat: section })
+  }
+
+  ;(entity.tags || []).forEach(t => {
+    const label = (typeof t === 'string' ? t : (t.tag_name || t.tag || '')).trim()
+    if (!label) return
+    const apiCat = typeof t === 'object' ? (t.tag_category || '') : ''
+    if (SKIP_CATS.has(apiCat)) return
+    const cat = API_CAT_MAP[apiCat] || null
+    addChip(label, cat)
+  })
+
+  // Boolean field fallbacks
+  if (entity.waterfront)          addChip('Waterfront',     'vibe',    '🌊')
+  if (entity.live_music)          addChip('Live Music',     'vibe',    '🎸')
+  if (entity.outdoor_seating)     addChip('Outdoor Seating','vibe',    '🌿')
+  if (entity.delivery)            addChip('Delivery',       'service', '🛵')
+  if (entity.takeout)             addChip('Takeout',        'service', '🥡')
+  if (entity.dine_in)             addChip('Dine-in',        'service', '🍽️')
+  if (entity.wheelchair_accessible) addChip('Accessible',  'service', '♿')
+  if (entity.good_for_children)   addChip('Kid Friendly',  'service', '👶')
+
+  // rawTags kept for live_music detection & image badges
   const rawTags = (entity.tags || [])
     .map(t => (typeof t === 'string' ? t : (t.tag_name || t.tag || '')).trim().toLowerCase().replace(/[\s\-\/]+/g, '_').replace(/[^a-z0-9_]/g, ''))
     .filter(Boolean)
-  const allTagKeys = subtypeKey && !rawTags.includes(subtypeKey) ? [subtypeKey, ...rawTags] : rawTags
 
-  // Tag sections
-  const sections = { food: [], drink: [], vibe: [], service: [] }
-  allTagKeys.forEach(tag => {
-    const cat = TAG_CAT[tag]
-    if (cat && sections[cat] && sections[cat].length < 8) {
-      const emoji = TAG_EMOJI[tag] || ''
-      const label = tag.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
-      sections[cat].push({ emoji, label, cat })
-    }
-  })
-  if (entity.waterfront && !sections.vibe.some(c => c.label === 'Waterfront')) sections.vibe.push({ emoji: '🌊', label: 'Waterfront', cat: 'vibe' })
-  if (entity.live_music && !sections.vibe.some(c => c.label === 'Live Music')) sections.vibe.push({ emoji: '🎸', label: 'Live Music', cat: 'vibe' })
-  if (entity.outdoor_seating && !sections.vibe.some(c => c.label === 'Outdoor Seating')) sections.vibe.push({ emoji: '🌿', label: 'Outdoor Seating', cat: 'vibe' })
-  if (entity.delivery && !sections.service.some(c => c.label === 'Delivery')) sections.service.push({ emoji: '🛵', label: 'Delivery', cat: 'service' })
-  if (entity.takeout && !sections.service.some(c => c.label === 'Takeout')) sections.service.push({ emoji: '🥡', label: 'Takeout', cat: 'service' })
-  if (entity.dine_in && !sections.service.some(c => c.label === 'Dine-in')) sections.service.push({ emoji: '🍽️', label: 'Dine-in', cat: 'service' })
-  if (entity.wheelchair_accessible && !sections.service.some(c => c.label === 'Accessible')) sections.service.push({ emoji: '♿', label: 'Accessible', cat: 'service' })
-  if (entity.good_for_children && !sections.service.some(c => c.label === 'Kid Friendly')) sections.service.push({ emoji: '👶', label: 'Kid Friendly', cat: 'service' })
-
-  const SECTION_LABELS = { food: 'Food', drink: 'Drinks', vibe: 'Vibe & Amenities', service: 'Service' }
+  const SECTION_LABELS = { food: 'Food', drink: 'Drinks', vibe: 'Vibe', service: 'Features', other: 'More' }
   const hasAnySections = Object.values(sections).some(a => a.length > 0)
 
   // Live music detection
@@ -288,18 +287,6 @@ export default function GCRCard({ entity, category, onSave, savedSlugs }) {
                 </div>
               </div>
             ))}
-          </div>
-        ) : allTagKeys.length > 0 ? (
-          <div className="gcr-tag-sections">
-            <div className="gcr-tag-row">
-              <div className="gcr-tag-scroll">
-                {allTagKeys.slice(0, 6).map((t, i) => (
-                  <span key={i} className="gcr-chip">
-                    {t.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                  </span>
-                ))}
-              </div>
-            </div>
           </div>
         ) : null}
 

@@ -190,6 +190,7 @@
 .gcr-chip.drink   { background: #fdf4ff; color: #6b21a8; border-color: #e9d5ff; }
 .gcr-chip.vibe    { background: #f0fdf4; color: #14532d; border-color: #bbf7d0; }
 .gcr-chip.service { background: #f0f9ff; color: #0c4a6e; border-color: #bae6fd; }
+.gcr-chip.other   { background: #f8fafc; color: #475569; border-color: #cbd5e1; }
 
 /* ── Activity Info ── */
 .gcr-activity-info { margin-top: 4px; display: flex; flex-direction: column; gap: 2px; }
