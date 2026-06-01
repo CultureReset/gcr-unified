@@ -16,22 +16,6 @@ export default function Search() {
   const [error, setError] = useState(null)
   const [searchInput, setSearchInput] = useState(query)
 
-  // Group results by business
-  const groupedResults = {}
-  results.forEach(item => {
-    const businessSlug = item.business_slug || item.parent_slug || 'unknown'
-    const businessName = item.business_name || item.parent_name || 'Unknown'
-    if (!groupedResults[businessSlug]) {
-      groupedResults[businessSlug] = {
-        slug: businessSlug,
-        name: businessName,
-        image: item.business_image || item.parent_image,
-        items: []
-      }
-    }
-    groupedResults[businessSlug].items.push(item)
-  })
-
   // Load search results
   useEffect(() => {
     if (!query.trim()) {
@@ -43,12 +27,20 @@ export default function Search() {
     async function loadResults() {
       try {
         setLoading(true)
+        setError(null)
         const res = await fetch(
-          `${API_BASE}/api/gcr/search?q=${encodeURIComponent(query)}&limit=100`
+          `${API_BASE}/api/gcr/search`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ query, limit: 100 })
+          }
         )
         if (res.ok) {
           const data = await res.json()
           setResults(data.results || [])
+        } else {
+          setError('Search failed. Please try again.')
         }
       } catch (err) {
         console.error('Error searching:', err)
@@ -72,7 +64,7 @@ export default function Search() {
     if (!userId) {
       navigate('/auth')
     } else {
-      console.log('Save item:', item.slug)
+      console.log('Save item:', item)
     }
   }
 
@@ -83,7 +75,7 @@ export default function Search() {
       {/* Hero Section */}
       <div className="search-hero">
         <div className="hero-content">
-          <h1>Search Results</h1>
+          <h1>Search</h1>
 
           {/* Search Bar */}
           <form className="search-form" onSubmit={handleSearch}>
@@ -117,13 +109,13 @@ export default function Search() {
           </div>
         ) : (
           <div className="results-list">
-            {Object.entries(groupedResults).map(([slug, business]) => (
-              <div key={slug} className="business-section">
+            {results.map((business) => (
+              <div key={business.slug} className="business-section">
                 {/* Business Header */}
                 <div className="business-header">
-                  {business.image && (
+                  {business.hero_image_url && (
                     <img
-                      src={business.image}
+                      src={business.hero_image_url}
                       alt={business.name}
                       className="business-image"
                     />
@@ -131,50 +123,76 @@ export default function Search() {
                   <div className="business-info">
                     <h2 className="business-name">{business.name}</h2>
                     <p className="business-item-count">
-                      {business.items.length} item{business.items.length !== 1 ? 's' : ''} match
+                      {business.matched_menu_items?.length || 0} items match
                     </p>
+                    {business.rating && (
+                      <p className="business-rating">⭐ {business.rating}</p>
+                    )}
                   </div>
                   <button
                     className="view-business-btn"
-                    onClick={() => navigate(`/business/${slug}`)}
+                    onClick={() => navigate(`/business/${business.slug}`)}
                   >
                     View Profile →
                   </button>
                 </div>
 
                 {/* Menu Items Grid */}
-                <div className="items-grid">
-                  {business.items.map((item) => (
-                    <div key={item.slug} className="menu-item">
-                      {item.image_url && (
-                        <img
-                          src={item.image_url}
-                          alt={item.name}
-                          className="item-image"
-                        />
-                      )}
-                      <div className="item-content">
-                        <h4 className="item-name">{item.name}</h4>
-                        {item.description && (
-                          <p className="item-desc">{item.description}</p>
-                        )}
-                        {item.price && (
-                          <p className="item-price">${item.price}</p>
-                        )}
-                        {item.section && (
-                          <p className="item-section">{item.section}</p>
-                        )}
+                {business.matched_menu_items && business.matched_menu_items.length > 0 && (
+                  <div className="items-grid">
+                    {business.matched_menu_items.map((item, idx) => (
+                      <div key={`${business.slug}-item-${idx}`} className="menu-item">
+                        <div className="item-content">
+                          <h4 className="item-name">{item.item_name}</h4>
+                          {item.description && (
+                            <p className="item-desc">{item.description}</p>
+                          )}
+                          {item.price && (
+                            <p className="item-price">${item.price}</p>
+                          )}
+                        </div>
+                        <button
+                          className="item-save-btn"
+                          onClick={() => handleSaveItem(item)}
+                          title="Save this item"
+                        >
+                          ❤️
+                        </button>
                       </div>
-                      <button
-                        className="item-save-btn"
-                        onClick={() => handleSaveItem(item)}
-                        title="Save this item"
-                      >
-                        ❤️
-                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {/* Specials Section */}
+                {business.matched_specials && business.matched_specials.length > 0 && (
+                  <div className="specials-section">
+                    <h3>✨ Specials</h3>
+                    <div className="specials-list">
+                      {business.matched_specials.map((special, idx) => (
+                        <div key={`${business.slug}-special-${idx}`} className="special-item">
+                          <h4>{special.special_name}</h4>
+                          <p>{special.description || special.discount_text}</p>
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
+                  </div>
+                )}
+
+                {/* Events Section */}
+                {business.matched_events && business.matched_events.length > 0 && (
+                  <div className="events-section">
+                    <h3>🎉 Events</h3>
+                    <div className="events-list">
+                      {business.matched_events.map((event, idx) => (
+                        <div key={`${business.slug}-event-${idx}`} className="event-item">
+                          <h4>{event.event_name}</h4>
+                          {event.artist_name && <p>Artist: {event.artist_name}</p>}
+                          {event.event_date && <p>Date: {event.event_date}</p>}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
           </div>
