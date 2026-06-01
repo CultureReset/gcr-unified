@@ -1,0 +1,181 @@
+.gcr-header {
+  background: linear-gradient(180deg, #87CEEB 0%, #B0E0E6 20%, #87CEFA 40%, #4A90E2 80%, #3a7bd5 100%);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.25);
+  padding: 0;
+  margin: 0;
+}
+
+.gcr-header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  min-height: 60px;
+}
+
+.gcr-logo {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  gap: 8px;
+}
+
+.logo-text {
+  font-size: 14px;
+  font-weight: 900;
+  color: #fff;
+  letter-spacing: -0.5px;
+  white-space: nowrap;
+}
+
+.logo-coast {
+  color: #5dd9d4;
+}
+
+.install-btn {
+  background: #14B8A6;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 9px 15px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.install-btn:hover {
+  background: #0d9b8a;
+}
+
+/* Category Tabs */
+.gcr-cat-tabs {
+  display: flex;
+  gap: 7px;
+  padding: 0 10px 10px;
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+.gcr-cat-tabs::-webkit-scrollbar {
+  height: 4px;
+}
+
+.gcr-cat-tabs::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+
+.gcr-cat-tabs::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+}
+
+.cat-tab {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid transparent;
+  border-radius: 22px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #2C5282;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.cat-tab:hover {
+  background: #fff;
+  border-color: #14B8A6;
+  color: #14B8A6;
+  transform: translateY(-2px);
+}
+
+.cat-tab.active {
+  background: #fff;
+  border-color: #0b7a75;
+  color: #0b7a75;
+}
+
+.cat-tab span:first-child {
+  font-size: 16px;
+}
+
+/* Action Strip */
+.gcr-action-strip {
+  display: flex;
+  gap: 10px;
+  padding: 10px;
+}
+
+.strip-btn {
+  flex: 1;
+  border: none;
+  border-radius: 22px;
+  padding: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.strip-btn.gold {
+  background: linear-gradient(135deg, #FFD700, #FFC200);
+  color: #1a1a1a;
+}
+
+.strip-btn.gold:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
+}
+
+.strip-btn.teal {
+  background: linear-gradient(135deg, #0b7a75, #14B8A6);
+  color: #fff;
+}
+
+.strip-btn.teal:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(11, 122, 117, 0.3);
+}
+
+/* Mobile */
+@media (max-width: 640px) {
+  .gcr-header-top {
+    padding: 10px 12px;
+    min-height: 50px;
+  }
+
+  .logo-text {
+    font-size: 12px;
+  }
+
+  .install-btn {
+    padding: 7px 12px;
+    font-size: 12px;
+  }
+
+  .cat-tab {
+    font-size: 12px;
+    padding: 7px 12px;
+  }
+
+  .gcr-action-strip {
+    padding: 8px;
+    gap: 8px;
+  }
+
+  .strip-btn {
+    padding: 8px;
+    font-size: 12px;
+  }
+}

@@ -33,15 +33,6 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* ACTION STRIP */}
-      <section className="gcr-action-strip">
-        <button className="gcr-strip-btn gcr-strip-gold" onClick={() => navigate('/auth')}>
-          ⭐ Join Our Loyalty Program 🎁
-        </button>
-        <button className="gcr-strip-btn gcr-strip-teal" onClick={() => navigate('/browse')}>
-          📅 Explore Categories 🎉
-        </button>
-      </section>
 
       {/* FEATURES */}
       <section className="landing-features">

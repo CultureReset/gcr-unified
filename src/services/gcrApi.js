@@ -155,10 +155,11 @@ export async function fetchBusinesses({ limit = 50 } = {}) {
   // Merge TripSwipe-specific overrides and fetch tonight cards in parallel
   let mergedCards = cards
   try {
+    const timeout = AbortSignal.timeout(4000)
     const [sr, pr, sponsoredR] = await Promise.all([
-      fetch(`${API}/api/admin/tripswipe/settings`).catch(() => null),
-      fetch(`${API}/api/admin/tripswipe/promo-cards`).catch(() => null),
-      fetch(`${API}/api/admin/tripswipe/sponsored`).catch(() => null),
+      fetch(`${API}/api/admin/tripswipe/settings`, { signal: timeout }).catch(() => null),
+      fetch(`${API}/api/admin/tripswipe/promo-cards`, { signal: timeout }).catch(() => null),
+      fetch(`${API}/api/admin/tripswipe/sponsored`, { signal: timeout }).catch(() => null),
     ])
 
     // Apply business settings (enabled flag, custom images)
