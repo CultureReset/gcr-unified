@@ -42,7 +42,7 @@ const ACTIVITY_SUBTYPES = new Set([
   'things-to-do','things_to_do','activity',
 ])
 
-const FOOD_CATEGORIES = new Set(['restaurants','coffee-sweets','nightlife','happy-hours'])
+const FOOD_CATEGORIES = new Set(['restaurants','coffee-sweets','coffee','nightlife','happy-hours'])
 
 function fmt12(t) {
   if (!t) return ''
@@ -119,7 +119,8 @@ export default function GCRCard({ entity, category, onSave, savedSlugs }) {
   const addr = entity.address_line_1 || entity.address || ''
   const fullAddr = [addr, city, state].filter(Boolean).join(', ')
 
-  const hero = entity.photos?.[0]?.image_url || entity.hero_image_url || entity.cover_url ||
+  const hero = entity.photos?.[0]?.image_url || entity.photos?.[0]?.url ||
+    entity.hero_image_url || entity.cover_url ||
     `https://images.unsplash.com/photo-1504674900968-08049c043914?w=600&q=80`
 
   const phone = entity.phone || ''
@@ -191,7 +192,7 @@ export default function GCRCard({ entity, category, onSave, savedSlugs }) {
   const priceRange = entity.price_range || ''
 
   // Profile URL
-  const profileUrl = isActivity ? `/activity/${slug}` : `/business/${slug}`
+  const profileUrl = `/business/${slug}`
   const isFoodPage = FOOD_CATEGORIES.has(category)
 
   // Dedupe action URLs
@@ -342,7 +343,7 @@ export default function GCRCard({ entity, category, onSave, savedSlugs }) {
                   ? <a href={menuUrl} target="_blank" rel="noopener" className="gcr-btn">🍽️ Menu</a>
                   : <a href={profileUrl} className="gcr-btn" onClick={e => { e.preventDefault(); navigate(profileUrl) }}>🍽️ Menu</a>
               )}
-              {hhDays && (
+              {(hhDays || entity.hh_sections?.length > 0) && (
                 <button className="gcr-btn hh" onClick={e => { e.stopPropagation(); setShowHH(!showHH) }}>
                   🍺 Happy Hour
                 </button>
@@ -358,12 +359,40 @@ export default function GCRCard({ entity, category, onSave, savedSlugs }) {
       </div>
 
       {/* Happy Hour Panel */}
-      {showHH && hhDays && (
+      {showHH && (hhDays || entity.hh_sections?.length) && (
         <div className="gcr-hh-panel" onClick={e => e.stopPropagation()}>
           <div className="hh-title">🍺 Happy Hour</div>
-          {hhDays && <div className="hh-days">{hhDays}</div>}
-          {(hhStart || hhEnd) && <div className="hh-time">{fmt12(hhStart)} – {fmt12(hhEnd)}</div>}
+          {hhDays && <div className="hh-time">{hhDays}{hhStart ? ` · ${fmt12(hhStart)}` : ''}{hhEnd ? ` – ${fmt12(hhEnd)}` : ''}</div>}
           {hhDesc && <div className="hh-desc">{hhDesc}</div>}
+          {(() => {
+            const sections = (entity.hh_sections || []).concat(entity.happy_hour_sections || [])
+            const items = []
+            sections.forEach(sec => {
+              (sec.items || sec.happy_hour_items || []).forEach(item => {
+                items.push({ section: sec.section_name || sec.name || '', ...item })
+              })
+            })
+            if (!items.length) return null
+            return (
+              <div className="hh-items">
+                {items.map((item, i) => {
+                  const n = item.item_name || item.name || ''
+                  if (!n) return null
+                  const rawPrice = item.hh_price ?? item.price
+                  const priceStr = item.price_text || (rawPrice != null ? `$${Number(rawPrice).toFixed(2).replace(/\.00$/, '')}` : '')
+                  return (
+                    <div key={i} className="hh-item">
+                      <div className="hh-item-info">
+                        <div className="hh-item-name">{n}</div>
+                        {item.description && <div className="hh-item-desc">{item.description}</div>}
+                      </div>
+                      {priceStr && <div className="hh-item-price">{priceStr}</div>}
+                    </div>
+                  )
+                })}
+              </div>
+            )
+          })()}
         </div>
       )}
     </div>

@@ -100,6 +100,31 @@
   z-index: 5;
 }
 
+.carousel-img-chips {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  z-index: 10;
+}
+
+.carousel-img-chip {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  backdrop-filter: blur(4px);
+  background: rgba(0,0,0,.5);
+  color: #fff;
+}
+
+.carousel-img-chip.chip-music  { background: rgba(109,40,217,.82); }
+.carousel-img-chip.chip-water  { background: rgba(14,165,233,.82); }
+.carousel-img-chip.chip-outdoor { background: rgba(22,163,74,.75); }
+.carousel-img-chip.chip-hh     { background: rgba(217,119,6,.88); }
+
 .carousel-hero {
   position: absolute;
   bottom: 28px;
@@ -821,3 +846,23 @@
   padding: 32px 16px;
   font-size: 15px;
 }
+
+.hh-price { color: #22c55e !important; }
+.item-original-price { font-size: 12px; color: var(--muted); text-decoration: line-through; margin: 2px 0 0; }
+
+/* Events tab */
+.events-list { display: flex; flex-direction: column; gap: 12px; }
+.event-row {
+  display: flex; gap: 14px; align-items: flex-start;
+  background: #f8fafc; border: 1px solid var(--border);
+  border-radius: 12px; padding: 14px 16px;
+}
+.event-row-date {
+  min-width: 72px; font-size: 12px; font-weight: 800;
+  color: #0b7a75; text-transform: uppercase; letter-spacing: .04em; padding-top: 2px;
+}
+.event-row-info { flex: 1; }
+.event-row-name { font-size: 15px; font-weight: 800; color: #1a2b3c; margin-bottom: 4px; }
+.event-row-artist { font-size: 13px; color: #7c3aed; font-weight: 700; margin-bottom: 3px; }
+.event-row-time { font-size: 13px; color: var(--muted); font-weight: 600; }
+.event-row-cover { font-size: 12px; color: #15803d; font-weight: 700; margin-top: 4px; background: #f0fdf4; display: inline-block; padding: 2px 8px; border-radius: 999px; }

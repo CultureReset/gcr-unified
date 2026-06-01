@@ -14,7 +14,7 @@ const CATEGORY_CONFIG = {
   'public-spots': { label: 'Public Spots',     emoji: '✨' },
   shopping:       { label: 'Shopping',          emoji: '🛍️' },
   staying:        { label: 'Staying',           emoji: '🏨' },
-  nightlife:      { label: 'Nightlife',         emoji: '🌙' },
+  feed:           { label: 'Live Feed',         emoji: '📡' },
 }
 
 // Maps entity_subtype → category page (mirrors launching-gcr subtype mapping)
@@ -51,7 +51,8 @@ const HERO_IMAGES = {
   'things-to-do': 'https://images.unsplash.com/photo-1544716278-ca5e3af4abd8?w=1200&q=80',
   services: 'https://images.unsplash.com/photo-1552664730-d307ca884978?w=1200&q=80',
   'public-spots': 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1200&q=80',
-  feed: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=1200&q=80',
+  feed:         'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=1200&q=80',
+  nightlife:    'https://images.unsplash.com/photo-1566417713940-fe7c737a9ef2?w=1200&q=80',
   shopping: 'https://images.unsplash.com/photo-1555685812-4b943f1cb0eb?w=1200&q=80',
   staying: 'https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=1200&q=80',
 }
@@ -98,21 +99,22 @@ export default function CategoryPage() {
         let ents = []
 
         if (category === 'happy-hours') {
-          // Dedicated happy-hours endpoint
           const res = await fetch(`${API_BASE}/api/gcr/happy-hours`)
           if (!res.ok) throw new Error('Failed to load happy hours')
           const data = await res.json()
           ents = data.happyHours || data.businesses || []
         } else {
-          // Fetch all entities, filter client-side by subtype
           const res = await fetch(`${API_BASE}/api/gcr/entities?limit=500`)
           if (!res.ok) throw new Error('Failed to load entities')
           const data = await res.json()
           const all = data.entities || []
-          ents = all.filter(e => {
-            const raw = (e.entity_subtype || e.entity_type || e.type || '').toLowerCase().replace(/-/g, '_')
-            return SUBTYPE_TO_CATEGORY[raw] === category
-          })
+          // feed = show everything; otherwise filter by subtype
+          ents = category === 'feed'
+            ? all
+            : all.filter(e => {
+                const raw = (e.entity_subtype || e.entity_type || e.type || '').toLowerCase().replace(/-/g, '_')
+                return SUBTYPE_TO_CATEGORY[raw] === category
+              })
         }
 
         setEntities(ents)
@@ -194,59 +196,26 @@ export default function CategoryPage() {
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="category-content">
-        {/* Listings Grid */}
-        <div className="listings-grid">
-          {loading && !entities.length ? (
-            <div className="loading">Loading...</div>
-          ) : error ? (
-            <div className="error">{error}</div>
-          ) : filtered.length === 0 ? (
-            <div className="empty">No results found</div>
-          ) : (
-            filtered.map(entity => (
-              <GCRCard
-                key={entity.id || entity.slug}
-                entity={entity}
-                category={category}
-                onSave={handleSave}
-                savedSlugs={savedSlugs}
-              />
-            ))
-          )}
-        </div>
-
-        {/* Sidebar */}
-        <aside className="category-sidebar">
-          <div className="sidebar-panel">
-            <h3>Popular Nearby</h3>
-            <p className="sidebar-text">Enable location to see nearby places</p>
-          </div>
-
-          <div className="sidebar-panel">
-            <h3>📍 Map</h3>
-            <p className="sidebar-text">Map view coming soon</p>
-          </div>
-
-          <div className="sidebar-panel">
-            <h3>Claim Your Listing</h3>
-            <p className="sidebar-text">
-              Is this your business? Claim and manage your profile
-            </p>
-            <button className="claim-btn">Get Started →</button>
-          </div>
-        </aside>
+      {/* Listings */}
+      <div className="listings-stack">
+        {loading && !entities.length ? (
+          <div className="loading">Loading...</div>
+        ) : error ? (
+          <div className="error">{error}</div>
+        ) : filtered.length === 0 ? (
+          <div className="empty">No results found</div>
+        ) : (
+          filtered.map(entity => (
+            <GCRCard
+              key={entity.id || entity.slug}
+              entity={entity}
+              category={category}
+              onSave={handleSave}
+              savedSlugs={savedSlugs}
+            />
+          ))
+        )}
       </div>
-
-      {/* Load More */}
-      {hasMore && !loading && (
-        <div className="load-more-container">
-          <button className="load-more-btn" onClick={handleLoadMore}>
-            Load More
-          </button>
-        </div>
-      )}
     </div>
   )
 }

@@ -47,9 +47,13 @@ export default function RestaurantDetail() {
   if (!business) return <div className="detail-page"><div className="error">Business not found</div></div>
 
   const photos = business.photos || []
-  const hours = business.hours || []
+  const hours = (business.hours || []).sort((a, b) => (a.day_of_week ?? 0) - (b.day_of_week ?? 0))
   const tags = business.tags || []
-  const slides = photos.length > 0 ? photos : [{ image_url: business.hero_image_url }]
+  const events = business.events || []
+  // API returns photos with .url, normalize to .image_url for carousel
+  const slides = photos.length > 0
+    ? photos.map(p => ({ ...p, image_url: p.image_url || p.url }))
+    : [{ image_url: business.hero_image_url }]
 
   const today = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][new Date().getDay()]
 
@@ -61,12 +65,13 @@ export default function RestaurantDetail() {
   }
 
   const sections = [
-    { id: 'overview', label: 'Overview', icon: 'ℹ️' },
-    { id: 'menu', label: 'Menu', icon: '🍽️' },
-    { id: 'happy-hour', label: 'Happy Hour', icon: '🍺' },
-    { id: 'hours', label: 'Hours', icon: '🕐' },
-    { id: 'location', label: 'Location', icon: '📍' },
-    { id: 'gallery', label: 'Photos', icon: '📸' },
+    { id: 'overview',    label: 'Overview',    icon: 'ℹ️'  },
+    ...(business.menu_sections?.length  ? [{ id: 'menu',       label: 'Menu',       icon: '🍽️' }] : []),
+    ...((business.hh_days || business.hh_sections?.length || business.happy_hour_sections?.length) ? [{ id: 'happy-hour', label: 'Happy Hour', icon: '🍺' }] : []),
+    ...(hours.length                   ? [{ id: 'hours',      label: 'Hours',      icon: '🕐' }] : []),
+    ...(events.length                  ? [{ id: 'events',     label: 'Events',     icon: '🎉' }] : []),
+    { id: 'location',    label: 'Location',    icon: '📍'  },
+    ...(photos.length                  ? [{ id: 'gallery',    label: 'Photos',     icon: '📸' }] : []),
   ]
 
   const GALLERY_PER_PAGE = 10
@@ -130,6 +135,22 @@ export default function RestaurantDetail() {
               <div className="carousel-count">{currentSlide + 1} / {slides.length}</div>
             </>
           )}
+
+          {/* Image feature chips */}
+          {(() => {
+            const tagStrs = (business.tags || []).map(t => (typeof t === 'string' ? t : (t.tag_name || '')).toLowerCase().replace(/[\s-]+/g,'_'))
+            const chips = [
+              (business.live_music || tagStrs.some(t => t.includes('live_music'))) && { cls: 'chip-music', label: '🎸 Live Music' },
+              (business.waterfront || tagStrs.includes('waterfront')) && { cls: 'chip-water', label: '🌊 Waterfront' },
+              (business.outdoor_seating || tagStrs.includes('outdoor_seating')) && { cls: 'chip-outdoor', label: '🌿 Outdoor' },
+              business.hh_days && { cls: 'chip-hh', label: '🍺 Happy Hour' },
+            ].filter(Boolean)
+            return chips.length ? (
+              <div className="carousel-img-chips">
+                {chips.map((c,i) => <span key={i} className={`carousel-img-chip ${c.cls}`}>{c.label}</span>)}
+              </div>
+            ) : null
+          })()}
 
           {/* Hero Text */}
           <div className="carousel-hero">
@@ -256,11 +277,71 @@ export default function RestaurantDetail() {
           )}
 
           {/* Happy Hour */}
-          {activeTab === 'happy-hour' && business.hh_days && (
+          {activeTab === 'happy-hour' && (
             <section className="content-section">
               <h2>🍺 Happy Hour</h2>
-              <p className="hh-schedule">{business.hh_days}</p>
+              {business.hh_days && (
+                <p className="hh-schedule">
+                  {business.hh_days}
+                  {business.hh_start && ` · ${formatTime(business.hh_start)}`}
+                  {business.hh_end && ` – ${formatTime(business.hh_end)}`}
+                </p>
+              )}
               {business.hh_description && <p>{business.hh_description}</p>}
+              {(business.hh_sections || business.happy_hour_sections || []).map(sec => (
+                <div key={sec.id} className="menu-section" style={{marginTop: 20}}>
+                  <h3>{sec.section_name || sec.name}</h3>
+                  <div className="menu-items">
+                    {(sec.items || sec.happy_hour_items || []).map(item => (
+                      <div key={item.id} className="menu-item">
+                        <div className="item-header">
+                          <span className="item-name">{item.item_name || item.name}</span>
+                          {(item.hh_price ?? item.price) != null && (
+                            <span className="item-price hh-price">${(item.hh_price ?? item.price)}</span>
+                          )}
+                        </div>
+                        {item.description && <p className="item-desc">{item.description}</p>}
+                        {item.original_price != null && (
+                          <p className="item-original-price">Was ${item.original_price}</p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </section>
+          )}
+
+          {/* Events */}
+          {activeTab === 'events' && (
+            <section className="content-section">
+              <h2>🎉 Events</h2>
+              {events.length === 0 ? (
+                <p className="no-data">No upcoming events</p>
+              ) : (
+                <div className="events-list">
+                  {events.map((ev, i) => {
+                    const evDate = ev.event_date ? new Date(ev.event_date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) : null
+                    return (
+                      <div key={ev.id || i} className="event-row">
+                        <div className="event-row-date">{evDate || (ev.recurring ? ev.day_of_week : 'Ongoing')}</div>
+                        <div className="event-row-info">
+                          <div className="event-row-name">{ev.event_name || ev.name}</div>
+                          {ev.artist_name && <div className="event-row-artist">🎤 {ev.artist_name}</div>}
+                          {(ev.start_time || ev.end_time) && (
+                            <div className="event-row-time">
+                              {formatTime(ev.start_time)}{ev.end_time ? ` – ${formatTime(ev.end_time)}` : ''}
+                            </div>
+                          )}
+                          {ev.cover_charge != null && ev.cover_charge > 0 && (
+                            <div className="event-row-cover">Cover: ${ev.cover_charge}</div>
+                          )}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
             </section>
           )}
 

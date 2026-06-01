@@ -27,6 +27,7 @@ export default function GCRHeader() {
       {/* Row 1: Logo + Install */}
       <div className="gcr-header-top">
         <div className="gcr-logo" onClick={() => navigate('/')}>
+          <img src="/gcr-logo.png" alt="Gulf Coast Radar" className="logo-img" onError={e => e.target.style.display='none'} />
           <span className="logo-text">GULF<span className="logo-coast">COAST</span>RADAR</span>
         </div>
         <button className="install-btn">📲 Install App</button>

@@ -6,7 +6,7 @@
 
 .landing-hero {
   position: relative;
-  min-height: 500px;
+  min-height: clamp(320px, 55vh, 500px);
   display: flex;
   align-items: flex-end;
   justify-content: center;
@@ -39,7 +39,7 @@
 }
 
 .hero-content h1 {
-  font-size: 3rem;
+  font-size: clamp(1.8rem, 6vw, 3rem);
   font-weight: 900;
   margin-bottom: 16px;
   line-height: 1.2;
@@ -174,11 +174,11 @@
 .feature-card p { color: var(--text2); margin: 0; }
 
 .site-footer {
-  background: linear-gradient(135deg, var(--bg2) 0%, var(--bg3) 100%);
+  background: linear-gradient(135deg, #12121f 0%, #1a1a2e 100%);
   color: #fff;
   padding: 40px 20px 20px;
   margin-top: 60px;
-  border-top: 1px solid var(--border);
+  border-top: 1px solid rgba(255,255,255,.08);
 }
 
 .footer-content {

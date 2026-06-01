@@ -42,10 +42,8 @@ function AppRoutes() {
   const location = useLocation()
   const navigate = useNavigate()
   const { logout } = useApp()
-  const publicCategoryPages = ['/restaurants', '/coffee', '/happy-hours', '/events', '/things-to-do', '/services', '/public-spots', '/feed', '/shopping', '/staying', '/search']
   const hideNav = ['/', '/auth'].some(p => location.pathname === p) ||
-    location.pathname.startsWith('/setup') ||
-    publicCategoryPages.includes(location.pathname)
+    location.pathname.startsWith('/setup')
 
   useEffect(() => {
     function onUnauth() {
