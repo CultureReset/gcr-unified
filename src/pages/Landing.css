@@ -475,6 +475,7 @@
   background: #0d2137;
   color: rgba(255,255,255,.7);
   padding: 40px 20px 24px;
+  text-align: center;
 }
 .ld-footer-grid {
   display: grid;
@@ -502,13 +503,14 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
+  align-items: center;
 }
 .ld-footer-links button {
   background: none;
   border: none;
   color: rgba(255,255,255,.7);
   font-size: .82rem;
-  text-align: left;
+  text-align: center;
   cursor: pointer;
   padding: 0;
   transition: color .15s;
@@ -518,10 +520,11 @@
   border-top: 1px solid rgba(255,255,255,.1);
   padding-top: 16px;
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   flex-wrap: wrap;
   gap: 8px;
   font-size: .75rem;
+  text-align: center;
 }
 .ld-footer-bottom strong { color: #5dd9d4; font-weight: 700; }
 
@@ -540,6 +543,7 @@
 
   .ld-districts-grid { grid-template-columns: 1fr; }
   .ld-footer-grid { grid-template-columns: 1fr 1fr; gap: 20px; }
+  .ld-footer p { max-width: 100%; }
   .ld-section-title { font-size: 1.4rem; }
   .ld-trip-emoji { display: none; }
 }
