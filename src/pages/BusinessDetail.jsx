@@ -78,7 +78,15 @@ export default function RestaurantDetail() {
 
   const photos = business.photos || []
   const hours = (business.hours || []).sort((a, b) => (a.day_of_week ?? 0) - (b.day_of_week ?? 0))
-  const tags = business.tags || []
+  const GOOGLE_TYPE_NOISE = new Set(['establishment','point_of_interest','food','restaurant','bar','cafe','store','premise','locality','political','sublocality','neighborhood'])
+  const seen = new Set()
+  const tags = (business.tags || []).filter(t => {
+    const name = (t.tag_name || '').toLowerCase().replace(/[\s-]+/g, '_')
+    if (GOOGLE_TYPE_NOISE.has(name)) return false
+    if (seen.has(name)) return false
+    seen.add(name)
+    return true
+  })
   const events = business.events || []
   const pricing = business.pricing || []
   const whatsIncluded = business.whats_included || []
