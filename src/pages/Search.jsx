@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import Toast from '../components/Toast'
 import { API_BASE } from '../config'
@@ -6,7 +6,7 @@ import './Search.css'
 
 export default function Search() {
   const navigate = useNavigate()
-  const [searchParams] = useSearchParams()
+  const [searchParams, setSearchParams] = useSearchParams()
   const query = searchParams.get('q') || ''
 
   const [results, setResults] = useState([])
@@ -14,7 +14,9 @@ export default function Search() {
   const [error, setError] = useState(null)
   const [searchInput, setSearchInput] = useState(query)
   const [toast, setToast] = useState(null)
+  const debounceRef = useRef(null)
 
+  // Run search whenever URL query param changes
   useEffect(() => {
     setSearchInput(query)
     if (!query.trim()) { setResults([]); setLoading(false); return }
@@ -40,9 +42,24 @@ export default function Search() {
     load()
   }, [query])
 
+  // Debounced live search — fires 400ms after user stops typing
+  const handleInputChange = (e) => {
+    const val = e.target.value
+    setSearchInput(val)
+    clearTimeout(debounceRef.current)
+    if (val.trim().length >= 2) {
+      debounceRef.current = setTimeout(() => {
+        setSearchParams({ q: val.trim() }, { replace: true })
+      }, 400)
+    } else if (!val.trim()) {
+      setResults([])
+    }
+  }
+
   const handleSearch = (e) => {
     e.preventDefault()
-    if (searchInput.trim()) navigate(`/search?q=${encodeURIComponent(searchInput.trim())}`)
+    clearTimeout(debounceRef.current)
+    if (searchInput.trim()) setSearchParams({ q: searchInput.trim() }, { replace: true })
   }
 
   const handleShare = () => {
@@ -68,8 +85,9 @@ export default function Search() {
               type="text"
               placeholder="Search restaurants, menu items, specials..."
               value={searchInput}
-              onChange={e => setSearchInput(e.target.value)}
+              onChange={handleInputChange}
               autoComplete="off"
+              autoFocus
             />
             <button type="submit" className="search-submit">🔍</button>
           </form>
@@ -121,23 +139,29 @@ export default function Search() {
   )
 }
 
+const ITEMS_PREVIEW = 3
+
 function SearchResultCard({ biz, navigate }) {
-  const [expanded, setExpanded] = useState(true)
+  const [showAll, setShowAll] = useState(false)
   const items = biz.matched_menu_items || []
   const specials = biz.matched_specials || []
   const events = biz.matched_events || []
-  const hasMatches = items.length > 0 || specials.length > 0 || events.length > 0
+  const allMatches = [
+    ...items.map(i => ({ ...i, _type: 'menu' })),
+    ...specials.map(s => ({ ...s, _type: 'special' })),
+    ...events.map(e => ({ ...e, _type: 'event' })),
+  ]
+  const hasMatches = allMatches.length > 0
+  const visible = showAll ? allMatches : allMatches.slice(0, ITEMS_PREVIEW)
 
-  const photo = biz.photos?.[0]?.url || biz.hero_image_url ||
-    'https://images.unsplash.com/photo-1504674900967-77800e8e33fe?w=600&q=80'
+  const photo = biz.photos?.[0]?.url || biz.hero_image_url
 
   return (
     <div className="sr-card">
-      {/* Business Row */}
       <div className="sr-biz-row" onClick={() => navigate(`/business/${biz.slug}`)}>
-        <div className="sr-biz-photo" style={{ backgroundImage: `url(${photo})` }} />
+        {photo && <div className="sr-biz-photo" style={{ backgroundImage: `url(${photo})` }} />}
         <div className="sr-biz-info">
-          <div className="sr-biz-name">{biz.icon || '📍'} {biz.name}</div>
+          <div className="sr-biz-name">{biz.name}</div>
           <div className="sr-biz-meta">
             {biz.rating && <span>⭐ {Number(biz.rating).toFixed(1)}</span>}
             {biz.city && <span>📍 {biz.city}</span>}
@@ -145,7 +169,7 @@ function SearchResultCard({ biz, navigate }) {
           </div>
           {hasMatches && (
             <div className="sr-match-count">
-              {items.length > 0 && `🍽️ ${items.length} menu item${items.length !== 1 ? 's' : ''}`}
+              {items.length > 0 && `🍽️ ${items.length} match${items.length !== 1 ? 'es' : ''}`}
               {specials.length > 0 && ` · ✨ ${specials.length} special${specials.length !== 1 ? 's' : ''}`}
               {events.length > 0 && ` · 🎉 ${events.length} event${events.length !== 1 ? 's' : ''}`}
             </div>
@@ -154,45 +178,46 @@ function SearchResultCard({ biz, navigate }) {
         <button className="sr-view-btn">View →</button>
       </div>
 
-      {/* Matched Items */}
       {hasMatches && (
         <div className="sr-matches">
-          <button className="sr-toggle" onClick={() => setExpanded(e => !e)}>
-            {expanded ? '▲ Hide matches' : '▼ Show matches'}
-          </button>
-          {expanded && (
-            <div className="sr-items-list">
-              {items.map((item, i) => (
+          <div className="sr-items-list">
+            {visible.map((item, i) => {
+              if (item._type === 'menu') return (
                 <div key={i} className="sr-item" onClick={() => navigate(`/business/${biz.slug}`)}>
                   <div className="sr-item-left">
-                    <div className="sr-item-name">🍽️ {item.item_name}</div>
+                    <div className="sr-item-name">{item.item_name}</div>
                     {item.description && <div className="sr-item-desc">{item.description}</div>}
                   </div>
                   {item.price != null && (
                     <div className="sr-item-price">${Number(item.price).toFixed(2).replace(/\.00$/, '')}</div>
                   )}
                 </div>
-              ))}
-              {specials.map((s, i) => (
-                <div key={`sp-${i}`} className="sr-item special" onClick={() => navigate(`/business/${biz.slug}`)}>
+              )
+              if (item._type === 'special') return (
+                <div key={i} className="sr-item sr-item--special" onClick={() => navigate(`/business/${biz.slug}`)}>
                   <div className="sr-item-left">
-                    <div className="sr-item-name">✨ {s.special_name || s.name}</div>
-                    {(s.description || s.discount_text) && (
-                      <div className="sr-item-desc">{s.description || s.discount_text}</div>
+                    <div className="sr-item-name">✨ {item.special_name || item.name}</div>
+                    {(item.description || item.discount_text) && (
+                      <div className="sr-item-desc">{item.description || item.discount_text}</div>
                     )}
                   </div>
                 </div>
-              ))}
-              {events.map((ev, i) => (
-                <div key={`ev-${i}`} className="sr-item event" onClick={() => navigate(`/business/${biz.slug}`)}>
+              )
+              return (
+                <div key={i} className="sr-item sr-item--event" onClick={() => navigate(`/business/${biz.slug}`)}>
                   <div className="sr-item-left">
-                    <div className="sr-item-name">🎉 {ev.event_name || ev.name}</div>
-                    {ev.artist_name && <div className="sr-item-desc">🎤 {ev.artist_name}</div>}
+                    <div className="sr-item-name">🎉 {item.event_name || item.name}</div>
+                    {item.artist_name && <div className="sr-item-desc">🎤 {item.artist_name}</div>}
                   </div>
-                  {ev.event_date && <div className="sr-item-price" style={{ fontSize: 11 }}>{ev.event_date}</div>}
+                  {item.event_date && <div className="sr-item-price" style={{ fontSize: 11 }}>{item.event_date}</div>}
                 </div>
-              ))}
-            </div>
+              )
+            })}
+          </div>
+          {allMatches.length > ITEMS_PREVIEW && (
+            <button className="sr-toggle" onClick={() => setShowAll(s => !s)}>
+              {showAll ? '▲ Show less' : `▼ +${allMatches.length - ITEMS_PREVIEW} more`}
+            </button>
           )}
         </div>
       )}
