@@ -70,6 +70,10 @@ export default function RestaurantDetail() {
   const hours = (business.hours || []).sort((a, b) => (a.day_of_week ?? 0) - (b.day_of_week ?? 0))
   const tags = business.tags || []
   const events = business.events || []
+  const pricing = business.pricing || []
+  const whatsIncluded = business.whats_included || []
+  const faqs = business.faqs || []
+  const requirements = business.requirements || []
   // API returns photos with .url, normalize to .image_url for carousel
   const slides = photos.length > 0
     ? photos.map(p => ({ ...p, image_url: p.image_url || p.url }))
@@ -89,10 +93,12 @@ export default function RestaurantDetail() {
   const sections = [
     ...(business.menu_sections?.length  ? [{ id: 'menu',        label: 'Menu',        icon: '🍽️' }] : []),
     ...((business.hh_days || business.hh_sections?.length || business.happy_hour_sections?.length) ? [{ id: 'happy-hour', label: 'Happy Hour', icon: '🍺' }] : []),
+    ...(pricing.length                  ? [{ id: 'pricing',     label: 'Pricing',     icon: '💰' }] : []),
     ...(hours.length                    ? [{ id: 'hours',       label: 'Hours',       icon: '🕐' }] : []),
     ...(events.length                   ? [{ id: 'events',      label: 'Events',      icon: '🎉' }] : []),
     { id: 'overview',    label: 'Overview',    icon: 'ℹ️'  },
     ...(hasActivityExtras                ? [{ id: 'experience',  label: 'Experience',  icon: '🎯' }] : []),
+    ...(faqs.length                     ? [{ id: 'faqs',        label: 'FAQs',        icon: '❓' }] : []),
     { id: 'location',    label: 'Location',    icon: '📍'  },
     ...(photos.length                   ? [{ id: 'gallery',     label: 'Photos',      icon: '📸' }] : []),
   ]
@@ -407,6 +413,71 @@ export default function RestaurantDetail() {
                   </div>
                 </div>
               ))}
+            </section>
+          )}
+
+          {/* Pricing */}
+          {activeTab === 'pricing' && (
+            <section className="content-section">
+              <h2>💰 Pricing</h2>
+              {pricing.length === 0 ? (
+                <p className="no-data">No pricing info available</p>
+              ) : (
+                <div className="pricing-list">
+                  {pricing.map((item, i) => (
+                    <div key={item.id || i} className="pricing-row">
+                      <div className="pricing-name">{item.item_name}</div>
+                      <div className="pricing-right">
+                        {item.price != null ? (
+                          <span className="pricing-price">${item.price % 1 === 0 ? item.price : item.price.toFixed(2)}</span>
+                        ) : (
+                          <span className="pricing-price pricing-call">Call for pricing</span>
+                        )}
+                        {item.description && <div className="pricing-desc">{item.description}</div>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {whatsIncluded.length > 0 && (
+                <div className="whats-included">
+                  <h3>✅ What's Included</h3>
+                  <ul>
+                    {whatsIncluded.map((item, i) => (
+                      <li key={item.id || i}>{item.included_item}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {requirements.length > 0 && (
+                <div className="requirements-list">
+                  <h3>📋 Requirements</h3>
+                  <ul>
+                    {requirements.map((item, i) => (
+                      <li key={item.id || i}>{item.requirement_text}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </section>
+          )}
+
+          {/* FAQs */}
+          {activeTab === 'faqs' && (
+            <section className="content-section">
+              <h2>❓ Frequently Asked Questions</h2>
+              {faqs.length === 0 ? (
+                <p className="no-data">No FAQs available</p>
+              ) : (
+                <div className="faqs-list">
+                  {faqs.map((faq, i) => (
+                    <div key={faq.id || i} className="faq-row">
+                      <div className="faq-question">{faq.question}</div>
+                      <div className="faq-answer">{faq.answer}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </section>
           )}
 
