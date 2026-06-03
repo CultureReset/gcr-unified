@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import GCRHeader from '../components/GCRHeader'
 import GCRCard from '../components/GCRCard'
 import { API_BASE } from '../config'
 import './CategoryPage.css'
@@ -177,7 +176,6 @@ export default function CategoryPage() {
 
   return (
     <div className="category-page">
-      <GCRHeader />
 
       {/* Hero Section */}
       <div

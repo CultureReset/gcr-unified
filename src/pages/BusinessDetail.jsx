@@ -1,6 +1,5 @@
 import { useEffect, useState, useRef, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import GCRHeader from '../components/GCRHeader'
 import { API_BASE } from '../config'
 import './BusinessDetail.css'
 
@@ -138,7 +137,6 @@ export default function RestaurantDetail() {
 
   return (
     <div className="detail-page">
-      <GCRHeader />
       {/* Header */}
       <div className="detail-header">
         <button className="back-btn" onClick={() => navigate(-1)}>← Back</button>

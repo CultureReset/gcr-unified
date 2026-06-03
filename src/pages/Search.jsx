@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
-import GCRHeader from '../components/GCRHeader'
 import Toast from '../components/Toast'
 import { API_BASE } from '../config'
 import './Search.css'
@@ -61,7 +60,6 @@ export default function Search() {
 
   return (
     <div className="search-page">
-      <GCRHeader />
 
       <div className="search-hero">
         <div className="search-hero-inner">

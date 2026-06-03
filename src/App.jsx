@@ -27,6 +27,7 @@ import Terms from './pages/Terms'
 import ReviewUpload from './pages/ReviewUpload'
 import BottomNav from './components/BottomNav'
 import InstallBanner from './components/InstallBanner'
+import GCRHeader from './components/GCRHeader'
 
 function RequireAuth({ children }) {
   const { userId } = useApp()
@@ -43,6 +44,8 @@ function AppRoutes() {
   const navigate = useNavigate()
   const { logout } = useApp()
   const hideNav = ['/', '/auth'].some(p => location.pathname === p) ||
+    location.pathname.startsWith('/setup')
+  const hideHeader = ['/', '/auth'].some(p => location.pathname === p) ||
     location.pathname.startsWith('/setup')
 
   useEffect(() => {
@@ -80,6 +83,7 @@ function AppRoutes() {
 
   return (
     <div className="app-shell">
+      {!hideHeader && <GCRHeader />}
       <Routes>
         <Route path="/" element={<Landing />} />
         <Route path="/browse" element={<Navigate to="/" replace />} />

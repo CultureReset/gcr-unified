@@ -1,6 +1,5 @@
 import { useEffect, useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import GCRHeader from '../components/GCRHeader'
 import { API_BASE } from '../config'
 import './Events.css'
 
@@ -211,7 +210,6 @@ export default function Events() {
 
   return (
     <div className="events-page">
-      <GCRHeader />
 
       {/* Hero */}
       <div className="ev-hero">
