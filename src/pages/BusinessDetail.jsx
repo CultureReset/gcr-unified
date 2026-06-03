@@ -62,6 +62,16 @@ export default function RestaurantDetail() {
     return () => observerRef.current?.disconnect()
   }, [activeTab, business])
 
+  const scrollToSubSection = useCallback((id) => {
+    const el = subSectionRefs.current[id]
+    if (!el) return
+    const headerH = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--gcr-header-h') || '156')
+    const tabsH = 100
+    const top = el.getBoundingClientRect().top + window.scrollY - headerH - tabsH
+    window.scrollTo({ top, behavior: 'smooth' })
+    setActiveSubSection(id)
+  }, [])
+
   if (loading) return <div className="detail-page"><div className="loading">Loading...</div></div>
   if (error) return <div className="detail-page"><div className="error">Error: {error}</div></div>
   if (!business) return <div className="detail-page"><div className="error">Business not found</div></div>
@@ -109,16 +119,6 @@ export default function RestaurantDetail() {
     : activeTab === 'happy-hour'
     ? (business.hh_sections || business.happy_hour_sections || []).map(s => ({ id: `hh-sec-${s.id || s.section_name}`, label: s.section_name || s.name }))
     : []
-
-  const scrollToSubSection = useCallback((id) => {
-    const el = subSectionRefs.current[id]
-    if (!el) return
-    const headerH = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--gcr-header-h') || '156')
-    const tabsH = 100 // main tabs + sub-section chips height
-    const top = el.getBoundingClientRect().top + window.scrollY - headerH - tabsH
-    window.scrollTo({ top, behavior: 'smooth' })
-    setActiveSubSection(id)
-  }, [])
 
   const GALLERY_PER_PAGE = 10
   const REVIEWS_PER_PAGE = 10
