@@ -123,10 +123,15 @@ export default function CategoryPage() {
         setEntities(ents)
         setHasMore(false)
 
-        // Extract unique tags for filter chips
+        // Extract unique curated tags for filter chips (skip raw Google Place types)
+        const SKIP_CATEGORIES = new Set(['google_type', 'google_primary_type', 'google_secondary_type'])
         const tagsSet = new Set()
         ents.forEach(e => {
+          // Use curated entity_subtype as a chip if present
+          if (e.entity_subtype) tagsSet.add(e.entity_subtype.replace(/_/g, ' '))
           ;(Array.isArray(e.tags) ? e.tags : []).forEach(t => {
+            const cat = typeof t === 'object' ? (t.tag_category || '') : ''
+            if (SKIP_CATEGORIES.has(cat)) return
             const tag = typeof t === 'string' ? t : (t.tag_name || t.tag || '')
             if (tag) tagsSet.add(tag)
           })
@@ -143,12 +148,16 @@ export default function CategoryPage() {
     loadEntities()
   }, [category])
 
+  const SKIP_CATS = new Set(['google_type', 'google_primary_type', 'google_secondary_type'])
   const filtered = !selectedTag || selectedTag === 'All'
     ? entities
     : entities.filter(e => {
+        if ((e.entity_subtype || '').replace(/_/g, ' ') === selectedTag) return true
         const tags = Array.isArray(e.tags) ? e.tags : []
         return tags.some(t => {
-          const tag = typeof t === 'string' ? t : t.tag_name
+          const cat = typeof t === 'object' ? (t.tag_category || '') : ''
+          if (SKIP_CATS.has(cat)) return false
+          const tag = typeof t === 'string' ? t : (t.tag_name || t.tag || '')
           return tag === selectedTag
         })
       })

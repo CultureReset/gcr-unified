@@ -37,6 +37,8 @@ export default function CategoryListings() {
   const [savedSlugs, setSavedSlugs] = useState(new Set())
   const [search, setSearch] = useState('')
   const [activeFilter, setActiveFilter] = useState('all')
+  const [activeTag, setActiveTag] = useState('All')
+  const [allTags, setAllTags] = useState(['All'])
   const gridRef = useRef(null)
 
   const meta = CATEGORY_META[category] || { label: category, emoji: '📍', desc: '' }
@@ -56,7 +58,20 @@ export default function CategoryListings() {
         const res = await fetch(url)
         if (!res.ok) throw new Error('Failed to load')
         const data = await res.json()
-        setEntities(data.entities || data.businesses || data || [])
+        const ents = data.entities || data.businesses || data || []
+        setEntities(ents)
+        const SKIP_CATEGORIES = new Set(['google_type', 'google_primary_type', 'google_secondary_type'])
+        const tagsSet = new Set()
+        ents.forEach(e => {
+          if (e.entity_subtype) tagsSet.add(e.entity_subtype.replace(/_/g, ' '))
+          ;(Array.isArray(e.tags) ? e.tags : []).forEach(t => {
+            const cat = typeof t === 'object' ? (t.tag_category || '') : ''
+            if (SKIP_CATEGORIES.has(cat)) return
+            const tag = typeof t === 'string' ? t : (t.tag_name || t.tag || '')
+            if (tag) tagsSet.add(tag)
+          })
+        })
+        setAllTags(['All', ...Array.from(tagsSet).sort()])
       } catch (err) {
         console.error(err)
         setError(err.message)
@@ -84,11 +99,18 @@ export default function CategoryListings() {
       (e.city || '').toLowerCase().includes(searchLower)
     const matchFilter =
       activeFilter === 'all' ? true :
-      activeFilter === 'open' ? true :
       activeFilter === 'hh' ? !!e.hh_days :
       activeFilter === 'music' ? !!e.live_music :
       true
-    return matchSearch && matchFilter
+    const matchTag = activeTag === 'All' ? true :
+      (e.entity_subtype || '').replace(/_/g, ' ') === activeTag ||
+      (Array.isArray(e.tags) ? e.tags : []).some(t => {
+        const cat = typeof t === 'object' ? (t.tag_category || '') : ''
+        if (['google_type','google_primary_type','google_secondary_type'].includes(cat)) return false
+        const name = typeof t === 'string' ? t : (t.tag_name || t.tag || '')
+        return name === activeTag
+      })
+    return matchSearch && matchFilter && matchTag
   })
 
   return (
@@ -122,6 +144,19 @@ export default function CategoryListings() {
             </button>
           ))}
         </div>
+        {allTags.length > 1 && (
+          <div className="listings-tags">
+            {allTags.map(tag => (
+              <button
+                key={tag}
+                className={`tag-chip ${activeTag === tag ? 'active' : ''}`}
+                onClick={() => setActiveTag(tag)}
+              >
+                {tag}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {loading ? (

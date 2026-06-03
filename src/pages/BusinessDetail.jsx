@@ -227,7 +227,7 @@ export default function RestaurantDetail() {
         {/* Tags */}
         {tags.length > 0 && (
           <div className="badge-row">
-            {tags.slice(0, 5).map(tag => (
+            {tags.map(tag => (
               <span key={tag.tag_name} className="badge">{tag.tag_name}</span>
             ))}
           </div>

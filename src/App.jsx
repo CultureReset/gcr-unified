@@ -49,7 +49,9 @@ function AppRoutes() {
     function onUnauth() {
       logout()
       const publicPaths = ['/', '/auth', '/reset', '/join', '/privacy', '/terms']
-      if (!publicPaths.includes(location.pathname)) {
+      const publicPrefixes = ['/business/', '/category/', '/restaurants', '/coffee', '/happy-hours', '/things-to-do', '/services', '/public-spots', '/feed', '/shopping', '/staying', '/events', '/swipe/', '/search']
+      const isPublic = publicPaths.includes(location.pathname) || publicPrefixes.some(p => location.pathname.startsWith(p))
+      if (!isPublic) {
         navigate('/auth', { replace: true, state: { from: location.pathname + location.search } })
       }
     }
