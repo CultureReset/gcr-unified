@@ -44,13 +44,17 @@ const EVENT_TYPE_EMOJI = {
 
 const TYPE_FILTERS = ['All', 'Live Music', 'Karaoke', 'Trivia', 'Open Mic', 'DJ Night']
 
+function localDateStr(d) {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
+}
+
 function getDateFilters() {
   const today = new Date()
-  const todayStr = today.toISOString().split('T')[0]
+  const todayStr = localDateStr(today)
 
   const tomorrow = new Date(today)
   tomorrow.setDate(today.getDate() + 1)
-  const tomorrowStr = tomorrow.toISOString().split('T')[0]
+  const tomorrowStr = localDateStr(tomorrow)
 
   // This weekend = next Fri/Sat/Sun
   const day = today.getDay()
@@ -58,7 +62,7 @@ function getDateFilters() {
   const fri = new Date(today); fri.setDate(today.getDate() + daysToFri)
   const sat = new Date(fri); sat.setDate(fri.getDate() + 1)
   const sun = new Date(fri); sun.setDate(fri.getDate() + 2)
-  const weekendDates = [fri, sat, sun].map(d => d.toISOString().split('T')[0])
+  const weekendDates = [fri, sat, sun].map(d => localDateStr(d))
 
   return { todayStr, tomorrowStr, weekendDates }
 }

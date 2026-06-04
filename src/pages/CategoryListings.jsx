@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import GCRCard from '../components/GCRCard'
 import { API_BASE } from '../config'
+import { subtypeToCategory, formatSubtypeLabel } from '../categoryMap'
 import './CategoryListings.css'
 
 const CATEGORY_META = {
@@ -49,21 +50,31 @@ export default function CategoryListings() {
       setLoading(true)
       setError(null)
       try {
-        let url = `${API_BASE}/api/gcr/entities?limit=500`
+        let ents = []
         if (category === 'happy-hours') {
-          url = `${API_BASE}/api/gcr/happy-hours`
+          const res = await fetch(`${API_BASE}/api/gcr/happy-hours`)
+          if (!res.ok) throw new Error('Failed to load')
+          const data = await res.json()
+          ents = data.happyHours || data.businesses || []
         } else {
-          url += `&type=${apiType}`
+          let all = []
+          let offset = 0
+          while (true) {
+            const res = await fetch(`${API_BASE}/api/gcr/entities?limit=1000&offset=${offset}`)
+            if (!res.ok) break
+            const data = await res.json()
+            const batch = data.entities || []
+            all = all.concat(batch)
+            if (batch.length < 1000) break
+            offset += 1000
+          }
+          ents = all.filter(e => subtypeToCategory(e) === category)
         }
-        const res = await fetch(url)
-        if (!res.ok) throw new Error('Failed to load')
-        const data = await res.json()
-        const ents = data.entities || data.businesses || data || []
         setEntities(ents)
         const SKIP_CATEGORIES = new Set(['google_type', 'google_primary_type', 'google_secondary_type'])
         const tagsSet = new Set()
         ents.forEach(e => {
-          if (e.entity_subtype) tagsSet.add(e.entity_subtype.replace(/_/g, ' '))
+          if (e.entity_subtype) tagsSet.add(formatSubtypeLabel(e.entity_subtype))
           ;(Array.isArray(e.tags) ? e.tags : []).forEach(t => {
             const cat = typeof t === 'object' ? (t.tag_category || '') : ''
             if (SKIP_CATEGORIES.has(cat)) return
@@ -103,7 +114,7 @@ export default function CategoryListings() {
       activeFilter === 'music' ? !!e.live_music :
       true
     const matchTag = activeTag === 'All' ? true :
-      (e.entity_subtype || '').replace(/_/g, ' ') === activeTag ||
+      formatSubtypeLabel(e.entity_subtype) === activeTag ||
       (Array.isArray(e.tags) ? e.tags : []).some(t => {
         const cat = typeof t === 'object' ? (t.tag_category || '') : ''
         if (['google_type','google_primary_type','google_secondary_type'].includes(cat)) return false

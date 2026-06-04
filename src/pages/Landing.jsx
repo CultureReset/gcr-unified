@@ -102,10 +102,19 @@ export default function Landing() {
       })
       .catch(() => {})
 
-    fetch(`${API_BASE}/api/gcr/entities?limit=500`)
-      .then(r => r.json())
-      .then(d => {
-        const all = d.entities || []
+    ;(async () => {
+      try {
+        let all = []
+        let offset = 0
+        while (true) {
+          const r = await fetch(`${API_BASE}/api/gcr/entities?limit=1000&offset=${offset}`)
+          if (!r.ok) break
+          const d = await r.json()
+          const batch = d.entities || []
+          all = all.concat(batch)
+          if (batch.length < 1000) break
+          offset += 1000
+        }
         const activities = all.filter(e => {
           const t = (e.entity_subtype || e.entity_type || '').toLowerCase().replace(/-/g, '_')
           return ['parasailing','dolphin_cruise','boat_rental','fishing_charter','jet_ski','watersports','snorkeling','kayak_rental','tour','attraction'].includes(t)
@@ -116,8 +125,8 @@ export default function Landing() {
             .slice(0, 8)
         )
         setHappeningActivities(activities.slice(0, 4))
-      })
-      .catch(() => {})
+      } catch {}
+    })()
   }, [])
 
   const weatherIcon = weather ? (WEATHER_ICON[weather.code] || '🌤️') : '🌤️'

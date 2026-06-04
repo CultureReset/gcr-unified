@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import GCRCard from '../components/GCRCard'
 import { API_BASE } from '../config'
+import { subtypeToCategory, formatSubtypeLabel } from '../categoryMap'
 import './CategoryPage.css'
 
 const CATEGORY_CONFIG = {
@@ -16,34 +17,6 @@ const CATEGORY_CONFIG = {
   feed:           { label: 'Live Feed',         emoji: '📡' },
 }
 
-// Maps entity_subtype → category page (mirrors launching-gcr subtype mapping)
-const SUBTYPE_TO_CATEGORY = {
-  restaurant:'restaurants', restaurants:'restaurants',
-  american_restaurant:'restaurants', seafood_restaurant:'restaurants', seafood:'restaurants',
-  pizza_restaurant:'restaurants', bar:'restaurants', bar_grill:'restaurants',
-  bar_and_grill:'restaurants', beach_bar:'restaurants', irish_pub:'restaurants', pub:'restaurants',
-  hybrid_venue:'restaurants', casual_dining:'restaurants', southern:'restaurants',
-  brunch_restaurant:'restaurants', breakfast_restaurant:'restaurants', steakhouse:'restaurants',
-  hamburger_restaurant:'restaurants', sandwich_shop:'restaurants', diner:'restaurants',
-  coffee_shop:'coffee', cafe:'coffee', bakery:'coffee', ice_cream:'coffee',
-  ice_cream_shop:'coffee', donut_shop:'coffee', dessert_shop:'coffee', smoothie:'coffee',
-  boutique:'shopping', souvenir:'shopping', retail:'shopping', shopping:'shopping',
-  surf_shop:'shopping', gift_shop:'shopping', clothing:'shopping', clothing_store:'shopping',
-  art_gallery:'shopping', grocery_store:'shopping', liquor_store:'shopping',
-  activity:'things-to-do', activities:'things-to-do',
-  parasailing:'things-to-do', dolphin_cruise:'things-to-do', boat_rental:'things-to-do',
-  boat_rentals:'things-to-do', fishing_charter:'things-to-do', tour:'things-to-do',
-  attraction:'things-to-do', jet_ski:'things-to-do', watersports:'things-to-do',
-  snorkeling:'things-to-do', kayak_rental:'things-to-do', marina:'things-to-do',
-  golf_course:'things-to-do', sunset_cruise:'things-to-do', dolphin_tour:'things-to-do',
-  glass_bottom_boat:'things-to-do', wildlife_tour:'things-to-do', charter:'things-to-do',
-  nightlife:'nightlife', night_club:'nightlife', sports_bar:'nightlife',
-  rooftop_bar:'nightlife', lounge:'nightlife', cocktail_bar:'nightlife',
-  services:'services', salon:'services', spa:'services', photographer:'services',
-  wellness:'services', transportation:'services', concierge:'services',
-  hotel:'staying', resort:'staying', condo:'staying', vacation_rental:'staying',
-  motel:'staying', bed_and_breakfast:'staying', rv_park:'staying',
-}
 
 const HERO_IMAGES = {
   restaurants: 'https://images.unsplash.com/photo-1504674900967-77800e8e33fe?w=1200&q=80',
@@ -106,18 +79,39 @@ export default function CategoryPage() {
           const data = await res.json()
           ents = data.happyHours || data.businesses || []
         } else {
-          const res = await fetch(`${API_BASE}/api/gcr/entities?limit=500`)
-          if (!res.ok) throw new Error('Failed to load entities')
-          const data = await res.json()
-          const all = data.entities || []
+          // Fetch all entities in batches of 1000 to bypass API hard limit
+          let all = []
+          let offset = 0
+          const BATCH = 1000
+          while (true) {
+            const res = await fetch(`${API_BASE}/api/gcr/entities?limit=${BATCH}&offset=${offset}`)
+            if (!res.ok) break
+            const data = await res.json()
+            const batch = data.entities || []
+            all = all.concat(batch)
+            if (batch.length < BATCH) break
+            offset += BATCH
+          }
           // feed = show everything; otherwise filter by subtype
           ents = category === 'feed'
             ? all
-            : all.filter(e => {
-                const raw = (e.entity_subtype || e.entity_type || e.type || '').toLowerCase().replace(/-/g, '_')
-                return SUBTYPE_TO_CATEGORY[raw] === category
-              })
+            : all.filter(e => subtypeToCategory(e) === category)
         }
+
+        // Deduplicate: same name → keep the one with a proper subtype / no hash slug
+        const seen = new Map()
+        const hasHashSlug = s => /[-_][A-Za-z0-9]{6,}$/.test(s || '') || /[-]\d+$/.test(s || '')
+        for (const e of ents) {
+          const key = (e.name || '').trim().toLowerCase()
+          if (!seen.has(key)) { seen.set(key, e); continue }
+          const prev = seen.get(key)
+          const prevHash = hasHashSlug(prev.slug)
+          const curHash = hasHashSlug(e.slug)
+          if (prevHash && !curHash) seen.set(key, e)
+          else if (!prevHash && curHash) { /* keep prev */ }
+          else if (e.entity_subtype && !prev.entity_subtype) seen.set(key, e)
+        }
+        ents = Array.from(seen.values())
 
         setEntities(ents)
         setHasMore(false)
@@ -127,7 +121,7 @@ export default function CategoryPage() {
         const tagsSet = new Set()
         ents.forEach(e => {
           // Use curated entity_subtype as a chip if present
-          if (e.entity_subtype) tagsSet.add(e.entity_subtype.replace(/_/g, ' '))
+          if (e.entity_subtype) tagsSet.add(formatSubtypeLabel(e.entity_subtype))
           ;(Array.isArray(e.tags) ? e.tags : []).forEach(t => {
             const cat = typeof t === 'object' ? (t.tag_category || '') : ''
             if (SKIP_CATEGORIES.has(cat)) return
@@ -151,7 +145,7 @@ export default function CategoryPage() {
   const filtered = !selectedTag || selectedTag === 'All'
     ? entities
     : entities.filter(e => {
-        if ((e.entity_subtype || '').replace(/_/g, ' ') === selectedTag) return true
+        if (formatSubtypeLabel(e.entity_subtype) === selectedTag) return true
         const tags = Array.isArray(e.tags) ? e.tags : []
         return tags.some(t => {
           const cat = typeof t === 'object' ? (t.tag_category || '') : ''
