@@ -88,6 +88,14 @@
   color: #0b6475;
 }
 
+.sort-divider {
+  width: 1px;
+  height: 20px;
+  background: #e2e8f0;
+  margin: 0 4px;
+  flex-shrink: 0;
+}
+
 .listings-tags {
   display: flex;
   gap: 8px;

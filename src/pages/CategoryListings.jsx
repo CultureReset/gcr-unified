@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import GCRCard from '../components/GCRCard'
 import { API_BASE } from '../config'
 import { subtypeToCategory, formatSubtypeLabel } from '../categoryMap'
+import { useApp } from '../context/AppContext'
 import './CategoryListings.css'
 
 const CATEGORY_META = {
@@ -32,12 +33,14 @@ const TYPE_MAP = {
 export default function CategoryListings() {
   const { category } = useParams()
   const navigate = useNavigate()
+  const { userLocation, requestLocation } = useApp()
   const [entities, setEntities] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [savedSlugs, setSavedSlugs] = useState(new Set())
   const [search, setSearch] = useState('')
   const [activeFilter, setActiveFilter] = useState('all')
+  const [activeSort, setActiveSort] = useState('default')
   const [activeTag, setActiveTag] = useState('All')
   const [allTags, setAllTags] = useState(['All'])
   const gridRef = useRef(null)
@@ -51,6 +54,7 @@ export default function CategoryListings() {
       setError(null)
       try {
         let ents = []
+        const locParams = userLocation ? `&lat=${userLocation.lat}&lng=${userLocation.lng}` : ''
         if (category === 'happy-hours') {
           const res = await fetch(`${API_BASE}/api/gcr/happy-hours`)
           if (!res.ok) throw new Error('Failed to load')
@@ -60,7 +64,7 @@ export default function CategoryListings() {
           let all = []
           let offset = 0
           while (true) {
-            const res = await fetch(`${API_BASE}/api/gcr/entities?limit=1000&offset=${offset}`)
+            const res = await fetch(`${API_BASE}/api/gcr/entities?limit=1000&offset=${offset}${locParams}`)
             if (!res.ok) break
             const data = await res.json()
             const batch = data.entities || []
@@ -91,7 +95,7 @@ export default function CategoryListings() {
       }
     }
     loadEntities()
-  }, [category])
+  }, [category, userLocation])
 
   const handleSave = (entity) => {
     const slug = entity.slug || entity.id
@@ -103,26 +107,32 @@ export default function CategoryListings() {
   }
 
   const searchLower = search.toLowerCase()
-  const filtered = entities.filter(e => {
-    const matchSearch = !search ||
-      (e.name || '').toLowerCase().includes(searchLower) ||
-      (e.description || '').toLowerCase().includes(searchLower) ||
-      (e.city || '').toLowerCase().includes(searchLower)
-    const matchFilter =
-      activeFilter === 'all' ? true :
-      activeFilter === 'hh' ? !!e.hh_days :
-      activeFilter === 'music' ? !!e.live_music :
-      true
-    const matchTag = activeTag === 'All' ? true :
-      formatSubtypeLabel(e.entity_subtype) === activeTag ||
-      (Array.isArray(e.tags) ? e.tags : []).some(t => {
-        const cat = typeof t === 'object' ? (t.tag_category || '') : ''
-        if (['google_type','google_primary_type','google_secondary_type'].includes(cat)) return false
-        const name = typeof t === 'string' ? t : (t.tag_name || t.tag || '')
-        return name === activeTag
-      })
-    return matchSearch && matchFilter && matchTag
-  })
+  const filtered = entities
+    .filter(e => {
+      const matchSearch = !search ||
+        (e.name || '').toLowerCase().includes(searchLower) ||
+        (e.description || '').toLowerCase().includes(searchLower) ||
+        (e.city || '').toLowerCase().includes(searchLower)
+      const matchFilter =
+        activeFilter === 'all' ? true :
+        activeFilter === 'hh' ? !!e.hh_days :
+        activeFilter === 'music' ? !!e.live_music :
+        true
+      const matchTag = activeTag === 'All' ? true :
+        formatSubtypeLabel(e.entity_subtype) === activeTag ||
+        (Array.isArray(e.tags) ? e.tags : []).some(t => {
+          const cat = typeof t === 'object' ? (t.tag_category || '') : ''
+          if (['google_type','google_primary_type','google_secondary_type'].includes(cat)) return false
+          const name = typeof t === 'string' ? t : (t.tag_name || t.tag || '')
+          return name === activeTag
+        })
+      return matchSearch && matchFilter && matchTag
+    })
+    .sort((a, b) => {
+      if (activeSort === 'distance') return (a.distance_miles ?? 9999) - (b.distance_miles ?? 9999)
+      if (activeSort === 'rating') return (b.rating || 0) - (a.rating || 0)
+      return 0
+    })
 
   return (
     <div className="category-listings">
@@ -154,6 +164,23 @@ export default function CategoryListings() {
               {f === 'all' ? 'All' : f === 'hh' ? '🍺 Happy Hour' : '🎸 Live Music'}
             </button>
           ))}
+          <div className="sort-divider" />
+          <button
+            className={`filter-btn ${activeSort === 'distance' ? 'active' : ''}`}
+            onClick={async () => {
+              if (activeSort === 'distance') { setActiveSort('default'); return }
+              if (!userLocation) await requestLocation()
+              setActiveSort('distance')
+            }}
+          >
+            📍 Nearest
+          </button>
+          <button
+            className={`filter-btn ${activeSort === 'rating' ? 'active' : ''}`}
+            onClick={() => setActiveSort(s => s === 'rating' ? 'default' : 'rating')}
+          >
+            ⭐ Top Rated
+          </button>
         </div>
         {allTags.length > 1 && (
           <div className="listings-tags">

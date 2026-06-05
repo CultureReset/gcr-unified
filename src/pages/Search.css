@@ -254,3 +254,33 @@
   font-weight: 600;
   cursor: pointer;
 }
+
+.search-results-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.search-sort-btn {
+  padding: 5px 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 999px;
+  background: #fff;
+  color: #446072;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: .15s;
+}
+.search-sort-btn.active {
+  background: #e8f7fa;
+  border-color: #b9e7ef;
+  color: #0b6475;
+}
+
+.sr-dist {
+  color: #0b7a75;
+  font-weight: 600;
+}

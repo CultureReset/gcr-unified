@@ -177,3 +177,8 @@
   background: rgba(81, 207, 102, 0.3);
   transform: scale(1.1);
 }
+
+.swipe-dist {
+  opacity: 0.85;
+  font-weight: 600;
+}

@@ -2,10 +2,12 @@ import { useEffect, useRef, useState } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import Toast from '../components/Toast'
 import { API_BASE } from '../config'
+import { useApp } from '../context/AppContext'
 import './Search.css'
 
 export default function Search() {
   const navigate = useNavigate()
+  const { userLocation } = useApp()
   const [searchParams, setSearchParams] = useSearchParams()
   const query = searchParams.get('q') || ''
 
@@ -13,10 +15,11 @@ export default function Search() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [searchInput, setSearchInput] = useState(query)
+  const [sortByDist, setSortByDist] = useState(false)
   const [toast, setToast] = useState(null)
   const debounceRef = useRef(null)
 
-  // Run search whenever URL query param changes
+  // Run search whenever URL query param or location changes
   useEffect(() => {
     setSearchInput(query)
     if (!query.trim()) { setResults([]); setLoading(false); return }
@@ -25,10 +28,12 @@ export default function Search() {
       try {
         setLoading(true)
         setError(null)
+        const body = { query, limit: 100 }
+        if (userLocation) { body.lat = userLocation.lat; body.lng = userLocation.lng }
         const res = await fetch(`${API_BASE}/api/gcr/search`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ query, limit: 100 })
+          body: JSON.stringify(body)
         })
         if (!res.ok) throw new Error('Search failed')
         const data = await res.json()
@@ -40,7 +45,7 @@ export default function Search() {
       }
     }
     load()
-  }, [query])
+  }, [query, userLocation])
 
   // Debounced live search — fires 400ms after user stops typing
   const handleInputChange = (e) => {
@@ -122,14 +127,26 @@ export default function Search() {
         ) : (
           <>
             <div className="search-results-header">
-              {results.length} restaurant{results.length !== 1 ? 's' : ''}
-              {totalItems > 0 && ` · ${totalItems} menu item${totalItems !== 1 ? 's' : ''}`}
-              {' '}matching &ldquo;{query}&rdquo;
+              <span>
+                {results.length} result{results.length !== 1 ? 's' : ''}
+                {totalItems > 0 && ` · ${totalItems} item${totalItems !== 1 ? 's' : ''}`}
+                {' '}for &ldquo;{query}&rdquo;
+              </span>
+              {userLocation && (
+                <button
+                  className={`search-sort-btn ${sortByDist ? 'active' : ''}`}
+                  onClick={() => setSortByDist(s => !s)}
+                >
+                  📍 {sortByDist ? 'Nearest first' : 'Sort: Nearest'}
+                </button>
+              )}
             </div>
 
-            {results.map(biz => (
-              <SearchResultCard key={biz.slug} biz={biz} navigate={navigate} />
-            ))}
+            {[...results]
+              .sort((a, b) => sortByDist ? (a.distance_miles ?? 9999) - (b.distance_miles ?? 9999) : 0)
+              .map(biz => (
+                <SearchResultCard key={biz.slug} biz={biz} navigate={navigate} />
+              ))}
           </>
         )}
       </div>
@@ -166,6 +183,11 @@ function SearchResultCard({ biz, navigate }) {
             {biz.rating && <span>⭐ {Number(biz.rating).toFixed(1)}</span>}
             {biz.city && <span>📍 {biz.city}</span>}
             {biz.price_range && <span>{biz.price_range}</span>}
+            {biz.distance_miles != null && (
+              <span className="sr-dist">
+                {biz.distance_miles < 0.1 ? 'You are here' : biz.distance_miles < 10 ? `${biz.distance_miles.toFixed(1)} mi away` : `${Math.round(biz.distance_miles)} mi away`}
+              </span>
+            )}
           </div>
           {hasMatches && (
             <div className="sr-match-count">

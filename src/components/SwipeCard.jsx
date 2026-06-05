@@ -102,9 +102,14 @@ export default function SwipeCard({ item, onSwipe, onSave }) {
       <div className="swipe-card-content">
         <h3 className="swipe-card-title">{item.name || item.item_name}</h3>
 
-        {/* Location */}
-        {item.city && (
-          <p className="swipe-card-meta">📍 {item.city}, {item.state || 'AL'}</p>
+        {/* Location + distance */}
+        {(item.city || item.distance_miles != null) && (
+          <p className="swipe-card-meta">
+            📍 {[item.city, item.state || 'AL'].filter(Boolean).join(', ')}
+            {item.distance_miles != null && (
+              <span className="swipe-dist"> · {item.distance_miles < 0.1 ? 'Here' : item.distance_miles < 10 ? `${item.distance_miles.toFixed(1)} mi` : `${Math.round(item.distance_miles)} mi`} away</span>
+            )}
+          </p>
         )}
 
         {/* Rating */}

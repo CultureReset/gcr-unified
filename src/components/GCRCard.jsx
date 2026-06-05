@@ -100,12 +100,20 @@ function computeHoursLine(hours) {
 
 const STATUS_LABELS = { open: 'Open Now', opening: 'Opening Soon', closing: 'Closing Soon', closed: 'Closed' }
 
+function fmtDist(miles) {
+  if (miles == null) return null
+  if (miles < 0.1) return 'Here'
+  if (miles < 10) return `${miles.toFixed(1)} mi`
+  return `${Math.round(miles)} mi`
+}
+
 export default function GCRCard({ entity, category, onSave, savedSlugs }) {
   const navigate = useNavigate()
   const [showHH, setShowHH] = useState(false)
 
   if (!entity) return null
 
+  const distLabel = fmtDist(entity.distance_miles)
   const slug = entity.slug || entity.subdomain || entity.id || ''
   const name = entity.name || 'Business'
   const icon = entity.icon || entity.emoji || '📍'
@@ -254,6 +262,7 @@ export default function GCRCard({ entity, category, onSave, savedSlugs }) {
         )}
 
         {priceRange && <div className="gcr-badge-price">{priceRange}</div>}
+        {distLabel && <div className="gcr-badge-dist">📍 {distLabel}</div>}
       </div>
 
       {/* Body */}
@@ -326,8 +335,10 @@ export default function GCRCard({ entity, category, onSave, savedSlugs }) {
 
       {/* Bottom */}
       <div className="gcr-card-bottom">
-        {(fullAddr || location) && (
-          <div className="gcr-card-addr">📍 {fullAddr || location}</div>
+        {(fullAddr || location || distLabel) && (
+          <div className="gcr-card-addr">
+            📍 {fullAddr || location}{distLabel ? ` · ${distLabel} away` : ''}
+          </div>
         )}
         <div className="gcr-card-actions" onClick={e => e.stopPropagation()}>
           {isActivity ? (
