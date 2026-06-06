@@ -926,3 +926,20 @@
 .event-row-artist { font-size: 13px; color: #7c3aed; font-weight: 700; margin-bottom: 3px; }
 .event-row-time { font-size: 13px; color: var(--muted); font-weight: 600; }
 .event-row-cover { font-size: 12px; color: #15803d; font-weight: 700; margin-top: 4px; background: #f0fdf4; display: inline-block; padding: 2px 8px; border-radius: 999px; }
+
+.ai-summary { background: #f0f9ff; border-left: 3px solid #0ea5e9; border-radius: 8px; padding: 12px 16px; margin: 12px 0; font-size: 14px; color: #1a2b3c; line-height: 1.6; }
+.ai-review-summary { margin: 16px 0; }
+.ai-review-summary h3 { font-size: 14px; font-weight: 800; color: #7c3aed; margin-bottom: 6px; }
+.ai-review-summary p { font-size: 14px; color: var(--muted); line-height: 1.6; font-style: italic; }
+
+.amenities-section { margin: 16px 0; }
+.amenities-section h3 { font-size: 14px; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 10px; }
+.amenities-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+.amenity-item { font-size: 13px; color: #1a2b3c; font-weight: 600; display: flex; align-items: center; gap: 6px; padding: 6px 10px; background: #f8fafc; border-radius: 8px; border: 1px solid var(--border); }
+
+.price-level-row { margin: 12px 0; display: flex; align-items: center; gap: 8px; }
+.price-level-row h3 { font-size: 14px; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin: 0; }
+.price-range-text { font-size: 13px; color: var(--muted); }
+
+.google-maps-link { display: inline-flex; align-items: center; gap: 6px; margin: 12px 0; padding: 8px 14px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 20px; font-size: 13px; font-weight: 700; color: #15803d; text-decoration: none; }
+.google-maps-link:hover { background: #dcfce7; }

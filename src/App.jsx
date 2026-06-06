@@ -28,6 +28,7 @@ import ReviewUpload from './pages/ReviewUpload'
 import BottomNav from './components/BottomNav'
 import InstallBanner from './components/InstallBanner'
 import GCRHeader from './components/GCRHeader'
+import AiChat from './components/AiChat'
 
 function RequireAuth({ children }) {
   const { userId } = useApp()
@@ -123,6 +124,7 @@ function AppRoutes() {
       </Routes>
       {!hideNav && <BottomNav />}
       {!hideNav && <InstallBanner />}
+      {!hideNav && <AiChat />}
     </div>
   )
 }

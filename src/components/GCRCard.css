@@ -283,3 +283,5 @@
   .gcr-card-name { font-size: 15px; }
   .gcr-btn { font-size: 11px; padding: 7px 10px; }
 }
+.rating-sep { color: var(--muted); }
+.price-level { font-size: 12px; letter-spacing: 1px; }

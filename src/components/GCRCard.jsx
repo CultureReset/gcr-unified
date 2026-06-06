@@ -183,14 +183,29 @@ export default function GCRCard({ entity, category, onSave, savedSlugs }) {
   })
 
   // Boolean field fallbacks
-  if (entity.waterfront)          addChip('Waterfront',     'vibe',    '🌊')
-  if (entity.live_music)          addChip('Live Music',     'vibe',    '🎸')
-  if (entity.outdoor_seating)     addChip('Outdoor Seating','vibe',    '🌿')
-  if (entity.delivery)            addChip('Delivery',       'service', '🛵')
-  if (entity.takeout)             addChip('Takeout',        'service', '🥡')
-  if (entity.dine_in)             addChip('Dine-in',        'service', '🍽️')
-  if (entity.wheelchair_accessible) addChip('Accessible',  'service', '♿')
-  if (entity.good_for_children)   addChip('Kid Friendly',  'service', '👶')
+  if (entity.waterfront)                        addChip('Waterfront',        'vibe',    '🌊')
+  if (entity.live_music)                        addChip('Live Music',        'vibe',    '🎸')
+  if (entity.outdoor_seating)                   addChip('Outdoor Seating',   'vibe',    '🌿')
+  if (entity.good_for_watching_sports)          addChip('Sports Bar',        'vibe',    '📺')
+  if (entity.allows_dogs)                       addChip('Dog Friendly',      'vibe',    '🐕')
+  if (entity.delivery)                          addChip('Delivery',          'service', '🛵')
+  if (entity.takeout)                           addChip('Takeout',           'service', '🥡')
+  if (entity.dine_in)                           addChip('Dine-in',           'service', '🍽️')
+  if (entity.curbside_pickup)                   addChip('Curbside',          'service', '🚗')
+  if (entity.reservable)                        addChip('Reservations',      'service', '📅')
+  if (entity.wheelchair_accessible_entrance || entity.wheelchair_accessible) addChip('Accessible', 'service', '♿')
+  if (entity.good_for_children)                 addChip('Kid Friendly',      'service', '👶')
+  if (entity.good_for_groups)                   addChip('Good for Groups',   'service', '👥')
+  if (entity.serves_breakfast)                  addChip('Breakfast',         'food',    '🍳')
+  if (entity.serves_brunch)                     addChip('Brunch',            'food',    '🥂')
+  if (entity.serves_lunch)                      addChip('Lunch',             'food',    '🥗')
+  if (entity.serves_dinner)                     addChip('Dinner',            'food',    '🍷')
+  if (entity.serves_vegetarian)                 addChip('Vegetarian',        'food',    '🥦')
+  if (entity.serves_dessert)                    addChip('Dessert',           'food',    '🍰')
+  if (entity.serves_coffee)                     addChip('Coffee',            'drink',   '☕')
+  if (entity.serves_beer)                       addChip('Beer',              'drink',   '🍺')
+  if (entity.serves_wine)                       addChip('Wine',              'drink',   '🍷')
+  if (entity.serves_cocktails)                  addChip('Cocktails',         'drink',   '🍹')
 
   // rawTags kept for live_music detection & image badges
   const rawTags = (entity.tags || [])
@@ -214,6 +229,7 @@ export default function GCRCard({ entity, category, onSave, savedSlugs }) {
   const pFrom = entity.price_from
   const pUnit = entity.price_unit || ''
   const priceRange = entity.price_range || ''
+  const priceLevel = entity.price_level ? '💰'.repeat(Math.min(entity.price_level, 4)) : null
 
   // Profile URL
   const profileUrl = `/business/${slug}`
@@ -274,10 +290,11 @@ export default function GCRCard({ entity, category, onSave, savedSlugs }) {
 
         {desc && <div className="gcr-card-desc">{desc}</div>}
 
-        {rating && (
+        {(rating || priceLevel) && (
           <div className="gcr-card-rating">
-            ⭐ {Number(rating).toFixed(1)}
-            {reviews > 0 && <span className="review-count">({reviews})</span>}
+            {rating && <>⭐ {Number(rating).toFixed(1)}{reviews > 0 && <span className="review-count">({reviews})</span>}</>}
+            {rating && priceLevel && <span className="rating-sep"> · </span>}
+            {priceLevel && <span className="price-level">{priceLevel}</span>}
           </div>
         )}
 

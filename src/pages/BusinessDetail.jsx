@@ -330,6 +330,75 @@ export default function RestaurantDetail() {
             <section className="content-section">
               <h2>About</h2>
               {business.description && <p>{business.description}</p>}
+              {!business.description && business.editorial_summary && <p>{business.editorial_summary}</p>}
+              {business.ai_overview && (
+                <div className="ai-summary">
+                  <p>{business.ai_overview}</p>
+                </div>
+              )}
+              {business.ai_review_summary && (
+                <div className="ai-review-summary">
+                  <h3>What Visitors Say</h3>
+                  <p>{business.ai_review_summary}</p>
+                </div>
+              )}
+
+              {/* Amenities grid */}
+              {(() => {
+                const amenities = [
+                  business.dine_in           && { icon: '🍽️', label: 'Dine-in' },
+                  business.takeout           && { icon: '🥡', label: 'Takeout' },
+                  business.delivery          && { icon: '🛵', label: 'Delivery' },
+                  business.curbside_pickup   && { icon: '🚗', label: 'Curbside Pickup' },
+                  business.reservable        && { icon: '📅', label: 'Reservations' },
+                  business.outdoor_seating   && { icon: '🌿', label: 'Outdoor Seating' },
+                  business.live_music        && { icon: '🎸', label: 'Live Music' },
+                  business.good_for_groups   && { icon: '👥', label: 'Good for Groups' },
+                  business.good_for_children && { icon: '👶', label: 'Kid Friendly' },
+                  business.allows_dogs       && { icon: '🐕', label: 'Dog Friendly' },
+                  business.good_for_watching_sports && { icon: '📺', label: 'Sports Bar' },
+                  business.serves_breakfast  && { icon: '🍳', label: 'Breakfast' },
+                  business.serves_brunch     && { icon: '🥂', label: 'Brunch' },
+                  business.serves_lunch      && { icon: '🥗', label: 'Lunch' },
+                  business.serves_dinner     && { icon: '🍷', label: 'Dinner' },
+                  business.serves_beer       && { icon: '🍺', label: 'Beer' },
+                  business.serves_wine       && { icon: '🍷', label: 'Wine' },
+                  business.serves_cocktails  && { icon: '🍹', label: 'Cocktails' },
+                  business.serves_coffee     && { icon: '☕', label: 'Coffee' },
+                  business.serves_dessert    && { icon: '🍰', label: 'Dessert' },
+                  business.serves_vegetarian && { icon: '🥦', label: 'Vegetarian Options' },
+                  business.wheelchair_accessible_entrance && { icon: '♿', label: 'Accessible Entrance' },
+                  business.wheelchair_accessible_parking  && { icon: '♿', label: 'Accessible Parking' },
+                  business.wheelchair_accessible_restroom && { icon: '♿', label: 'Accessible Restroom' },
+                ].filter(Boolean)
+                return amenities.length > 0 ? (
+                  <div className="amenities-section">
+                    <h3>Amenities & Features</h3>
+                    <div className="amenities-grid">
+                      {amenities.map((a, i) => (
+                        <div key={i} className="amenity-item">{a.icon} {a.label}</div>
+                      ))}
+                    </div>
+                  </div>
+                ) : null
+              })()}
+
+              {business.price_level && (
+                <div className="price-level-row">
+                  <h3>Price Level</h3>
+                  <span>{'💰'.repeat(Math.min(business.price_level, 4))}</span>
+                  {business.price_range_low && business.price_range_high && (
+                    <span className="price-range-text"> (${business.price_range_low}–${business.price_range_high})</span>
+                  )}
+                </div>
+              )}
+
+              {business.google_maps_uri && (
+                <a href={business.google_maps_uri} target="_blank" rel="noopener noreferrer" className="google-maps-link" onClick={e => e.stopPropagation()}>
+                  🗺️ View on Google Maps
+                </a>
+              )}
+
               {tags.length > 0 && (
                 <div>
                   <h3>Categories</h3>
