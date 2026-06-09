@@ -29,6 +29,15 @@ export default function Auth() {
     }
   }, [step])
 
+  // Pre-fill phone from ?phone= param (set by inbound SMS link)
+  useEffect(() => {
+    const p = searchParams.get('phone')
+    if (p) {
+      setPhone(p.replace(/^\+1/, ''))
+      setAuthMethod('phone')
+    }
+  }, [])
+
   useEffect(() => {
     const verified = searchParams.get('verified')
     const inviteToken = searchParams.get('invite')
@@ -147,7 +156,7 @@ export default function Auth() {
       if (!r.ok) { setError(d.error || 'Invalid code — try again.'); return }
       if (d.access_token) {
         localStorage.setItem('gcr_access_token', d.access_token)
-        localStorage.setItem('gcr_user_id', d.tourist.id)
+        localStorage.setItem('gcr_user_id', d.tourist.user_id)
       }
       const complete = d.tourist?.setup_complete
       navigate(complete ? (returnTo || '/home') : '/setup/name', { replace: true })
