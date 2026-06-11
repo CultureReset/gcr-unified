@@ -1,23 +1,24 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import Toast from '../components/Toast'
 import { SkeletonGrid } from '../components/SkeletonLoader'
 import { CATEGORIES } from '../data/categories'
-import { fetchBusinesses, fetchLiveNow, saveItem, unsaveItem } from '../services/gcrApi'
+import { fetchBusinesses, fetchLiveNow } from '../services/gcrApi'
 import * as locationService from '../services/locationService'
+import { findSavedPlace, getSavedSlugSet } from '../utils/savedPlaces'
 import './Home.css'
 
 export default function Home() {
   const navigate = useNavigate()
-  const { tourist, savedPlaces, itinerary, seenSlugs, locationSharingEnabled, enableLocationSharing, userId } = useApp()
+  const { tourist, savedPlaces, addSavedPlace, removeSavedPlace, itinerary, seenSlugs, locationSharingEnabled, enableLocationSharing, userId } = useApp()
   const [businesses, setBusinesses] = useState([])
   const [businessesLoading, setBusinessesLoading] = useState(true)
   const [liveNow, setLiveNow] = useState([])
   const [showLocationBanner, setShowLocationBanner] = useState(false)
   const [requestingPermission, setRequestingPermission] = useState(false)
   const [toast, setToast] = useState(null)
-  const [savedSlugs, setSavedSlugs] = useState(new Set())
+  const savedSlugs = useMemo(() => getSavedSlugSet(savedPlaces), [savedPlaces])
 
   useEffect(() => {
     let cancelled = false
@@ -77,31 +78,20 @@ export default function Home() {
     }
   }
 
-  const handleSaveItem = async (e, slug) => {
-    e.stopPropagation()
-    if (!userId) {
-      navigate('/auth')
-      return
-    }
+  const handleSaveItem = async (event, business) => {
+    event.stopPropagation()
+    const savedPlace = findSavedPlace(savedPlaces, business)
 
     try {
-      const isSaved = savedSlugs.has(slug)
-
-      if (isSaved) {
-        await unsaveItem(slug)
-        setSavedSlugs(prev => {
-          const next = new Set(prev)
-          next.delete(slug)
-          return next
-        })
+      if (savedPlace) {
+        await removeSavedPlace(savedPlace)
         setToast({ message: 'Removed from saved', type: 'info' })
       } else {
-        await saveItem(slug)
-        setSavedSlugs(prev => new Set(prev).add(slug))
+        await addSavedPlace(business)
         setToast({ message: 'Saved!', type: 'success' })
       }
-    } catch (err) {
-      setToast({ message: err.message || 'Failed to save', type: 'error' })
+    } catch (error) {
+      setToast({ message: error.message || 'Failed to update saved places', type: 'error' })
     }
   }
 
@@ -214,7 +204,7 @@ export default function Home() {
                 </button>
                 <button
                   className={`live-card-save ${savedSlugs.has(b.slug) ? 'saved' : ''}`}
-                  onClick={(e) => handleSaveItem(e, b.slug)}
+                  onClick={(e) => handleSaveItem(e, b)}
                   title={savedSlugs.has(b.slug) ? 'Remove from saved' : 'Save this item'}
                 >
                   {savedSlugs.has(b.slug) ? '❤️' : '🤍'}

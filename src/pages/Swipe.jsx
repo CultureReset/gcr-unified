@@ -2,6 +2,8 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import TinderCard from 'react-tinder-card'
 import { useApp } from '../context/AppContext'
+import Toast from '../components/Toast'
+import { findSavedPlace } from '../utils/savedPlaces'
 import { CATEGORIES } from '../data/categories'
 import { fetchBusinesses, calcDistance, formatDistance, fetchPreferences, personalizeAndSort } from '../services/gcrApi'
 import { API_BASE } from '../config'
@@ -59,6 +61,7 @@ export default function Swipe() {
   const [loading, setLoading] = useState(true)
   const [deckReady, setDeckReady] = useState(false)
   const [error, setError] = useState(null)
+  const [toast, setToast] = useState(null)
   const [lastAction, setLastAction] = useState(null)
   const [likedCount, setLikedCount] = useState(0)
   const [view, setView] = useState('swipe')
@@ -212,7 +215,9 @@ export default function Swipe() {
 
   function onSwipe(direction, business) {
     if (direction === 'right') {
-      addSavedPlace(resolveReal(business))
+      addSavedPlace(resolveReal(business)).catch(error => {
+        setToast({ message: error.message || 'Failed to save place', type: 'error' })
+      })
       setLikedCount(p => p + 1)
       flash('like')
       recordSwipe(business, 'like')
@@ -234,7 +239,9 @@ export default function Swipe() {
   function pressLike() {
     if (cards.length === 0) return
     const top = cards[cards.length - 1]
-    addSavedPlace(resolveReal(top))
+    addSavedPlace(resolveReal(top)).catch(error => {
+      setToast({ message: error.message || 'Failed to save place', type: 'error' })
+    })
     recordSwipe(top, 'like')
     setLikedCount(p => p + 1)
     setCards(prev => refillDeck(prev.slice(0, -1)))
@@ -463,7 +470,8 @@ export default function Swipe() {
             </div>
           ) : (
             businesses.map(b => {
-              const saved = savedPlaces.some(p => p.id === b.id)
+              const savedPlace = findSavedPlace(savedPlaces, b)
+              const saved = !!savedPlace
               return (
                 <div key={b.id} className="list-card" onClick={() => navigate(`/business/${b.slug}`)}>
                   <div className="list-card-img" style={b.hero_image_url ? undefined : {background:'linear-gradient(135deg,#1a3a5c,#0ea5e9)'}}>
@@ -490,7 +498,15 @@ export default function Swipe() {
                       <button
                         className={`list-save-btn ${saved ? 'saved' : ''}`}
                         onPointerDown={e => e.stopPropagation()}
-                        onClick={e => { e.stopPropagation(); saved ? removeSavedPlace(b.id) : addSavedPlace(b) }}
+                        onClick={async e => {
+                          e.stopPropagation()
+                          try {
+                            if (savedPlace) await removeSavedPlace(savedPlace)
+                            else await addSavedPlace(b)
+                          } catch (error) {
+                            setToast({ message: error.message || 'Failed to update saved places', type: 'error' })
+                          }
+                        }}
                       >
                         {saved ? '♥' : '♡'}
                       </button>
@@ -509,6 +525,11 @@ export default function Swipe() {
           )}
         </div>
       )}
+      <Toast
+        message={toast?.message}
+        type={toast?.type}
+        onClose={() => setToast(null)}
+      />
     </div>
   )
 }

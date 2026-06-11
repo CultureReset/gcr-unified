@@ -1,8 +1,11 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import GCRCard from '../components/GCRCard'
+import Toast from '../components/Toast'
+import { useApp } from '../context/AppContext'
 import { API_BASE } from '../config'
 import { subtypeToCategory, formatSubtypeLabel } from '../categoryMap'
+import { findSavedPlace, getSavedSlugSet } from '../utils/savedPlaces'
 import './CategoryPage.css'
 
 const CATEGORY_CONFIG = {
@@ -39,6 +42,7 @@ export default function CategoryPage() {
   const location = useLocation()
   const navigate = useNavigate()
   const category = location.pathname.slice(1) // Remove leading slash
+  const { savedPlaces, addSavedPlace, removeSavedPlace } = useApp()
   const [entities, setEntities] = useState([])
   const [allTags, setAllTags] = useState([])
   const [selectedTag, setSelectedTag] = useState(null)
@@ -46,15 +50,22 @@ export default function CategoryPage() {
   const [error, setError] = useState(null)
   const [offset, setOffset] = useState(0)
   const [hasMore, setHasMore] = useState(true)
-  const [savedSlugs, setSavedSlugs] = useState(new Set())
+  const [toast, setToast] = useState(null)
+  const savedSlugs = useMemo(() => getSavedSlugSet(savedPlaces), [savedPlaces])
 
-  const handleSave = (entity) => {
-    const slug = entity.slug || entity.id
-    setSavedSlugs(prev => {
-      const next = new Set(prev)
-      next.has(slug) ? next.delete(slug) : next.add(slug)
-      return next
-    })
+  const handleSave = async (entity) => {
+    const savedPlace = findSavedPlace(savedPlaces, entity)
+    try {
+      if (savedPlace) {
+        await removeSavedPlace(savedPlace)
+        setToast({ message: 'Removed from saved', type: 'info' })
+      } else {
+        await addSavedPlace(entity)
+        setToast({ message: 'Saved!', type: 'success' })
+      }
+    } catch (error) {
+      setToast({ message: error.message || 'Failed to update saved places', type: 'error' })
+    }
   }
 
   const config = CATEGORY_CONFIG[category]
@@ -223,6 +234,11 @@ export default function CategoryPage() {
           ))
         )}
       </div>
+      <Toast
+        message={toast?.message}
+        type={toast?.type}
+        onClose={() => setToast(null)}
+      />
     </div>
   )
 }

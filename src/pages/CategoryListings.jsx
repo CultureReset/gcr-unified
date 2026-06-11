@@ -1,9 +1,11 @@
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import GCRCard from '../components/GCRCard'
+import Toast from '../components/Toast'
 import { API_BASE } from '../config'
 import { subtypeToCategory, formatSubtypeLabel } from '../categoryMap'
 import { useApp } from '../context/AppContext'
+import { findSavedPlace, getSavedSlugSet } from '../utils/savedPlaces'
 import './CategoryListings.css'
 
 const CATEGORY_META = {
@@ -33,11 +35,12 @@ const TYPE_MAP = {
 export default function CategoryListings() {
   const { category } = useParams()
   const navigate = useNavigate()
-  const { userLocation, requestLocation } = useApp()
+  const { userLocation, requestLocation, savedPlaces, addSavedPlace, removeSavedPlace } = useApp()
   const [entities, setEntities] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  const [savedSlugs, setSavedSlugs] = useState(new Set())
+  const [toast, setToast] = useState(null)
+  const savedSlugs = useMemo(() => getSavedSlugSet(savedPlaces), [savedPlaces])
   const [search, setSearch] = useState('')
   const [activeFilter, setActiveFilter] = useState('all')
   const [activeSort, setActiveSort] = useState('default')
@@ -97,13 +100,19 @@ export default function CategoryListings() {
     loadEntities()
   }, [category, userLocation])
 
-  const handleSave = (entity) => {
-    const slug = entity.slug || entity.id
-    setSavedSlugs(prev => {
-      const next = new Set(prev)
-      next.has(slug) ? next.delete(slug) : next.add(slug)
-      return next
-    })
+  const handleSave = async (entity) => {
+    const savedPlace = findSavedPlace(savedPlaces, entity)
+    try {
+      if (savedPlace) {
+        await removeSavedPlace(savedPlace)
+        setToast({ message: 'Removed from saved', type: 'info' })
+      } else {
+        await addSavedPlace(entity)
+        setToast({ message: 'Saved!', type: 'success' })
+      }
+    } catch (error) {
+      setToast({ message: error.message || 'Failed to update saved places', type: 'error' })
+    }
   }
 
   const searchLower = search.toLowerCase()
@@ -224,6 +233,11 @@ export default function CategoryListings() {
           ))}
         </div>
       )}
+      <Toast
+        message={toast?.message}
+        type={toast?.type}
+        onClose={() => setToast(null)}
+      />
     </div>
   )
 }
