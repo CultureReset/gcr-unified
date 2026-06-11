@@ -565,28 +565,51 @@ export default function RestaurantDetail() {
               {events.length === 0 ? (
                 <p className="no-data">No upcoming events</p>
               ) : (
-                <div className="events-list">
-                  {events.map((ev, i) => {
-                    const evDate = ev.event_date ? new Date(ev.event_date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) : null
-                    return (
-                      <div key={ev.id || i} className="event-row">
-                        <div className="event-row-date">{evDate || (ev.recurring ? ev.day_of_week : 'Ongoing')}</div>
-                        <div className="event-row-info">
-                          <div className="event-row-name">{ev.event_name || ev.name}</div>
-                          {ev.artist_name && <div className="event-row-artist">🎤 {ev.artist_name}</div>}
-                          {(ev.start_time || ev.end_time) && (
-                            <div className="event-row-time">
-                              {formatTime(ev.start_time)}{ev.end_time ? ` – ${formatTime(ev.end_time)}` : ''}
-                            </div>
-                          )}
-                          {ev.cover_charge != null && ev.cover_charge > 0 && (
-                            <div className="event-row-cover">Cover: ${ev.cover_charge}</div>
-                          )}
-                        </div>
+                <>
+                  {/* Unique artist images — deduplicated by image_url */}
+                  {(() => {
+                    const seen = new Set()
+                    const artists = events.filter(ev => {
+                      if (!ev.image_url) return false
+                      if (seen.has(ev.image_url)) return false
+                      seen.add(ev.image_url)
+                      return true
+                    })
+                    return artists.length > 0 ? (
+                      <div className="artist-grid">
+                        {artists.map(ev => (
+                          <div key={ev.image_url} className="artist-card">
+                            <img src={ev.image_url} alt={ev.artist_name || ev.event_name} className="artist-card-img" />
+                            {ev.artist_name && <div className="artist-card-name">{ev.artist_name}</div>}
+                          </div>
+                        ))}
                       </div>
-                    )
-                  })}
-                </div>
+                    ) : null
+                  })()}
+
+                  <div className="events-list">
+                    {events.map((ev, i) => {
+                      const evDate = ev.event_date ? new Date(ev.event_date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) : null
+                      return (
+                        <div key={ev.id || i} className="event-row">
+                          <div className="event-row-date">{evDate || (ev.recurring ? ev.day_of_week : 'Ongoing')}</div>
+                          <div className="event-row-info">
+                            <div className="event-row-name">{ev.event_name || ev.name}</div>
+                            {ev.artist_name && <div className="event-row-artist">🎤 {ev.artist_name}</div>}
+                            {(ev.start_time || ev.end_time) && (
+                              <div className="event-row-time">
+                                {formatTime(ev.start_time)}{ev.end_time ? ` – ${formatTime(ev.end_time)}` : ''}
+                              </div>
+                            )}
+                            {ev.cover_charge != null && ev.cover_charge > 0 && (
+                              <div className="event-row-cover">Cover: ${ev.cover_charge}</div>
+                            )}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </>
               )}
             </section>
           )}
