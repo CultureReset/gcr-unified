@@ -247,6 +247,8 @@
 .ct-events      { background: linear-gradient(135deg,#6c3483,#5b2c6f); }
 .ct-thingstodo  { background: linear-gradient(135deg,#1a6496,#134f78); }
 .ct-other       { background: linear-gradient(135deg,#2e4057,#1a2d44); }
+.ct-nightlife   { background: linear-gradient(135deg,#4a1a6e,#2d0f45); }
+.ct-wellness    { background: linear-gradient(135deg,#1a7a4a,#0f5533); }
 .ct-services    { background: linear-gradient(135deg,#6b4f12,#4a3508); }
 .ct-feed        { background: linear-gradient(135deg,#1a7a82,#0f5560); }
 

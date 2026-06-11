@@ -53,7 +53,7 @@ function AppRoutes() {
     function onUnauth() {
       logout()
       const publicPaths = ['/', '/auth', '/reset', '/join', '/privacy', '/terms']
-      const publicPrefixes = ['/business/', '/category/', '/restaurants', '/coffee', '/happy-hours', '/things-to-do', '/services', '/public-spots', '/feed', '/shopping', '/staying', '/events', '/swipe/', '/search']
+      const publicPrefixes = ['/business/', '/category/', '/restaurants', '/coffee', '/happy-hours', '/things-to-do', '/services', '/public-spots', '/feed', '/shopping', '/staying', '/events', '/swipe/', '/search', '/nightlife', '/wellness']
       const isPublic = publicPaths.includes(location.pathname) || publicPrefixes.some(p => location.pathname.startsWith(p))
       if (!isPublic) {
         navigate('/auth', { replace: true, state: { from: location.pathname + location.search } })
@@ -119,6 +119,8 @@ function AppRoutes() {
         <Route path="/feed" element={<CategoryPage />} />
         <Route path="/shopping" element={<CategoryPage />} />
         <Route path="/staying" element={<CategoryPage />} />
+        <Route path="/nightlife" element={<CategoryPage />} />
+        <Route path="/wellness" element={<CategoryPage />} />
 
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>

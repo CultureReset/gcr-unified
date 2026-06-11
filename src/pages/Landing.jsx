@@ -13,6 +13,8 @@ const CATEGORIES = [
   { key: 'events',        label: 'Events',           emoji: '🎉', desc: 'Live music, concerts & festivals',             cls: 'ct-events',      path: '/events' },
   { key: 'things-to-do',  label: 'Things To Do',    emoji: '🎯', desc: 'Fishing, boat rentals, tours & fun',           cls: 'ct-thingstodo',  path: '/things-to-do' },
   { key: 'public-spots',  label: 'Public Spots',    emoji: '✨', desc: 'Parks, beaches, piers & more',                 cls: 'ct-other',       path: '/public-spots' },
+  { key: 'nightlife',     label: 'Bars & Nightlife', emoji: '🍸', desc: 'Bars, breweries, clubs & nightlife',           cls: 'ct-nightlife',   path: '/nightlife' },
+  { key: 'wellness',      label: 'Health & Wellness',emoji: '💆', desc: 'Spas, salons, gyms & wellness',               cls: 'ct-wellness',    path: '/wellness' },
   { key: 'services',      label: 'Services',         emoji: '🛠️', desc: 'Local pros, repairs & home services',         cls: 'ct-services',    path: '/services' },
   { key: 'feed',          label: 'Live Feed',        emoji: '📡', desc: 'Photos, reviews & what\'s happening',         cls: 'ct-feed',        path: '/feed' },
 ]
