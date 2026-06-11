@@ -14,6 +14,8 @@ const CATEGORIES = [
   { id: 'feed', label: 'Live Feed', emoji: '📡' },
   { id: 'shopping', label: 'Shopping', emoji: '🛍️' },
   { id: 'staying', label: 'Staying', emoji: '🏨' },
+  { id: 'nightlife', label: 'Bars & Nightlife', emoji: '🍸' },
+  { id: 'wellness', label: 'Health & Wellness', emoji: '💆' },
 ]
 
 export default function GCRHeader() {
