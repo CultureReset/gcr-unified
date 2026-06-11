@@ -50,6 +50,11 @@ html, body {
   min-height: 100dvh;
   position: relative;
   background: #fff;
+  padding-top: 110px;
+}
+
+.app-shell.no-header {
+  padding-top: 0;
 }
 
 button { cursor: pointer; border: none; outline: none; font-family: inherit; }

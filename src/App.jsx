@@ -83,7 +83,7 @@ function AppRoutes() {
   }, [location.pathname])
 
   return (
-    <div className="app-shell">
+    <div className={`app-shell${hideHeader ? ' no-header' : ''}`}>
       {!hideHeader && <GCRHeader />}
       <Routes>
         <Route path="/" element={<Landing />} />

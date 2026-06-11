@@ -1,7 +1,9 @@
 .gcr-header {
   background: linear-gradient(180deg, #87CEEB 0%, #B0E0E6 20%, #87CEFA 40%, #4A90E2 80%, #3a7bd5 100%);
-  position: sticky;
+  position: fixed;
   top: 0;
+  left: 0;
+  right: 0;
   z-index: 1000;
   box-shadow: 0 2px 16px rgba(0,0,0,.25);
   padding: 10px 0 0;
