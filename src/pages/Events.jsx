@@ -23,12 +23,12 @@ function inferEventType(name = '', desc = '') {
   const s = (name + ' ' + desc).toLowerCase()
   if (s.includes('karaoke')) return 'Karaoke'
   if (s.includes('trivia')) return 'Trivia'
-  if (s.includes('open mic')) return 'Open Mic'
   if (s.includes('bingo')) return 'Bingo'
+  if (s.includes('open mic') || s.includes('open jam') || s.includes('open mic/jam')) return 'Open Mic'
   if (s.includes('dj') || s.includes(' dj')) return 'DJ Night'
   if (s.includes('comedy')) return 'Comedy'
   if (s.includes('music') || s.includes('band') || s.includes('concert') || s.includes('live')) return 'Live Music'
-  return 'Event'
+  return 'Live Music'
 }
 
 const EVENT_TYPE_EMOJI = {
@@ -36,13 +36,13 @@ const EVENT_TYPE_EMOJI = {
   'Karaoke': '🎤',
   'Trivia': '🎯',
   'Open Mic': '🎙️',
-  'Bingo': '🎱',
+  'Bingo': '🎴',
   'DJ Night': '🎧',
   'Comedy': '😂',
   'Event': '🎉',
 }
 
-const TYPE_FILTERS = ['All', 'Live Music', 'Karaoke', 'Trivia', 'Open Mic', 'DJ Night']
+const TYPE_FILTERS = ['All', 'Live Music', 'Karaoke', 'Trivia', 'Open Mic', 'Bingo', 'DJ Night', 'Comedy']
 
 function localDateStr(d) {
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
@@ -181,14 +181,19 @@ export default function Events() {
       const isRecurring = ev.recurring
 
       let dateMatch = false
+      const todayDow   = new Date().getDay()
+      const tomorrowDow = new Date(tomorrowStr + 'T12:00:00').getDay()
+      const weekendDows = weekendDates.map(ds => new Date(ds + 'T12:00:00').getDay())
+
       if (dateFilter === 'today') {
-        dateMatch = d === todayStr || (isRecurring && ev.day_of_week && new Date().toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase() === (ev.day_of_week || '').toLowerCase())
+        dateMatch = d === todayStr || (isRecurring && ev.day_of_week === todayDow)
       } else if (dateFilter === 'tomorrow') {
-        dateMatch = d === tomorrowStr || (isRecurring && ev.day_of_week && new Date(tomorrowStr + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase() === (ev.day_of_week || '').toLowerCase())
+        dateMatch = d === tomorrowStr || (isRecurring && ev.day_of_week === tomorrowDow)
       } else if (dateFilter === 'weekend') {
-        dateMatch = weekendDates.includes(d) || isRecurring
+        dateMatch = weekendDates.includes(d) || (isRecurring && weekendDows.includes(ev.day_of_week))
       } else if (dateFilter === 'custom' && customDate) {
-        dateMatch = d === customDate
+        const customDow = new Date(customDate + 'T12:00:00').getDay()
+        dateMatch = d === customDate || (isRecurring && ev.day_of_week === customDow)
       } else if (dateFilter === 'all') {
         dateMatch = true
       }
