@@ -119,6 +119,8 @@ export const SUBTYPE_TO_CATEGORY = {
   travel_agency:'services',
   // --- shopping (additional) ---
   farmers_market:'shopping', cell_phone_store:'shopping', toy_store:'shopping',
+  market:'shopping', food_store:'shopping', building_materials_store:'shopping',
+  'retail-liquor-store':'shopping', garden_center:'shopping',
   // --- staying ---
   hotel:'staying', resort:'staying', condo:'staying', vacation_rental:'staying',
   motel:'staying', bed_and_breakfast:'staying', rv_park:'staying',
