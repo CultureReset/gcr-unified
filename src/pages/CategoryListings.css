@@ -46,8 +46,8 @@
   flex-direction: column;
   gap: 10px;
   position: sticky;
-  top: 0;
-  z-index: 10;
+  top: var(--gcr-header-h, 156px);
+  z-index: 50;
   backdrop-filter: blur(8px);
 }
 .listings-search {

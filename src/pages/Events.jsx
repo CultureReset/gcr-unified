@@ -19,30 +19,52 @@ function fmtDate(dateStr) {
   return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
 }
 
-function inferEventType(name = '', desc = '') {
-  const s = (name + ' ' + desc).toLowerCase()
-  if (s.includes('karaoke')) return 'Karaoke'
-  if (s.includes('trivia')) return 'Trivia'
-  if (s.includes('bingo')) return 'Bingo'
-  if (s.includes('open mic') || s.includes('open jam') || s.includes('open mic/jam')) return 'Open Mic'
-  if (s.includes('dj') || s.includes(' dj')) return 'DJ Night'
-  if (s.includes('comedy')) return 'Comedy'
-  if (s.includes('music') || s.includes('band') || s.includes('concert') || s.includes('live')) return 'Live Music'
-  return 'Live Music'
+const EVENT_TYPE_MAP = {
+  live_music:    { label: 'Live Music',      emoji: '🎸' },
+  open_mic:      { label: 'Open Mic',        emoji: '🎙️' },
+  dj:            { label: 'DJ Night',        emoji: '🎧' },
+  karaoke:       { label: 'Karaoke',         emoji: '🎤' },
+  trivia:        { label: 'Trivia',          emoji: '🎯' },
+  bingo:         { label: 'Bingo',           emoji: '🎴' },
+  comedy:        { label: 'Comedy',          emoji: '😂' },
+  drag_show:     { label: 'Drag Show',       emoji: '💃' },
+  open_bar:      { label: 'Open Bar',        emoji: '🍸' },
+  happy_hour:    { label: 'Happy Hour',      emoji: '🍺' },
+  food_special:  { label: 'Food Special',    emoji: '🍽️' },
+  wine_tasting:  { label: 'Wine Tasting',    emoji: '🍷' },
+  beer_tasting:  { label: 'Beer Tasting',    emoji: '🍻' },
+  brunch_event:  { label: 'Brunch',          emoji: '🥂' },
+  kids_event:    { label: 'Kids Event',      emoji: '🧒' },
+  holiday:       { label: 'Holiday',         emoji: '🎉' },
+  festival:      { label: 'Festival',        emoji: '🎪' },
+  fundraiser:    { label: 'Fundraiser',      emoji: '❤️' },
+  tournament:    { label: 'Tournament',      emoji: '🏆' },
+  art_show:      { label: 'Art Show',        emoji: '🎨' },
+  market:        { label: 'Market',          emoji: '🛍️' },
+  special_event: { label: 'Special Event',   emoji: '⭐' },
+  other:         { label: 'Event',           emoji: '📅' },
 }
 
-const EVENT_TYPE_EMOJI = {
-  'Live Music': '🎸',
-  'Karaoke': '🎤',
-  'Trivia': '🎯',
-  'Open Mic': '🎙️',
-  'Bingo': '🎴',
-  'DJ Night': '🎧',
-  'Comedy': '😂',
-  'Event': '🎉',
+function getEventType(event) {
+  if (event.event_type && EVENT_TYPE_MAP[event.event_type]) return event.event_type
+  const s = ((event.event_name || '') + ' ' + (event.description || '')).toLowerCase()
+  if (s.includes('karaoke')) return 'karaoke'
+  if (s.includes('trivia')) return 'trivia'
+  if (s.includes('bingo')) return 'bingo'
+  if (s.includes('open mic') || s.includes('open jam')) return 'open_mic'
+  if (s.includes('drag')) return 'drag_show'
+  if (s.includes('comedy')) return 'comedy'
+  if (s.includes('dj ') || s.includes(' dj')) return 'dj'
+  if (s.includes('happy hour')) return 'happy_hour'
+  if (s.includes('brunch')) return 'brunch_event'
+  if (s.includes('wine')) return 'wine_tasting'
+  if (s.includes('beer') && s.includes('tast')) return 'beer_tasting'
+  if (s.includes('kids') || s.includes('children')) return 'kids_event'
+  if (s.includes('festival')) return 'festival'
+  if (s.includes('tournament') || s.includes('competition')) return 'tournament'
+  if (s.includes('music') || s.includes('band') || s.includes('concert') || s.includes('live')) return 'live_music'
+  return 'other'
 }
-
-const TYPE_FILTERS = ['All', 'Live Music', 'Karaoke', 'Trivia', 'Open Mic', 'Bingo', 'DJ Night', 'Comedy']
 
 function localDateStr(d) {
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
@@ -69,8 +91,10 @@ function getDateFilters() {
 
 function EventCard({ event, navigate }) {
   const img = event.image_url || event.hero_image_url || FALLBACK_EVENT_IMG
-  const eventType = inferEventType(event.event_name, event.description)
-  const typeEmoji = EVENT_TYPE_EMOJI[eventType] || '🎉'
+  const typeKey = getEventType(event)
+  const typeMeta = EVENT_TYPE_MAP[typeKey] || { label: 'Event', emoji: '📅' }
+  const eventType = typeMeta.label
+  const typeEmoji = typeMeta.emoji
   const dateLabel = fmtDate(event.event_date)
   const timeLabel = fmt12(event.start_time)
   const endLabel = event.end_time ? fmt12(event.end_time) : ''
@@ -93,12 +117,27 @@ function EventCard({ event, navigate }) {
         {event.artist_name && (
           <div className="ev-artist">🎤 {event.artist_name}</div>
         )}
-        {event.description && (
-          <div className="ev-desc">{event.description}</div>
+        {event.artist?.genre && (
+          <div className="ev-genre">🎵 {event.artist.genre}</div>
+        )}
+        {event.artist?.hometown && (
+          <div className="ev-hometown">🏠 {event.artist.hometown}</div>
+        )}
+        {(event.description || event.artist?.bio) && (
+          <div className="ev-desc">{event.description || event.artist.bio}</div>
         )}
         {event.cover_charge != null && (
           <div className="ev-cover">
             💵 {event.cover_charge === 0 || event.cover_charge === '0' ? 'Free admission' : `$${event.cover_charge} cover`}
+          </div>
+        )}
+        {event.artist && (event.artist.social_instagram || event.artist.social_facebook || event.artist.social_tiktok || event.artist.spotify_url || event.artist.website_url) && (
+          <div className="ev-socials">
+            {event.artist.social_instagram && <a href={event.artist.social_instagram} target="_blank" rel="noopener noreferrer" className="ev-social-link">IG</a>}
+            {event.artist.social_facebook && <a href={event.artist.social_facebook} target="_blank" rel="noopener noreferrer" className="ev-social-link">FB</a>}
+            {event.artist.social_tiktok && <a href={event.artist.social_tiktok} target="_blank" rel="noopener noreferrer" className="ev-social-link">TT</a>}
+            {event.artist.spotify_url && <a href={event.artist.spotify_url} target="_blank" rel="noopener noreferrer" className="ev-social-link">Spotify</a>}
+            {event.artist.website_url && <a href={event.artist.website_url} target="_blank" rel="noopener noreferrer" className="ev-social-link">Website</a>}
           </div>
         )}
       </div>
@@ -156,6 +195,12 @@ export default function Events() {
 
   const { todayStr, tomorrowStr, weekendDates } = useMemo(() => getDateFilters(), [])
 
+  const availableTypeFilters = useMemo(() => {
+    const seen = new Set()
+    events.forEach(ev => seen.add(getEventType(ev)))
+    return ['All', ...Object.keys(EVENT_TYPE_MAP).filter(k => seen.has(k))]
+  }, [events])
+
   useEffect(() => {
     async function load() {
       try {
@@ -201,8 +246,7 @@ export default function Events() {
       // Type filter
       let typeMatch = typeFilter === 'All'
       if (!typeMatch) {
-        const inferred = inferEventType(ev.event_name, ev.description)
-        typeMatch = inferred === typeFilter
+        typeMatch = getEventType(ev) === typeFilter
       }
 
       return dateMatch && typeMatch
@@ -253,17 +297,20 @@ export default function Events() {
           </div>
         )}
 
-        {/* Type Filter */}
+        {/* Type Filter — dynamic from loaded events */}
         <div className="ev-filter-scroll" style={{ marginTop: 8 }}>
-          {TYPE_FILTERS.map(t => (
-            <button
-              key={t}
-              className={`ev-filter-chip ${typeFilter === t ? 'active' : ''}`}
-              onClick={() => setTypeFilter(t)}
-            >
-              {EVENT_TYPE_EMOJI[t] || ''} {t}
-            </button>
-          ))}
+          {availableTypeFilters.map(t => {
+            const meta = t === 'All' ? { label: 'All', emoji: '' } : (EVENT_TYPE_MAP[t] || { label: t, emoji: '📅' })
+            return (
+              <button
+                key={t}
+                className={`ev-filter-chip ${typeFilter === t ? 'active' : ''}`}
+                onClick={() => setTypeFilter(t)}
+              >
+                {meta.emoji} {meta.label}
+              </button>
+            )
+          })}
         </div>
       </div>
 
