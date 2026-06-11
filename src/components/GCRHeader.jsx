@@ -1,7 +1,35 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import './GCRHeader.css'
+
+const LOYALTY_PHONE = '+12513135464'
+const LOYALTY_KEYWORD = 'BEACH'
+
+function LoyaltyModal({ onClose }) {
+  return (
+    <div className="loyalty-overlay" onClick={onClose}>
+      <div className="loyalty-modal" onClick={e => e.stopPropagation()}>
+        <button className="loyalty-close" onClick={onClose}>✕</button>
+        <div className="loyalty-emoji">⭐</div>
+        <h2 className="loyalty-title">Join Our Loyalty Program</h2>
+        <p className="loyalty-desc">Text <strong>BEACH</strong> to sign up for deals, specials &amp; rewards while you're on the Gulf Coast!</p>
+
+        <a
+          className="loyalty-sms-btn"
+          href={`sms:${LOYALTY_PHONE}?body=${LOYALTY_KEYWORD}`}
+        >
+          📱 Tap to Text BEACH → Sign Up
+        </a>
+
+        <div className="loyalty-divider">or text manually</div>
+
+        <div className="loyalty-number">{LOYALTY_PHONE}</div>
+        <p className="loyalty-hint">Send the word <strong>BEACH</strong> to that number</p>
+      </div>
+    </div>
+  )
+}
 
 const CATEGORIES = [
   { id: 'restaurants', label: 'Restaurants', emoji: '🍽️' },
@@ -23,6 +51,7 @@ export default function GCRHeader() {
   const navigate = useNavigate()
   const { userId } = useApp()
   const headerRef = useRef(null)
+  const [showLoyalty, setShowLoyalty] = useState(false)
 
   const currentPath = location.pathname.slice(1)
   const activeCat = CATEGORIES.find(c => c.id === currentPath)
@@ -74,9 +103,11 @@ export default function GCRHeader() {
 
       {/* Row 3: Action Strip */}
       <div className="gcr-action-strip">
-        <button className="strip-btn gold">⭐ Join Our Loyalty Program 🎁</button>
+        <button className="strip-btn gold" onClick={() => setShowLoyalty(true)}>📲 Sign Up for Promos 🎁</button>
         <button className="strip-btn teal">📅 Master Calendar 🎉</button>
       </div>
+
+      {showLoyalty && <LoyaltyModal onClose={() => setShowLoyalty(false)} />}
     </header>
   )
 }
