@@ -15,6 +15,8 @@ const CATEGORY_CONFIG = {
   shopping:       { label: 'Shopping',          emoji: '🛍️' },
   staying:        { label: 'Staying',           emoji: '🏨' },
   feed:           { label: 'Live Feed',         emoji: '📡' },
+  nightlife:      { label: 'Bars & Nightlife',  emoji: '🍸' },
+  wellness:       { label: 'Health & Wellness', emoji: '💆' },
 }
 
 
@@ -28,6 +30,7 @@ const HERO_IMAGES = {
   'public-spots': 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1200&q=80',
   feed:         'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=1200&q=80',
   nightlife:    'https://images.unsplash.com/photo-1566417713940-fe7c737a9ef2?w=1200&q=80',
+  wellness:     'https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=1200&q=80',
   shopping: 'https://images.unsplash.com/photo-1555685812-4b943f1cb0eb?w=1200&q=80',
   staying: 'https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=1200&q=80',
 }
