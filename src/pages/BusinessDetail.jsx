@@ -27,7 +27,11 @@ export default function RestaurantDetail() {
         const data = await res.json()
         if (!data || !data.slug) throw new Error('Business not found')
         setBusiness(data)
-        setActiveTab(data.menu_sections?.length ? 'menu' : 'overview')
+        const tabs = []
+        if (data.menu_sections?.length) tabs.push('menu')
+        if (data.hh_days || data.hh_sections?.length || data.happy_hour_sections?.length) tabs.push('happy-hour')
+        if (data.events?.length) tabs.push('events')
+        setActiveTab(tabs[0] || 'overview')
       } catch (err) {
         setError(err.message)
       } finally {
@@ -97,7 +101,8 @@ export default function RestaurantDetail() {
     ? photos.map(p => ({ ...p, image_url: p.image_url || p.url }))
     : [{ image_url: business.hero_image_url }]
 
-  const today = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][new Date().getDay()]
+  const todayIdx = new Date().getDay()
+  const today = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][todayIdx]
 
   const formatTime = (time) => {
     if (!time) return null
@@ -105,6 +110,22 @@ export default function RestaurantDetail() {
     const [h, m] = time.split(':').map(Number)
     return `${(h % 12 || 12)}:${String(m).padStart(2, '0')}${h >= 12 ? 'pm' : 'am'}`
   }
+
+  // Open/closed status
+  const todayHours = hours.find(h => h.day_of_week === todayIdx)
+  const openStatus = (() => {
+    if (!todayHours) return null
+    if (todayHours.is_closed) return { open: false, label: 'Closed today' }
+    const now = new Date()
+    const toMins = t => { if (!t) return null; const [h, m] = t.split(':').map(Number); return h * 60 + m }
+    const nowMins = now.getHours() * 60 + now.getMinutes()
+    const openMins = toMins(todayHours.open_time)
+    const closeMins = toMins(todayHours.close_time)
+    if (openMins == null) return null
+    if (nowMins < openMins) return { open: false, label: `Opens at ${formatTime(todayHours.open_time)}` }
+    if (closeMins && nowMins > closeMins) return { open: false, label: `Closed · Opens ${today}` }
+    return { open: true, label: `Open · Closes ${formatTime(todayHours.close_time) || 'late'}` }
+  })()
 
   const hasActivityExtras = business.highlights?.length || business.known_for?.length || business.good_for?.length || business.what_makes_it_different
 
@@ -232,8 +253,19 @@ export default function RestaurantDetail() {
       <div className="business-header">
         <h1>{business.name}</h1>
         {business.subtitle && <p className="subtitle">{business.subtitle}</p>}
+
+        {/* Open/closed status + today's hours */}
+        {openStatus && (
+          <div className={`open-status ${openStatus.open ? 'open' : 'closed'}`}>
+            <span className="open-dot" />
+            {openStatus.label}
+            {todayHours && !todayHours.is_closed && openStatus.open && todayHours.open_time && (
+              <span className="open-hours-today"> · {formatTime(todayHours.open_time)}–{formatTime(todayHours.close_time)}</span>
+            )}
+          </div>
+        )}
+
         {business.city && <p className="meta">📍 {business.city}, {business.state}</p>}
-        {business.phone && <p className="meta">📞 {business.phone}</p>}
         {business.rating && <p className="meta">⭐ {business.rating} ({business.review_count || 0} reviews)</p>}
 
         {/* Tags */}
@@ -245,10 +277,31 @@ export default function RestaurantDetail() {
           </div>
         )}
 
-        {/* Action Buttons */}
+        {/* Primary CTA — reserve/order/book gets top billing */}
+        {(business.reservation_url || business.order_url || business.booking_url) && (
+          <div className="primary-cta">
+            {business.reservation_url && (
+              <a href={business.reservation_url} target="_blank" rel="noopener noreferrer" className="btn-primary-cta">
+                🍽️ Make a Reservation
+              </a>
+            )}
+            {business.order_url && (
+              <a href={business.order_url} target="_blank" rel="noopener noreferrer" className="btn-primary-cta">
+                🛵 Order Online
+              </a>
+            )}
+            {business.booking_url && !business.reservation_url && (
+              <a href={business.booking_url} target="_blank" rel="noopener noreferrer" className="btn-primary-cta">
+                📅 Book Now
+              </a>
+            )}
+          </div>
+        )}
+
+        {/* Secondary Action Buttons */}
         <div className="action-buttons">
           {business.phone && (
-            <a href={`tel:${business.phone}`} className="btn btn-call">📞 Call Now</a>
+            <a href={`tel:${business.phone}`} className="btn btn-call">📞 Call</a>
           )}
           {business.directions_url && (
             <a href={business.directions_url} target="_blank" rel="noopener noreferrer" className="btn btn-directions">
@@ -260,16 +313,6 @@ export default function RestaurantDetail() {
               📄 Menu
             </a>
           )}
-          {business.reservation_url && (
-            <a href={business.reservation_url} target="_blank" rel="noopener noreferrer" className="btn btn-reserve">
-              🍽️ Reserve
-            </a>
-          )}
-          {business.order_url && (
-            <a href={business.order_url} target="_blank" rel="noopener noreferrer" className="btn btn-order">
-              🛵 Order
-            </a>
-          )}
           {business.website_url && (
             <a href={business.website_url} target="_blank" rel="noopener noreferrer" className="btn btn-website">
               🌐 Website
@@ -278,16 +321,21 @@ export default function RestaurantDetail() {
         </div>
 
         {/* Social Links */}
-        {(business.social_instagram || business.social_facebook) && (
+        {(business.social_instagram || business.social_facebook || business.social_tiktok) && (
           <div className="social-links">
             {business.social_instagram && (
-              <a href={business.social_instagram.startsWith('http') ? business.social_instagram : `https://instagram.com/${business.social_instagram}`} target="_blank" rel="noopener noreferrer" className="social-btn" title="Instagram">
-                📱
+              <a href={business.social_instagram.startsWith('http') ? business.social_instagram : `https://instagram.com/${business.social_instagram}`} target="_blank" rel="noopener noreferrer" className="social-btn social-instagram">
+                Instagram
               </a>
             )}
             {business.social_facebook && (
-              <a href={business.social_facebook} target="_blank" rel="noopener noreferrer" className="social-btn" title="Facebook">
-                f
+              <a href={business.social_facebook} target="_blank" rel="noopener noreferrer" className="social-btn social-facebook">
+                Facebook
+              </a>
+            )}
+            {business.social_tiktok && (
+              <a href={business.social_tiktok.startsWith('http') ? business.social_tiktok : `https://tiktok.com/@${business.social_tiktok}`} target="_blank" rel="noopener noreferrer" className="social-btn social-tiktok">
+                TikTok
               </a>
             )}
           </div>
@@ -587,28 +635,57 @@ export default function RestaurantDetail() {
                     ) : null
                   })()}
 
-                  <div className="events-list">
-                    {events.map((ev, i) => {
-                      const evDate = ev.event_date ? new Date(ev.event_date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) : null
-                      return (
-                        <div key={ev.id || i} className="event-row">
-                          <div className="event-row-date">{evDate || (ev.recurring ? ev.day_of_week : 'Ongoing')}</div>
-                          <div className="event-row-info">
-                            <div className="event-row-name">{ev.event_name || ev.name}</div>
-                            {ev.artist_name && <div className="event-row-artist">🎤 {ev.artist_name}</div>}
-                            {(ev.start_time || ev.end_time) && (
-                              <div className="event-row-time">
-                                {formatTime(ev.start_time)}{ev.end_time ? ` – ${formatTime(ev.end_time)}` : ''}
+                  {(() => {
+                    const todayStr = new Date().toISOString().split('T')[0]
+                    const tomorrowStr = new Date(Date.now() + 86400000).toISOString().split('T')[0]
+                    const groups = {}
+                    const noDate = []
+                    events.forEach(ev => {
+                      if (!ev.event_date) { noDate.push(ev); return }
+                      if (!groups[ev.event_date]) groups[ev.event_date] = []
+                      groups[ev.event_date].push(ev)
+                    })
+                    const sortedDates = Object.keys(groups).sort()
+                    const dateLabel = d => {
+                      if (d === todayStr) return 'Today'
+                      if (d === tomorrowStr) return 'Tomorrow'
+                      return new Date(d + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })
+                    }
+                    return (
+                      <div className="events-list">
+                        {sortedDates.map(date => (
+                          <div key={date} className="event-date-group">
+                            <div className="event-date-heading">{dateLabel(date)}</div>
+                            {groups[date].map((ev, i) => (
+                              <div key={ev.id || i} className="event-row">
+                                <div className="event-row-info">
+                                  <div className="event-row-name">{ev.event_name || ev.name}</div>
+                                  {ev.artist_name && <div className="event-row-artist">🎤 {ev.artist_name}</div>}
+                                  {(ev.start_time || ev.end_time) && (
+                                    <div className="event-row-time">
+                                      {formatTime(ev.start_time)}{ev.end_time ? ` – ${formatTime(ev.end_time)}` : ''}
+                                    </div>
+                                  )}
+                                  {ev.cover_charge != null && ev.cover_charge > 0 && (
+                                    <div className="event-row-cover">Cover: ${ev.cover_charge}</div>
+                                  )}
+                                </div>
                               </div>
-                            )}
-                            {ev.cover_charge != null && ev.cover_charge > 0 && (
-                              <div className="event-row-cover">Cover: ${ev.cover_charge}</div>
-                            )}
+                            ))}
                           </div>
-                        </div>
-                      )
-                    })}
-                  </div>
+                        ))}
+                        {noDate.map((ev, i) => (
+                          <div key={ev.id || i} className="event-row">
+                            <div className="event-row-info">
+                              <div className="event-row-name">{ev.event_name || ev.name}</div>
+                              {ev.artist_name && <div className="event-row-artist">🎤 {ev.artist_name}</div>}
+                              {ev.recurring && ev.day_of_week && <div className="event-row-time">Every {ev.day_of_week}</div>}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )
+                  })()}
                 </>
               )}
             </section>
