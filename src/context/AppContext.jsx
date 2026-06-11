@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useRef, useState } from 'react'
 import { API_BASE as API } from '../config'
 import * as locationService from '../services/locationService'
+import { findSavedPlace, getPlaceSlug } from '../utils/savedPlaces'
 
 const AppContext = createContext(null)
 
@@ -237,24 +238,40 @@ export function AppProvider({ children }) {
   }
 
   async function addSavedPlace(business) {
+    const slug = getPlaceSlug(business)
+    if (!slug) throw new Error('This place cannot be saved because it has no slug')
+    if (findSavedPlace(savedPlaces, slug)) return
+
+    const savedPlace = { ...business, slug }
     setSavedPlaces(prev => {
-      if (prev.find(p => p.id === business.id || p.slug === business.slug)) return prev
-      const updated = [...prev, business]
+      if (findSavedPlace(prev, slug)) return prev
+      const updated = [...prev, savedPlace]
       localStorage.setItem('gcr_saved', JSON.stringify(updated))
       return updated
     })
     if (!userId) return
-    await apiSend('POST', '/api/tourist/saves', {
-      entity_slug: business.slug,
-      entity_id: business.id && /^[0-9a-f-]{36}$/i.test(String(business.id)) ? business.id : null,
-      business_name: business.name,
-      hero_image_url: business.hero_image_url,
-      subtitle: business.subtitle,
-      category: business.category,
-      rating: business.rating ?? null,
-      price_range: business.price_range,
-      is_super_like: !!business._isSuper,
-    })
+
+    try {
+      const result = await apiSend('POST', '/api/tourist/saves', {
+        entity_slug: slug,
+        entity_id: business.id && /^[0-9a-f-]{36}$/i.test(String(business.id)) ? business.id : null,
+        business_name: business.name,
+        hero_image_url: business.hero_image_url,
+        subtitle: business.subtitle,
+        category: business.category,
+        rating: business.rating ?? null,
+        price_range: business.price_range,
+        is_super_like: !!business._isSuper,
+      })
+      if (!result) throw new Error('Failed to save place')
+    } catch (error) {
+      setSavedPlaces(prev => {
+        const updated = prev.filter(place => getPlaceSlug(place) !== slug)
+        localStorage.setItem('gcr_saved', JSON.stringify(updated))
+        return updated
+      })
+      throw error
+    }
   }
 
   async function addSuperLike(business) {
@@ -307,20 +324,46 @@ export function AppProvider({ children }) {
     await apiSend('DELETE', '/api/tourist/super-likes/' + encodeURIComponent(target.slug))
   }
 
-  async function removeSavedPlace(id) {
-    const target = savedPlaces.find(p => p.id === id)
+  async function removeSavedPlace(place) {
+    const target = findSavedPlace(savedPlaces, place)
+    const slug = getPlaceSlug(target || place)
+    if (!target || !slug) return
+    const targetIndex = savedPlaces.findIndex(saved => getPlaceSlug(saved) === slug)
+    const removedSuperLike = findSavedPlace(superLikedPlaces, slug)
+
     setSavedPlaces(prev => {
-      const updated = prev.filter(p => p.id !== id)
+      const updated = prev.filter(saved => getPlaceSlug(saved) !== slug)
       localStorage.setItem('gcr_saved', JSON.stringify(updated))
       return updated
     })
     setSuperLikedPlaces(prev => {
-      const updated = prev.filter(p => p.id !== id)
+      const updated = prev.filter(saved => getPlaceSlug(saved) !== slug)
       localStorage.setItem('gcr_super', JSON.stringify(updated))
       return updated
     })
-    if (!userId || !target?.slug) return
-    await apiSend('DELETE', '/api/tourist/saves/' + encodeURIComponent(target.slug))
+    if (!userId) return
+
+    try {
+      const result = await apiSend('DELETE', '/api/tourist/saves/' + encodeURIComponent(slug))
+      if (!result) throw new Error('Failed to remove saved place')
+    } catch (error) {
+      setSavedPlaces(prev => {
+        if (findSavedPlace(prev, slug)) return prev
+        const updated = [...prev]
+        updated.splice(Math.min(targetIndex, updated.length), 0, target)
+        localStorage.setItem('gcr_saved', JSON.stringify(updated))
+        return updated
+      })
+      if (removedSuperLike) {
+        setSuperLikedPlaces(prev => {
+          if (findSavedPlace(prev, slug)) return prev
+          const updated = [...prev, removedSuperLike]
+          localStorage.setItem('gcr_super', JSON.stringify(updated))
+          return updated
+        })
+      }
+      throw error
+    }
   }
 
   async function saveItinerary(data) {

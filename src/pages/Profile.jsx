@@ -195,7 +195,7 @@ export default function Profile() {
                   </div>
                 </div>
                 <button
-                  onClick={() => removeSavedPlace(p.id)}
+                  onClick={() => removeSavedPlace(p)}
                   style={{background:'none',border:'none',color:'rgba(255,255,255,.5)',fontSize:18,cursor:'pointer',padding:8}}
                   aria-label="Remove"
                 >✕</button>

@@ -84,7 +84,7 @@ export default function MyList() {
                 </div>
                 <button
                   className="remove-btn"
-                  onClick={e => { e.stopPropagation(); removeSavedPlace(b.id) }}
+                  onClick={e => { e.stopPropagation(); removeSavedPlace(b) }}
                 >
                   ✕
                 </button>

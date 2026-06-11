@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { getPlaceSlug } from '../utils/savedPlaces'
 import './GCRCard.css'
 
 // ── Map API tag_category → display section ────────────────────────────────────
@@ -114,7 +115,7 @@ export default function GCRCard({ entity, category, onSave, savedSlugs }) {
   if (!entity) return null
 
   const distLabel = fmtDist(entity.distance_miles)
-  const slug = entity.slug || entity.subdomain || entity.id || ''
+  const slug = getPlaceSlug(entity)
   const name = entity.name || 'Business'
   const icon = entity.icon || entity.emoji || '📍'
   const sub = entity.subtitle || ''
