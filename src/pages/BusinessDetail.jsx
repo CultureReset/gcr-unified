@@ -28,7 +28,13 @@ export default function RestaurantDetail() {
         if (!data || !data.slug) throw new Error('Business not found')
         setBusiness(data)
         const tabs = []
-        if (data.menu_sections?.length) tabs.push('menu')
+        const rotating = data.rotating_sections || data.rotatingSections || []
+        const hasMenuData = data.menu_sections?.length || rotating.some(r => r.type !== 'drinks') || data.areas?.some(a => a.menu_sections?.length)
+        const hasDrinksData = data.drink_sections?.length || rotating.some(r => r.type === 'drinks') || data.areas?.some(a => a.drink_sections?.length)
+        const hasSpecialsData = data.specials?.length || data.daily_features?.length || data.dailyFeatures?.length || data.sides?.length || data.areas?.some(a => a.specials?.length)
+        if (hasMenuData) tabs.push('menu')
+        if (hasDrinksData) tabs.push('drinks')
+        if (hasSpecialsData) tabs.push('specials')
         if (data.hh_days || data.hh_sections?.length || data.happy_hour_sections?.length) tabs.push('happy-hour')
         if (data.events?.length) tabs.push('events')
         setActiveTab(tabs[0] || 'overview')
@@ -96,6 +102,82 @@ export default function RestaurantDetail() {
   const whatsIncluded = business.whats_included || []
   const faqs = business.faqs || []
   const requirements = business.requirements || []
+
+  // Rich menu data
+  const rotating = business.rotating_sections || business.rotatingSections || []
+  const foodRotating = rotating.filter(r => r.type !== 'drinks')
+  const drinkRotating = rotating.filter(r => r.type === 'drinks')
+  const allAreas = business.areas || []
+  const flatMenuSections = [
+    ...(business.menu_sections || []),
+    ...allAreas.flatMap(a => a.menu_sections || [])
+  ]
+  const flatDrinkSections = [
+    ...(business.drink_sections || []),
+    ...allAreas.flatMap(a => a.drink_sections || [])
+  ]
+  const allSpecials = [
+    ...(business.specials || []),
+    ...allAreas.flatMap(a => a.specials || []),
+  ]
+  const sides = business.sides || []
+  const dailyFeatures = business.daily_features || business.dailyFeatures || []
+
+  const MEAL_ORDER = ['Breakfast', 'Brunch', 'Lunch', 'Dinner', 'Late Night', 'All Day']
+
+  const getMealPeriod = (sec) => {
+    const n = (sec.section_name || sec.name || '').toLowerCase()
+    if (n.includes('breakfast')) return 'Breakfast'
+    if (n.includes('brunch')) return 'Brunch'
+    if (n.includes('lunch')) return 'Lunch'
+    if (n.includes('dinner') || n.includes('supper')) return 'Dinner'
+    if (n.includes('late night') || n.includes('late-night')) return 'Late Night'
+    const tr = sec.time_range || ''
+    if (tr) {
+      const startH = parseInt((tr.split('-')[0] || '').split(':')[0] || '0')
+      if (startH < 10) return 'Breakfast'
+      if (startH < 12) return 'Brunch'
+      if (startH < 15) return 'Lunch'
+      if (startH >= 17) return 'Dinner'
+    }
+    return 'All Day'
+  }
+
+  const groupByMealPeriod = (secs) => {
+    const groups = {}
+    secs.forEach(sec => {
+      const p = getMealPeriod(sec)
+      if (!groups[p]) groups[p] = []
+      groups[p].push(sec)
+    })
+    return MEAL_ORDER.filter(p => groups[p]).map(p => ({ period: p, sections: groups[p] }))
+  }
+
+  const menuGroups = groupByMealPeriod(flatMenuSections)
+
+  const renderMenuItem = (item, i) => {
+    const name = item.item_name || item.name
+    const price = item.price != null ? item.price : null
+    const priceStr = price != null
+      ? (typeof price === 'string' ? price : (price % 1 === 0 ? `$${price}` : `$${parseFloat(price).toFixed(2)}`))
+      : null
+    const images = item.images || []
+    return (
+      <div key={item.id || i} className="menu-item">
+        {images[0]?.url && (
+          <img src={images[0].url} alt={images[0].label || name} className="menu-item-img" />
+        )}
+        <div className="item-body">
+          <div className="item-header">
+            <span className="item-name">{name}</span>
+            {priceStr && <span className="item-price">{priceStr}</span>}
+          </div>
+          {item.description && <p className="item-desc">{item.description}</p>}
+          {item.available_days && <p className="item-days">{item.available_days}</p>}
+        </div>
+      </div>
+    )
+  }
   // API returns photos with .url, normalize to .image_url for carousel
   const slides = photos.length > 0
     ? photos.map(p => ({ ...p, image_url: p.image_url || p.url }))
@@ -129,22 +211,36 @@ export default function RestaurantDetail() {
 
   const hasActivityExtras = business.highlights?.length || business.known_for?.length || business.good_for?.length || business.what_makes_it_different
 
+  const hasMenu = flatMenuSections.length > 0 || foodRotating.length > 0
+  const hasDrinks = flatDrinkSections.length > 0 || drinkRotating.length > 0
+  const hasSpecials = allSpecials.length > 0 || dailyFeatures.length > 0 || sides.length > 0
+
   const sections = [
-    ...(business.menu_sections?.length  ? [{ id: 'menu',        label: 'Menu',        icon: '🍽️' }] : []),
+    ...(hasMenu                          ? [{ id: 'menu',        label: 'Menu',        icon: '🍽️' }] : []),
+    ...(hasDrinks                        ? [{ id: 'drinks',      label: 'Drinks',      icon: '🍷' }] : []),
+    ...(hasSpecials                      ? [{ id: 'specials',    label: 'Specials',    icon: '⭐' }] : []),
     ...((business.hh_days || business.hh_sections?.length || business.happy_hour_sections?.length) ? [{ id: 'happy-hour', label: 'Happy Hour', icon: '🍺' }] : []),
-    ...(pricing.length                  ? [{ id: 'pricing',     label: 'Pricing',     icon: '💰' }] : []),
-    ...(hours.length                    ? [{ id: 'hours',       label: 'Hours',       icon: '🕐' }] : []),
-    ...(events.length                   ? [{ id: 'events',      label: 'Events',      icon: '🎉' }] : []),
+    ...(pricing.length                   ? [{ id: 'pricing',     label: 'Pricing',     icon: '💰' }] : []),
+    ...(hours.length                     ? [{ id: 'hours',       label: 'Hours',       icon: '🕐' }] : []),
+    ...(events.length                    ? [{ id: 'events',      label: 'Events',      icon: '🎉' }] : []),
     { id: 'overview',    label: 'Overview',    icon: 'ℹ️'  },
     ...(hasActivityExtras                ? [{ id: 'experience',  label: 'Experience',  icon: '🎯' }] : []),
-    ...(faqs.length                     ? [{ id: 'faqs',        label: 'FAQs',        icon: '❓' }] : []),
+    ...(faqs.length                      ? [{ id: 'faqs',        label: 'FAQs',        icon: '❓' }] : []),
     { id: 'location',    label: 'Location',    icon: '📍'  },
-    ...(photos.length                   ? [{ id: 'gallery',     label: 'Photos',      icon: '📸' }] : []),
+    ...(photos.length                    ? [{ id: 'gallery',     label: 'Photos',      icon: '📸' }] : []),
   ]
 
-  // Sub-sections for current tab
+  // Sub-section chips — meal period groups for menu, section names for drinks/happy-hour
   const subSections = activeTab === 'menu'
-    ? (business.menu_sections || []).map(s => ({ id: `menu-sec-${s.id || s.section_name}`, label: s.section_name }))
+    ? [
+        ...(foodRotating.length ? [{ id: 'menu-rotating', label: "Today's Features" }] : []),
+        ...menuGroups.map(g => ({ id: `menu-period-${g.period}`, label: g.period }))
+      ]
+    : activeTab === 'drinks'
+    ? [
+        ...(drinkRotating.length ? [{ id: 'drinks-rotating', label: 'On Tap / Featured' }] : []),
+        ...flatDrinkSections.map(s => ({ id: `drink-sec-${s.id || s.section_name || s.name}`, label: s.section_name || s.name }))
+      ]
     : activeTab === 'happy-hour'
     ? (business.hh_sections || business.happy_hour_sections || []).map(s => ({ id: `hh-sec-${s.id || s.section_name}`, label: s.section_name || s.name }))
     : []
@@ -742,82 +838,168 @@ export default function RestaurantDetail() {
           {activeTab === 'menu' && (
             <section className="content-section">
               <h2>🍽️ Menu</h2>
-              {business.menu_sections && business.menu_sections.length > 0 ? (
-                <div className="menu-container">
-                  {business.menu_sections.map(section => {
-                    const secId = `menu-sec-${section.id || section.section_name}`
-                    return (
-                    <div
-                      key={section.id}
-                      className="menu-section menu-section-anchor"
-                      data-secid={secId}
-                      ref={el => { subSectionRefs.current[secId] = el }}
-                    >
-                      <h3>{section.section_name}</h3>
+
+              {/* Today's Features — rotating food sections (Catch of the Day, Daily Special, etc.) */}
+              {foodRotating.length > 0 && (
+                <div
+                  className="menu-period-group"
+                  data-secid="menu-rotating"
+                  ref={el => { subSectionRefs.current['menu-rotating'] = el }}
+                >
+                  <div className="meal-period-header">
+                    <span className="meal-period-label">⭐ Today's Features</span>
+                  </div>
+                  {foodRotating.map(rot => (
+                    <div key={rot.id} className="menu-section">
+                      <h3>{rot.name}</h3>
                       <div className="menu-items">
-                        {section.items && section.items.map(item => (
-                          <div key={item.id} className="menu-item">
-                            <div className="item-header">
-                              <span className="item-name">{item.item_name}</span>
-                              {item.price && <span className="item-price">${item.price.toFixed(2)}</span>}
-                            </div>
-                            {item.description && <p className="item-desc">{item.description}</p>}
-                          </div>
-                        ))}
+                        {(rot.items || []).filter(it => it.active !== false).map((item, i) => renderMenuItem(item, i))}
                       </div>
                     </div>
-                  )})}
+                  ))}
                 </div>
-              ) : (
+              )}
+
+              {/* Meal period groups */}
+              {menuGroups.length > 0 ? menuGroups.map(({ period, sections: grpSections }) => {
+                const periodId = `menu-period-${period}`
+                return (
+                  <div
+                    key={period}
+                    className="menu-period-group"
+                    data-secid={periodId}
+                    ref={el => { subSectionRefs.current[periodId] = el }}
+                  >
+                    <div className="meal-period-header">
+                      <span className="meal-period-label">
+                        {{ Breakfast: '🍳', Brunch: '🥂', Lunch: '🥗', Dinner: '🍷', 'Late Night': '🌙', 'All Day': '🍽️' }[period] || '🍽️'} {period}
+                      </span>
+                    </div>
+                    {grpSections.map(section => {
+                      const secId = `menu-sec-${section.id || section.section_name || section.name}`
+                      const timeRange = section.time_range
+                      const days = section.available_days
+                      return (
+                        <div
+                          key={secId}
+                          className="menu-section menu-section-anchor"
+                          data-secid={secId}
+                          ref={el => { subSectionRefs.current[secId] = el }}
+                        >
+                          <div className="section-header-row">
+                            <h3>{section.section_name || section.name}</h3>
+                            {(timeRange || days) && (
+                              <span className="section-meta">
+                                {timeRange && `${formatTime(timeRange.split('-')[0])}–${formatTime(timeRange.split('-')[1])}`}
+                                {days && ` · ${days}`}
+                              </span>
+                            )}
+                          </div>
+                          <div className="menu-items">
+                            {(section.items || []).map((item, i) => renderMenuItem(item, i))}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )
+              }) : !foodRotating.length && (
                 <p className="no-data">No menu available</p>
               )}
+            </section>
+          )}
 
-              {business.drink_sections && business.drink_sections.length > 0 && (
-                <>
-                  <h2 style={{marginTop: '32px'}}>🍷 Drinks</h2>
-                  <div className="menu-container">
-                    {business.drink_sections.map(section => (
-                      <div key={section.id} className="menu-section">
-                        <h3>{section.section_name}</h3>
-                        <div className="menu-items">
-                          {section.items && section.items.map(item => (
-                            <div key={item.id} className="menu-item">
-                              <div className="item-header">
-                                <span className="item-name">{item.item_name}</span>
-                                {item.price && <span className="item-price">${item.price.toFixed(2)}</span>}
-                              </div>
-                              {item.description && <p className="item-desc">{item.description}</p>}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
+          {/* Drinks */}
+          {activeTab === 'drinks' && (
+            <section className="content-section">
+              <h2>🍷 Drinks</h2>
+
+              {/* On tap / featured rotating drinks (Beer on Tap, etc.) */}
+              {drinkRotating.length > 0 && (
+                <div
+                  className="menu-period-group"
+                  data-secid="drinks-rotating"
+                  ref={el => { subSectionRefs.current['drinks-rotating'] = el }}
+                >
+                  <div className="meal-period-header">
+                    <span className="meal-period-label">🍺 On Tap &amp; Featured</span>
                   </div>
-                </>
+                  {drinkRotating.map(rot => (
+                    <div key={rot.id} className="menu-section">
+                      <h3>{rot.name}</h3>
+                      <div className="menu-items">
+                        {(rot.items || []).filter(it => it.active !== false).map((item, i) => renderMenuItem(item, i))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               )}
 
-              {business.happy_hour_sections && business.happy_hour_sections.length > 0 && (
-                <>
-                  <h2 style={{marginTop: '32px'}}>🍺 Happy Hour Specials</h2>
-                  <div className="menu-container">
-                    {business.happy_hour_sections.map(section => (
-                      <div key={section.id} className="menu-section">
-                        <h3>{section.section_name}</h3>
-                        <div className="menu-items">
-                          {section.items && section.items.map(item => (
-                            <div key={item.id} className="menu-item">
-                              <div className="item-header">
-                                <span className="item-name">{item.item_name}</span>
-                                {item.price && <span className="item-price">${item.price.toFixed(2)}</span>}
-                              </div>
-                              {item.description && <p className="item-desc">{item.description}</p>}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
+              {flatDrinkSections.length > 0 ? flatDrinkSections.map(section => {
+                const secId = `drink-sec-${section.id || section.section_name || section.name}`
+                const timeRange = section.time_range
+                const days = section.available_days
+                return (
+                  <div
+                    key={secId}
+                    className="menu-section menu-section-anchor"
+                    data-secid={secId}
+                    ref={el => { subSectionRefs.current[secId] = el }}
+                  >
+                    <div className="section-header-row">
+                      <h3>{section.section_name || section.name}</h3>
+                      {(timeRange || days) && (
+                        <span className="section-meta">
+                          {timeRange && `${formatTime(timeRange.split('-')[0])}–${formatTime(timeRange.split('-')[1])}`}
+                          {days && ` · ${days}`}
+                        </span>
+                      )}
+                    </div>
+                    <div className="menu-items">
+                      {(section.items || []).map((item, i) => renderMenuItem(item, i))}
+                    </div>
                   </div>
-                </>
+                )
+              }) : !drinkRotating.length && (
+                <p className="no-data">No drink menu available</p>
+              )}
+            </section>
+          )}
+
+          {/* Specials */}
+          {activeTab === 'specials' && (
+            <section className="content-section">
+              <h2>⭐ Specials</h2>
+
+              {dailyFeatures.length > 0 && (
+                <div className="menu-section" style={{marginBottom: 24}}>
+                  <h3>Daily Features</h3>
+                  <div className="menu-items">
+                    {dailyFeatures.map((item, i) => renderMenuItem(item, i))}
+                  </div>
+                </div>
+              )}
+
+              {allSpecials.length > 0 && (
+                <div className="menu-section" style={{marginBottom: 24}}>
+                  <h3>Today's Specials</h3>
+                  <div className="menu-items">
+                    {allSpecials.map((item, i) => renderMenuItem(item, i))}
+                  </div>
+                </div>
+              )}
+
+              {sides.length > 0 && (
+                <div className="menu-section">
+                  <h3>Sides &amp; Add-Ons</h3>
+                  <div className="menu-items">
+                    {sides.map((item, i) => renderMenuItem(item, i))}
+                  </div>
+                </div>
+              )}
+
+              {!dailyFeatures.length && !allSpecials.length && !sides.length && (
+                <p className="no-data">No specials right now</p>
               )}
             </section>
           )}
