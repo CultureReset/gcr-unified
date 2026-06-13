@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useSearchParams, useLocation, Link } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import { API_BASE as API } from '../config'
+import { sendFirebaseOTP, confirmFirebaseOTP, resetRecaptcha } from '../services/firebaseAuth'
 import './Auth.css'
 
 export default function Auth() {
@@ -129,16 +130,13 @@ export default function Auth() {
     if (normalized.length < 10) { setError('Enter a valid US phone number'); return }
     setLoading(true); setError(''); setInfo('')
     try {
-      const r = await fetch(`${API}/api/tourist-auth/phone`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: normalized }),
-      })
-      const d = await r.json()
-      if (!r.ok) { setError(d.error || 'Could not send code'); return }
+      await sendFirebaseOTP(normalized)
       setDigits(['', '', '', '', '', ''])
       setStep('verify-code')
-    } catch { setError('Network error — try again.') }
+    } catch (err) {
+      resetRecaptcha()
+      setError(err.message || 'Could not send code — try again.')
+    }
     finally { setLoading(false) }
   }
 
@@ -147,35 +145,42 @@ export default function Auth() {
     if (code.length < 6) return
     setLoading(true); setError(''); setInfo('')
     try {
+      const { idToken, firebaseUser } = await confirmFirebaseOTP(code)
+      // Send Firebase ID token to backend to create/find GCR tourist profile
       const r = await fetch(`${API}/api/tourist-auth/phone-verify`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: normalizePhone(phone), code }),
+        body: JSON.stringify({ phone: normalizePhone(phone), idToken }),
       })
       const d = await r.json()
-      if (!r.ok) { setError(d.error || 'Invalid code — try again.'); return }
+      if (!r.ok) {
+        // Backend failed but Firebase verified — store Firebase user minimally and continue
+        localStorage.setItem('gcr_firebase_uid', firebaseUser.uid)
+        localStorage.setItem('gcr_user_phone', firebaseUser.phoneNumber)
+        navigate('/setup/name', { replace: true })
+        return
+      }
       if (d.access_token) {
         localStorage.setItem('gcr_access_token', d.access_token)
-        localStorage.setItem('gcr_user_id', d.tourist.user_id)
+        localStorage.setItem('gcr_user_id', d.tourist?.user_id || '')
       }
       const complete = d.tourist?.setup_complete
       navigate(complete ? (returnTo || '/home') : '/setup/name', { replace: true })
-    } catch { setError('Network error — try again.') }
+    } catch (err) {
+      setError(err.message || 'Invalid code — try again.')
+    }
     finally { setLoading(false) }
   }
 
   async function resendPhoneOTP() {
+    resetRecaptcha()
     setLoading(true); setError(''); setInfo('')
     try {
-      const r = await fetch(`${API}/api/tourist-auth/phone`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: normalizePhone(phone) }),
-      })
-      const d = await r.json()
-      if (!r.ok) { setError(d.error || 'Failed to resend'); return }
+      await sendFirebaseOTP(normalizePhone(phone))
       setInfo('New code sent.')
-    } catch { setError('Network error — try again.') }
+    } catch (err) {
+      setError(err.message || 'Failed to resend — try again.')
+    }
     finally { setLoading(false) }
   }
 
@@ -293,6 +298,7 @@ export default function Auth() {
                 )}
 
                 <button
+                  id="send-code-btn"
                   className="btn-primary"
                   onClick={sendPhoneOTP}
                   disabled={phone.replace(/\D/g, '').length < 10 || loading}
