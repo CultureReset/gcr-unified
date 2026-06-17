@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app'
-import { getAuth, signInWithPhoneNumber } from 'firebase/auth'
+import { getAuth, signInWithPhoneNumber, RecaptchaVerifier } from 'firebase/auth'
 
 const firebaseConfig = {
   apiKey:            import.meta.env.VITE_FIREBASE_API_KEY,
@@ -14,10 +14,27 @@ const app = initializeApp(firebaseConfig)
 export const auth = getAuth(app)
 
 let confirmationResult = null
+let recaptchaVerifier = null
 
-// Firebase v11+ with reCAPTCHA Enterprise: no RecaptchaVerifier needed
+function getVerifier() {
+  if (recaptchaVerifier) return recaptchaVerifier
+  const container = document.getElementById('recaptcha-container')
+  if (!container) throw new Error('reCAPTCHA container missing — load the auth page first.')
+  recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+    size: 'invisible',
+    callback: () => {},
+    'expired-callback': () => { resetRecaptcha() },
+  })
+  return recaptchaVerifier
+}
+
+export function setupRecaptcha() {
+  getVerifier()
+}
+
 export async function sendFirebaseOTP(phoneE164) {
-  confirmationResult = await signInWithPhoneNumber(auth, phoneE164)
+  const verifier = getVerifier()
+  confirmationResult = await signInWithPhoneNumber(auth, phoneE164, verifier)
   return confirmationResult
 }
 
@@ -28,5 +45,10 @@ export async function confirmFirebaseOTP(code) {
   return { idToken, firebaseUser: result.user }
 }
 
-export function setupRecaptcha() {}
-export function resetRecaptcha() { confirmationResult = null }
+export function resetRecaptcha() {
+  confirmationResult = null
+  if (recaptchaVerifier) {
+    try { recaptchaVerifier.clear() } catch {}
+    recaptchaVerifier = null
+  }
+}

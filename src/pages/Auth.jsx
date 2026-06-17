@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useSearchParams, useLocation, Link } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import { API_BASE as API } from '../config'
-import { sendFirebaseOTP, confirmFirebaseOTP, resetRecaptcha } from '../services/firebaseAuth'
+import { sendFirebaseOTP, confirmFirebaseOTP, resetRecaptcha, setupRecaptcha } from '../services/firebaseAuth'
 import './Auth.css'
 
 export default function Auth() {
@@ -29,6 +29,7 @@ export default function Auth() {
       setTimeout(() => inputRefs.current[0]?.focus(), 50)
     }
   }, [step])
+
 
   // Pre-fill phone from ?phone= param (set by inbound SMS link)
   useEffect(() => {
@@ -160,11 +161,26 @@ export default function Auth() {
         navigate('/setup/name', { replace: true })
         return
       }
-      if (d.access_token) {
-        localStorage.setItem('gcr_access_token', d.access_token)
-        localStorage.setItem('gcr_user_id', d.tourist?.user_id || '')
+      const session = d.session || (d.access_token ? { access_token: d.access_token } : null)
+      if (session?.access_token) {
+        localStorage.setItem('gcr_access_token', session.access_token)
+        if (session.refresh_token) localStorage.setItem('gcr_refresh_token', session.refresh_token)
+        if (session.expires_at)    localStorage.setItem('gcr_expires_at', String(session.expires_at))
       }
-      const complete = d.tourist?.setup_complete
+      if (d.user?.id || d.tourist?.user_id) {
+        localStorage.setItem('gcr_user_id', d.user?.id || d.tourist?.user_id || '')
+      }
+      if (d.user?.email) localStorage.setItem('gcr_user_email', d.user.email)
+      if (firebaseUser.phoneNumber) localStorage.setItem('gcr_user_phone', firebaseUser.phoneNumber)
+
+      const pending = sessionStorage.getItem('gcr_pending_invite')
+      if (pending) {
+        sessionStorage.removeItem('gcr_pending_invite')
+        navigate('/join?t=' + encodeURIComponent(pending), { replace: true })
+        return
+      }
+      const profile = await setSessionFromLogin?.(d)
+      const complete = profile?.setupComplete || profile?.setup_complete || d.tourist?.setup_complete
       navigate(complete ? (returnTo || '/home') : '/setup/name', { replace: true })
     } catch (err) {
       setError(err.message || 'Invalid code — try again.')
@@ -296,6 +312,8 @@ export default function Auth() {
                     {error}
                   </div>
                 )}
+
+                <div id="recaptcha-container"></div>
 
                 <button
                   id="send-code-btn"
