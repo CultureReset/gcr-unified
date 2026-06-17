@@ -537,6 +537,21 @@ export default function RestaurantDetail() {
                 </div>
               )}
 
+              {(() => {
+                const hasPropertyDetails = business.bedrooms || business.bathrooms || business.sqft;
+                if (!hasPropertyDetails) return null;
+                return (
+                  <div className="property-details-row">
+                    <h3>Property Details</h3>
+                    <div className="property-specs">
+                      {business.bedrooms && <span className="spec">🛏️ {business.bedrooms} bed{business.bedrooms !== 1 ? 's' : ''}</span>}
+                      {business.bathrooms && <span className="spec">🚿 {business.bathrooms} bath{business.bathrooms !== 1 ? 's' : ''}</span>}
+                      {business.sqft && <span className="spec">📐 {business.sqft.toLocaleString()} sqft</span>}
+                    </div>
+                  </div>
+                );
+              })()}
+
               {business.google_maps_uri && (
                 <a href={business.google_maps_uri} target="_blank" rel="noopener noreferrer" className="google-maps-link" onClick={e => e.stopPropagation()}>
                   🗺️ View on Google Maps
