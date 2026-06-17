@@ -155,10 +155,7 @@ export default function Auth() {
       })
       const d = await r.json()
       if (!r.ok) {
-        // Backend failed but Firebase verified — store Firebase user minimally and continue
-        localStorage.setItem('gcr_firebase_uid', firebaseUser.uid)
-        localStorage.setItem('gcr_user_phone', firebaseUser.phoneNumber)
-        navigate('/setup/name', { replace: true })
+        setError(d.error || `Sign-in failed (${r.status}) — try again.`)
         return
       }
       const session = d.session || (d.access_token ? { access_token: d.access_token } : null)
