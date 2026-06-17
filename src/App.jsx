@@ -34,7 +34,7 @@ import { onAuthStateChanged } from 'firebase/auth'
 
 // On app load, if Supabase token is missing but Firebase still has a user,
 // silently re-issue a GCR session so the user stays logged in (PWA / home screen).
-const API = import.meta.env.VITE_API_BASE || 'https://gcr-api-clean-fresh.vercel.app'
+const API = import.meta.env.VITE_API_BASE || 'https://gcr-api-clean.vercel.app'
 onAuthStateChanged(auth, async (firebaseUser) => {
   if (!firebaseUser) return
   const hasToken = !!localStorage.getItem('gcr_access_token')
@@ -93,7 +93,7 @@ function AppRoutes() {
 
   // Track route changes — fires on every page navigation
   useEffect(() => {
-    const API = import.meta.env.VITE_API_BASE || 'https://gcr-api-clean-fresh.vercel.app'
+    const API = import.meta.env.VITE_API_BASE || 'https://gcr-api-clean.vercel.app'
     let sess = sessionStorage.getItem('ts_sess_id')
     if (!sess) { sess = Math.random().toString(36).slice(2) + Date.now().toString(36); sessionStorage.setItem('ts_sess_id', sess) }
     const qs = new URLSearchParams(location.search)
