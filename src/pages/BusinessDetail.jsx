@@ -32,6 +32,8 @@ export default function RestaurantDetail() {
         const hasMenuData = data.menu_sections?.length || rotating.some(r => r.type !== 'drinks') || data.areas?.some(a => a.menu_sections?.length)
         const hasDrinksData = data.drink_sections?.length || rotating.some(r => r.type === 'drinks') || data.areas?.some(a => a.drink_sections?.length)
         const hasSpecialsData = data.specials?.length || data.daily_features?.length || data.dailyFeatures?.length || data.sides?.length || data.areas?.some(a => a.specials?.length)
+        const hasOfferingsData = (data.sections || []).some(s => (s.items || []).length > 0)
+        if (hasOfferingsData) tabs.push('offerings')
         if (hasMenuData) tabs.push('menu')
         if (hasDrinksData) tabs.push('drinks')
         if (hasSpecialsData) tabs.push('specials')
