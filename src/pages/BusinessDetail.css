@@ -1212,3 +1212,19 @@
 
 .google-maps-link { display: inline-flex; align-items: center; gap: 6px; margin: 12px 0; padding: 8px 14px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 20px; font-size: 13px; font-weight: 700; color: #15803d; text-decoration: none; }
 .google-maps-link:hover { background: #dcfce7; }
+
+/* ── Flexible offerings (rentals, charters, tours) ── */
+.offering-section { margin-bottom: 28px; }
+.offering-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; margin-top: 12px; }
+.offering-card { border: 1px solid #e5e7eb; border-radius: 14px; padding: 16px; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.04); }
+.offering-head { display: flex; align-items: center; gap: 8px; }
+.offering-icon { font-size: 20px; }
+.offering-name { font-weight: 800; font-size: 16px; color: #111827; flex: 1; }
+.offering-price { font-weight: 800; font-size: 16px; color: #15803d; white-space: nowrap; }
+.offering-meta { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 4px; font-size: 12.5px; color: #6b7280; }
+.offering-label { font-weight: 700; color: #2563eb; }
+.offering-desc { margin: 8px 0 0; font-size: 13.5px; color: #4b5563; line-height: 1.45; }
+.offering-includes { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.offering-chip { font-size: 11.5px; font-weight: 600; color: #15803d; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 3px 9px; }
+.offering-chip.feature { color: #b45309; background: #fffbeb; border-color: #fde68a; }
+.offering-notes { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 10px; padding-top: 10px; border-top: 1px dashed #e5e7eb; font-size: 12px; color: #6b7280; }

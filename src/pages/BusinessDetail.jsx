@@ -102,6 +102,11 @@ export default function RestaurantDetail() {
   const whatsIncluded = business.whats_included || []
   const faqs = business.faqs || []
   const requirements = business.requirements || []
+  // Flexible offerings (entity_sections) — used for rentals, charters, tours, etc.
+  const flexSections = (business.sections || [])
+    .filter(s => (s.items || []).length > 0)
+    .map(s => ({ ...s, items: [...s.items].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0)) }))
+  const hasOfferings = flexSections.length > 0
 
   // Rich menu data
   const rotating = business.rotating_sections || business.rotatingSections || []
@@ -216,6 +221,7 @@ export default function RestaurantDetail() {
   const hasSpecials = allSpecials.length > 0 || dailyFeatures.length > 0 || sides.length > 0
 
   const sections = [
+    ...(hasOfferings                     ? [{ id: 'offerings',   label: 'Offerings',   icon: '🎟️' }] : []),
     ...(hasMenu                          ? [{ id: 'menu',        label: 'Menu',        icon: '🍽️' }] : []),
     ...(hasDrinks                        ? [{ id: 'drinks',      label: 'Drinks',      icon: '🍷' }] : []),
     ...(hasSpecials                      ? [{ id: 'specials',    label: 'Specials',    icon: '⭐' }] : []),
@@ -653,6 +659,62 @@ export default function RestaurantDetail() {
           )}
 
           {/* Pricing */}
+          {activeTab === 'offerings' && (
+            <section className="content-section">
+              {flexSections.map((sec) => (
+                <div key={sec.id} className="offering-section">
+                  <h2>{sec.section_name}</h2>
+                  <div className="offering-grid">
+                    {sec.items.map((item) => {
+                      const m = item.metadata || {}
+                      const priceText = item.price_from != null
+                        ? (item.price_to != null
+                            ? `$${item.price_from}–$${item.price_to}`
+                            : `$${item.price_from}`)
+                        : (item.price_label || 'Ask Us')
+                      const includes = Array.isArray(m.includes) ? m.includes : []
+                      const features = Array.isArray(m.features) ? m.features : []
+                      return (
+                        <div key={item.id} className="offering-card">
+                          <div className="offering-head">
+                            <span className="offering-icon">{item.icon || '•'}</span>
+                            <span className="offering-name">{item.item_name}</span>
+                            <span className="offering-price">{priceText}</span>
+                          </div>
+                          {(item.price_label || item.duration) && (
+                            <div className="offering-meta">
+                              {item.price_label && item.price_from != null && <span className="offering-label">{item.price_label}</span>}
+                              {item.duration && <span className="offering-duration">⏱ {item.duration}</span>}
+                            </div>
+                          )}
+                          {item.description && <p className="offering-desc">{item.description}</p>}
+                          {includes.length > 0 && (
+                            <div className="offering-includes">
+                              {includes.map((inc, k) => <span key={k} className="offering-chip">✓ {inc}</span>)}
+                            </div>
+                          )}
+                          {features.length > 0 && (
+                            <div className="offering-includes">
+                              {features.map((f, k) => <span key={k} className="offering-chip feature">★ {f}</span>)}
+                            </div>
+                          )}
+                          {(m.requires || m.deposit || m.ages || m.note) && (
+                            <div className="offering-notes">
+                              {m.ages && <span>👥 {m.ages}</span>}
+                              {m.requires && <span>🪪 {m.requires}</span>}
+                              {m.deposit && <span>💵 Deposit {m.deposit}</span>}
+                              {m.note && <span>ℹ️ {m.note}</span>}
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              ))}
+            </section>
+          )}
+
           {activeTab === 'pricing' && (
             <section className="content-section">
               <h2>💰 Pricing</h2>
