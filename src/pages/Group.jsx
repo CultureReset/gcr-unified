@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { authFetch } from '../context/AppContext'
+import Toast from '../components/Toast'
 import './Group.css'
 
 export default function Group() {
@@ -11,6 +12,7 @@ export default function Group() {
   const [error, setError] = useState('')
   const [tab, setTab] = useState('overlaps')
   const [generating, setGenerating] = useState(false)
+  const [toast, setToast] = useState(null)
 
   async function load() {
     setLoading(true); setError('')
@@ -54,15 +56,15 @@ export default function Group() {
       const text = `Join my ${group.destination || group.name} trip on Gulf Coast Radar. This one-time link expires in 48 hours: ${invite.url}`
       await action({ url: invite.url, text })
     } catch (e) {
-      alert(e.message || 'Failed to create invite link')
+      setToast({ message: e.message || 'Failed to create invite link', type: 'error' })
     } finally { setGenerating(false) }
   }
 
   async function nativeShare()   { await withInvite(async ({ url, text }) => {
     if (navigator.share) { try { await navigator.share({ title: shareTitle, text, url }) } catch(e) {} }
-    else { navigator.clipboard.writeText(text); alert('Invite copied — paste it anywhere') }
+    else { navigator.clipboard.writeText(text); setToast({ message: 'Invite copied — paste it anywhere', type: 'success' }) }
   })}
-  async function copyInvite()    { await withInvite(async ({ text })   => { navigator.clipboard.writeText(text); alert('One-time invite copied') })}
+  async function copyInvite()    { await withInvite(async ({ text })   => { navigator.clipboard.writeText(text); setToast({ message: 'One-time invite copied', type: 'success' }) })}
   async function shareSMS()      { await withInvite(async ({ text })   => { window.location.href = `sms:?&body=${encodeURIComponent(text)}` })}
   async function shareWhatsApp() { await withInvite(async ({ text })   => { window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank') })}
   async function shareEmail()    { await withInvite(async ({ text })   => { window.location.href = `mailto:?subject=${encodeURIComponent(shareTitle)}&body=${encodeURIComponent(text)}` })}
@@ -70,6 +72,7 @@ export default function Group() {
 
   return (
     <div className="group-page page safe-top safe-bottom">
+      <Toast message={toast?.message} type={toast?.type} onClose={() => setToast(null)} />
       <div className="group-header">
         <button className="back-btn-sm" onClick={() => navigate('/home')}>
           <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} width={20} height={20}>

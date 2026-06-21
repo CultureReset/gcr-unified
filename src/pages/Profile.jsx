@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useApp, authFetch } from '../context/AppContext'
+import Toast from '../components/Toast'
 import './Profile.css'
 
 function hasRealEmail(email) {
@@ -30,6 +31,7 @@ export default function Profile() {
   const [togglingLocation, setTogglingLocation] = useState(false)
   const [filterCategory, setFilterCategory] = useState('all')
   const [accountOpen, setAccountOpen] = useState(false)
+  const [toast, setToast] = useState(null)
 
   const [addEmailOpen, setAddEmailOpen] = useState(false)
   const [addEmailStep, setAddEmailStep] = useState('input')
@@ -128,7 +130,7 @@ export default function Profile() {
     const ok = window.confirm(`Reset your swipe deck? This wipes the ${seenSlugs.length} place${seenSlugs.length === 1 ? '' : 's'} you've seen so they show up again. Saves and Must-Do are NOT affected.`)
     if (!ok) return
     await resetSeenSlugs()
-    window.alert(`Done — you'll see all places again.`)
+    setToast({ message: "Done — you'll see all places again.", type: 'success' })
   }
 
   async function sendAddEmailCode() {
@@ -165,6 +167,7 @@ export default function Profile() {
 
   return (
     <div className="profile-page page safe-top safe-bottom">
+      <Toast message={toast?.message} type={toast?.type} onClose={() => setToast(null)} />
       <div className="profile-header">
         <div className="profile-avatar">
           {(tourist?.name?.[0] || realEmail?.[0] || phoneFormatted?.[1] || '?').toUpperCase()}

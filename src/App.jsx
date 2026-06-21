@@ -3,8 +3,8 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from
 import { useApp } from './context/AppContext'
 import { DEFAULT_MODE } from './config'
 import Landing from './pages/Landing'
-import Browse from './pages/Browse'
 import CategoryListings from './pages/CategoryListings'
+import NotFound from './pages/NotFound'
 import CategoryPage from './pages/CategoryPage'
 import Events from './pages/Events'
 import Search from './pages/Search'
@@ -25,6 +25,16 @@ import Group from './pages/Group'
 import Privacy from './pages/Privacy'
 import Terms from './pages/Terms'
 import ReviewUpload from './pages/ReviewUpload'
+import RestaurantMenu from './pages/RestaurantMenu'
+import ArtistListings from './pages/ArtistListings'
+import ArtistProfile from './pages/ArtistProfile'
+import RentalListings from './pages/RentalListings'
+import RentalDetail from './pages/RentalDetail'
+import BookRental from './pages/BookRental'
+import ServiceListings from './pages/ServiceListings'
+import ServiceDetail from './pages/ServiceDetail'
+import BookService from './pages/BookService'
+import Confirmation from './pages/Confirmation'
 import BottomNav from './components/BottomNav'
 import InstallBanner from './components/InstallBanner'
 import GCRHeader from './components/GCRHeader'
@@ -124,6 +134,16 @@ function AppRoutes() {
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/terms" element={<Terms />} />
         <Route path="/review/:slug" element={<ReviewUpload />} />
+        <Route path="/menu/:slug" element={<RestaurantMenu />} />
+        <Route path="/artists" element={<ArtistListings />} />
+        <Route path="/artist/:slug" element={<ArtistProfile />} />
+        <Route path="/staying" element={<RentalListings />} />
+        <Route path="/rental/:slug" element={<RentalDetail />} />
+        <Route path="/book-rental/:slug" element={<BookRental />} />
+        <Route path="/confirmation/:type/:id" element={<Confirmation />} />
+        <Route path="/services" element={<ServiceListings />} />
+        <Route path="/service/:slug" element={<ServiceDetail />} />
+        <Route path="/book-service/:slug" element={<BookService />} />
         <Route path="/setup/*" element={<RequireAuth><Setup /></RequireAuth>} />
         <Route path="/home" element={<RequireAuth><Home /></RequireAuth>} />
         <Route path="/swipe/:category" element={<Swipe />} />
@@ -142,15 +162,13 @@ function AppRoutes() {
         <Route path="/happy-hours" element={<CategoryPage />} />
         <Route path="/events" element={<Events />} />
         <Route path="/things-to-do" element={<CategoryPage />} />
-        <Route path="/services" element={<CategoryPage />} />
         <Route path="/public-spots" element={<CategoryPage />} />
         <Route path="/feed" element={<CategoryPage />} />
         <Route path="/shopping" element={<CategoryPage />} />
-        <Route path="/staying" element={<CategoryPage />} />
         <Route path="/nightlife" element={<CategoryPage />} />
         <Route path="/wellness" element={<CategoryPage />} />
 
-        <Route path="*" element={<Navigate to="/" />} />
+        <Route path="*" element={<NotFound />} />
       </Routes>
       {!hideNav && <BottomNav />}
       {!hideNav && <InstallBanner />}
