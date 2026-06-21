@@ -19,6 +19,7 @@ export default function RentalDetail() {
   const [rental, setRental] = useState(null)
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('overview')
+  const [saved, setSaved] = useState(false)
   const [checkIn, setCheckIn] = useState('')
   const [checkOut, setCheckOut] = useState('')
   const [available, setAvailable] = useState(null)
@@ -130,13 +131,22 @@ export default function RentalDetail() {
 
   const photos = rental.photo_urls || []
   const amenities = rental.amenities || []
+  const faqs = rental.faqs || []
+  const [galleryPage, setGalleryPage] = useState(0)
+  const GALLERY_PER_PAGE = 9
+  const galleryTotal = Math.ceil(photos.length / GALLERY_PER_PAGE)
+  const [lightboxOpen, setLightboxOpen] = useState(false)
 
   const tabs = [
     { id: 'overview', label: 'Overview' },
     { id: 'book', label: '📅 Book' },
     ...(amenities.length ? [{ id: 'amenities', label: 'Amenities' }] : []),
     { id: 'reviews', label: `Reviews${reviewStats?.total ? ` (${reviewStats.total})` : ''}` },
-    { id: 'policies', label: 'Policies' },
+    ...(rental.nightly_price ? [{ id: 'pricing', label: '💰 Pricing' }] : []),
+    ...(faqs.length ? [{ id: 'faqs', label: '❓ FAQs' }] : []),
+    ...(rental.house_rules ? [{ id: 'policies', label: 'Policies' }] : []),
+    { id: 'location', label: '📍 Location' },
+    ...(photos.length > 5 ? [{ id: 'gallery', label: `📸 Photos (${photos.length})` }] : []),
   ]
 
   const nights = (checkIn && checkOut)
@@ -171,7 +181,10 @@ export default function RentalDetail() {
         {/* Header */}
         <div className="rental-header">
           <div className="rental-header-left">
-            <h1>{rental.name}</h1>
+            <div style={{display:'flex',alignItems:'center',gap:10}}>
+              <h1 style={{margin:0}}>{rental.name}</h1>
+              <button className={`save-btn-detail ${saved ? 'saved' : ''}`} onClick={() => setSaved(s => !s)}>{saved ? '❤️' : '🤍'}</button>
+            </div>
             <div className="rental-meta-row">
               {rental.bedrooms && <span>🛏️ {rental.bedrooms} bed</span>}
               {rental.bathrooms && <span>🚿 {rental.bathrooms} bath</span>}
@@ -413,6 +426,92 @@ export default function RentalDetail() {
             <div className="policy-block">
               <p className="policy-note">For cancellation or refund policies, please contact the host directly.</p>
             </div>
+          </div>
+        )}
+
+        {/* Pricing */}
+        {activeTab === 'pricing' && (
+          <div className="rental-section">
+            <h2>💰 Pricing</h2>
+            <div className="pricing-row">
+              <div className="pricing-name">Nightly Rate</div>
+              <div className="pricing-price">${rental.nightly_price} / night</div>
+            </div>
+            {rental.min_nights && (
+              <div className="pricing-row">
+                <div className="pricing-name">Minimum Stay</div>
+                <div className="pricing-price">{rental.min_nights} night{rental.min_nights !== 1 ? 's' : ''}</div>
+              </div>
+            )}
+            {rental.capacity && (
+              <div className="pricing-row">
+                <div className="pricing-name">Max Guests</div>
+                <div className="pricing-price">{rental.capacity} people</div>
+              </div>
+            )}
+            {nights > 0 && (
+              <div className="pricing-row pricing-total">
+                <div className="pricing-name">Total ({nights} nights)</div>
+                <div className="pricing-price">${(rental.nightly_price * nights).toLocaleString()}</div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* FAQs */}
+        {activeTab === 'faqs' && faqs.length > 0 && (
+          <div className="rental-section">
+            <h2>❓ Frequently Asked Questions</h2>
+            <div className="faqs-list">
+              {faqs.map((faq, i) => (
+                <div key={faq.id || i} className="faq-row">
+                  <div className="faq-question">{faq.question}</div>
+                  <div className="faq-answer">{faq.answer}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Location */}
+        {activeTab === 'location' && (
+          <div className="rental-section">
+            <h2>📍 Location</h2>
+            {rental.address_line_1 && (
+              <p className="address">
+                {rental.address_line_1}<br />
+                {[rental.city, rental.state, rental.zip].filter(Boolean).join(', ')}
+              </p>
+            )}
+            {rental.directions_url && (
+              <a href={rental.directions_url} target="_blank" rel="noopener noreferrer" className="btn btn-directions">
+                📍 Get Directions
+              </a>
+            )}
+            {!rental.address_line_1 && !rental.directions_url && (
+              <p className="no-data">Contact host for exact address after booking.</p>
+            )}
+          </div>
+        )}
+
+        {/* Full Gallery */}
+        {activeTab === 'gallery' && (
+          <div className="rental-section">
+            <h2>📸 All Photos ({photos.length})</h2>
+            <div className="gallery-grid-preview">
+              {photos.slice(galleryPage * GALLERY_PER_PAGE, (galleryPage + 1) * GALLERY_PER_PAGE).map((url, idx) => (
+                <img key={idx} src={url} alt={`${rental.name} ${galleryPage * GALLERY_PER_PAGE + idx + 1}`}
+                  className="gallery-preview-img"
+                  onClick={() => setLightboxIdx(galleryPage * GALLERY_PER_PAGE + idx)} />
+              ))}
+            </div>
+            {galleryTotal > 1 && (
+              <div className="gallery-pagination">
+                <button disabled={galleryPage === 0} onClick={() => setGalleryPage(p => p - 1)}>← Prev</button>
+                <span>{galleryPage + 1} / {galleryTotal}</span>
+                <button disabled={galleryPage >= galleryTotal - 1} onClick={() => setGalleryPage(p => p + 1)}>Next →</button>
+              </div>
+            )}
           </div>
         )}
 

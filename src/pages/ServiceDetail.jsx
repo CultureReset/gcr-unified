@@ -10,6 +10,7 @@ export default function ServiceDetail() {
   const [service, setService] = useState(null)
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('overview')
+  const [saved, setSaved] = useState(false)
   const [selectedDate, setSelectedDate] = useState('')
   const [selectedTime, setSelectedTime] = useState('')
   const [availability, setAvailability] = useState(null)
@@ -118,13 +119,21 @@ export default function ServiceDetail() {
 
   const photos = service.photo_urls || []
   const amenities = service.amenities || []
+  const faqs = service.faqs || []
+  const [galleryPage, setGalleryPage] = useState(0)
+  const GALLERY_PER_PAGE = 9
+  const galleryTotal = Math.ceil(photos.length / GALLERY_PER_PAGE)
 
   const tabs = [
     { id: 'overview', label: 'Overview' },
     { id: 'book', label: '📅 Book' },
     ...(amenities.length ? [{ id: 'highlights', label: 'Highlights' }] : []),
     { id: 'reviews', label: `Reviews${reviewStats?.total ? ` (${reviewStats.total})` : ''}` },
-    { id: 'policies', label: 'Policies' },
+    ...(service.nightly_price ? [{ id: 'pricing', label: '💰 Pricing' }] : []),
+    ...(faqs.length ? [{ id: 'faqs', label: '❓ FAQs' }] : []),
+    ...(service.house_rules ? [{ id: 'policies', label: 'Policies' }] : []),
+    { id: 'location', label: '📍 Location' },
+    ...(photos.length > 5 ? [{ id: 'gallery', label: `📸 Photos (${photos.length})` }] : []),
   ]
 
   return (
@@ -155,7 +164,10 @@ export default function ServiceDetail() {
         {/* Header */}
         <div className="service-header">
           <div className="service-header-left">
-            <h1>{service.name}</h1>
+            <div style={{display:'flex',alignItems:'center',gap:10}}>
+              <h1 style={{margin:0}}>{service.name}</h1>
+              <button className={`save-btn-detail ${saved ? 'saved' : ''}`} onClick={() => setSaved(s => !s)}>{saved ? '❤️' : '🤍'}</button>
+            </div>
             {reviewStats?.total > 0 && (
               <div className="service-rating">⭐ {reviewStats.average?.toFixed(1)} · {reviewStats.total} reviews</div>
             )}
@@ -340,6 +352,77 @@ export default function ServiceDetail() {
             <div className="policy-block">
               <p className="policy-note">For cancellation or refund inquiries, please contact the provider directly.</p>
             </div>
+          </div>
+        )}
+
+        {/* Pricing */}
+        {activeTab === 'pricing' && (
+          <div className="service-section">
+            <h2>💰 Pricing</h2>
+            <div className="pricing-row">
+              <div className="pricing-name">Base Rate</div>
+              <div className="pricing-price">${service.nightly_price}</div>
+            </div>
+          </div>
+        )}
+
+        {/* FAQs */}
+        {activeTab === 'faqs' && faqs.length > 0 && (
+          <div className="service-section">
+            <h2>❓ Frequently Asked Questions</h2>
+            <div className="faqs-list">
+              {faqs.map((faq, i) => (
+                <div key={faq.id || i} className="faq-row">
+                  <div className="faq-question">{faq.question}</div>
+                  <div className="faq-answer">{faq.answer}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Location */}
+        {activeTab === 'location' && (
+          <div className="service-section">
+            <h2>📍 Location</h2>
+            {service.address_line_1 && (
+              <p className="address">
+                {service.address_line_1}<br />
+                {[service.city, service.state, service.zip].filter(Boolean).join(', ')}
+              </p>
+            )}
+            {service.directions_url && (
+              <a href={service.directions_url} target="_blank" rel="noopener noreferrer" className="btn btn-directions">
+                📍 Get Directions
+              </a>
+            )}
+            {service.phone && (
+              <a href={`tel:${service.phone}`} className="btn btn-call" style={{marginTop: 12, display: 'inline-block'}}>📞 Call</a>
+            )}
+            {!service.address_line_1 && !service.directions_url && (
+              <p className="no-data">Contact provider for service location details.</p>
+            )}
+          </div>
+        )}
+
+        {/* Full Gallery */}
+        {activeTab === 'gallery' && (
+          <div className="service-section">
+            <h2>📸 All Photos ({photos.length})</h2>
+            <div className="gallery-grid-preview">
+              {photos.slice(galleryPage * GALLERY_PER_PAGE, (galleryPage + 1) * GALLERY_PER_PAGE).map((url, idx) => (
+                <img key={idx} src={url} alt={`${service.name} ${galleryPage * GALLERY_PER_PAGE + idx + 1}`}
+                  className="gallery-preview-img"
+                  onClick={() => setLightboxIdx(galleryPage * GALLERY_PER_PAGE + idx)} />
+              ))}
+            </div>
+            {galleryTotal > 1 && (
+              <div className="gallery-pagination">
+                <button disabled={galleryPage === 0} onClick={() => setGalleryPage(p => p - 1)}>← Prev</button>
+                <span>{galleryPage + 1} / {galleryTotal}</span>
+                <button disabled={galleryPage >= galleryTotal - 1} onClick={() => setGalleryPage(p => p + 1)}>Next →</button>
+              </div>
+            )}
           </div>
         )}
 

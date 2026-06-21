@@ -23,6 +23,11 @@ export default function RestaurantDetail() {
   const [reviewsOpen, setReviewsOpen] = useState(false)
   const [galleryPage, setGalleryPage] = useState(0)
   const [reviewsPage, setReviewsPage] = useState(0)
+  const [reviewCount, setReviewCount] = useState(0)
+  const [hasTeam, setHasTeam] = useState(false)
+  const [hasBlog, setHasBlog] = useState(false)
+  const [hasPolicies, setHasPolicies] = useState(false)
+  const [saved, setSaved] = useState(false)
   const subSectionRefs = useRef({})
   const observerRef = useRef(null)
 
@@ -47,6 +52,19 @@ export default function RestaurantDetail() {
         if (data.hh_days || data.hh_sections?.length || data.happy_hour_sections?.length) tabs.push('happy-hour')
         if (data.events?.length) tabs.push('events')
         setActiveTab(tabs[0] || 'overview')
+
+        // Preload counts for conditional tabs
+        Promise.all([
+          fetch(`${API_BASE}/api/reviews/${encodeURIComponent(slug)}/stats`).then(r => r.ok ? r.json() : null).catch(() => null),
+          fetch(`${API_BASE}/api/team/${encodeURIComponent(slug)}`).then(r => r.ok ? r.json() : null).catch(() => null),
+          fetch(`${API_BASE}/api/blog/${encodeURIComponent(slug)}?page=1&limit=1`).then(r => r.ok ? r.json() : null).catch(() => null),
+          fetch(`${API_BASE}/api/faqs/${encodeURIComponent(slug)}?category=cancellation`).then(r => r.ok ? r.json() : null).catch(() => null),
+        ]).then(([reviewStats, teamData, blogData, policiesData]) => {
+          if (reviewStats?.total) setReviewCount(reviewStats.total)
+          if ((teamData?.team || []).length > 0) setHasTeam(true)
+          if ((blogData?.posts || []).length > 0) setHasBlog(true)
+          if ((policiesData?.faqs || []).length > 0) setHasPolicies(true)
+        })
       } catch (err) {
         setError(err.message)
       } finally {
@@ -243,12 +261,12 @@ export default function RestaurantDetail() {
     { id: 'overview',    label: 'Overview',    icon: 'ℹ️'  },
     ...(hasActivityExtras                ? [{ id: 'experience',  label: 'Experience',  icon: '🎯' }] : []),
     ...(faqs.length                      ? [{ id: 'faqs',        label: 'FAQs',        icon: '❓' }] : []),
-    { id: 'reviews',     label: 'Reviews',     icon: '⭐'  },
-    { id: 'team',        label: 'Team',        icon: '👥'  },
-    { id: 'blog',        label: 'Blog',        icon: '📰' },
-    { id: 'policies',    label: 'Policies',    icon: '📋' },
-    { id: 'location',    label: 'Location',    icon: '📍'  },
-    ...(photos.length                    ? [{ id: 'gallery',     label: 'Photos',      icon: '📸' }] : []),
+    { id: 'reviews', label: reviewCount > 0 ? `Reviews (${reviewCount})` : 'Reviews', icon: '⭐' },
+    ...(hasTeam     ? [{ id: 'team',     label: 'Team',     icon: '👥' }] : []),
+    ...(hasBlog     ? [{ id: 'blog',     label: 'Blog',     icon: '📰' }] : []),
+    ...(hasPolicies ? [{ id: 'policies', label: 'Policies', icon: '📋' }] : []),
+    { id: 'location', label: 'Location', icon: '📍' },
+    ...(photos.length ? [{ id: 'gallery', label: `Photos (${photos.length})`, icon: '📸' }] : []),
   ]
 
   // Sub-section chips — meal period groups for menu, section names for drinks/happy-hour
@@ -269,7 +287,7 @@ export default function RestaurantDetail() {
   const GALLERY_PER_PAGE = 10
   const REVIEWS_PER_PAGE = 10
   const galleryTotal = Math.ceil((photos?.length || 0) / GALLERY_PER_PAGE)
-  const reviewsTotal = 0
+  const reviewsTotal = reviewCount
 
   const handleShareBusiness = () => {
     const businessUrl = `${window.location.origin}/business/${business.slug}`
@@ -292,7 +310,12 @@ export default function RestaurantDetail() {
       {/* Header */}
       <div className="detail-header">
         <button className="back-btn" onClick={() => navigate(-1)}>← Back</button>
-        <button className="share-btn" onClick={handleShareBusiness} title="Share this business">📤 Share</button>
+        <div style={{display:'flex',gap:8}}>
+          <button className={`save-btn-detail ${saved ? 'saved' : ''}`} onClick={() => setSaved(s => !s)} title={saved ? 'Saved' : 'Save'}>
+            {saved ? '❤️' : '🤍'}
+          </button>
+          <button className="share-btn" onClick={handleShareBusiness} title="Share this business">📤 Share</button>
+        </div>
       </div>
 
       {/* Photo Carousel */}
@@ -358,6 +381,13 @@ export default function RestaurantDetail() {
           </div>
         </div>
       </div>
+
+      {/* Permanently Closed Banner */}
+      {business.business_status === 'CLOSED_PERMANENTLY' && (
+        <div className="closed-permanently-banner">
+          ⚠️ This business is permanently closed
+        </div>
+      )}
 
       {/* Happy Hour Banner */}
       {business.hh_days && (
@@ -1028,10 +1058,25 @@ export default function RestaurantDetail() {
           {/* Gallery */}
           {activeTab === 'gallery' && (
             <section className="content-section">
-              <h2>Photos</h2>
-              <button className="gallery-btn" onClick={() => setGalleryOpen(true)}>
-                📸 View All Photos ({photos.length})
-              </button>
+              <h2>Photos ({photos.length})</h2>
+              <div className="gallery-grid-preview">
+                {photos.slice(galleryPage * GALLERY_PER_PAGE, (galleryPage + 1) * GALLERY_PER_PAGE).map((photo, idx) => (
+                  <img
+                    key={idx}
+                    src={photo.image_url || photo.url}
+                    alt={photo.caption || business.name}
+                    className="gallery-preview-img"
+                    onClick={() => { setGalleryOpen(true); setGalleryPage(Math.floor((galleryPage * GALLERY_PER_PAGE + idx) / GALLERY_PER_PAGE)) }}
+                  />
+                ))}
+              </div>
+              {galleryTotal > 1 && (
+                <div className="gallery-pagination">
+                  <button disabled={galleryPage === 0} onClick={() => setGalleryPage(p => p - 1)}>← Prev</button>
+                  <span>{galleryPage + 1} / {galleryTotal}</span>
+                  <button disabled={galleryPage >= galleryTotal - 1} onClick={() => setGalleryPage(p => p + 1)}>Next →</button>
+                </div>
+              )}
             </section>
           )}
 
