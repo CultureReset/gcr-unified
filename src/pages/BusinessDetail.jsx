@@ -39,19 +39,22 @@ export default function RestaurantDetail() {
         const data = await res.json()
         if (!data || !data.slug) throw new Error('Business not found')
         setBusiness(data)
-        const tabs = []
+        const et = (data.entity_type || '').toLowerCase()
+        const isFood = ['restaurant','coffee','dessert','bakery','bar'].includes(et)
         const rotating = data.rotating_sections || data.rotatingSections || []
         const hasMenuData = data.menu_sections?.length || rotating.some(r => r.type !== 'drinks') || data.areas?.some(a => a.menu_sections?.length)
         const hasDrinksData = data.drink_sections?.length || rotating.some(r => r.type === 'drinks') || data.areas?.some(a => a.drink_sections?.length)
         const hasSpecialsData = data.specials?.length || data.daily_features?.length || data.dailyFeatures?.length || data.sides?.length || data.areas?.some(a => a.specials?.length)
         const hasOfferingsData = (data.sections || []).some(s => (s.items || []).length > 0)
-        if (hasOfferingsData) tabs.push('offerings')
-        if (hasMenuData) tabs.push('menu')
-        if (hasDrinksData) tabs.push('drinks')
-        if (hasSpecialsData) tabs.push('specials')
-        if (data.hh_days || data.hh_sections?.length || data.happy_hour_sections?.length) tabs.push('happy-hour')
-        if (data.events?.length) tabs.push('events')
-        setActiveTab(tabs[0] || 'overview')
+        const hasPricing = data.pricing?.length > 0
+        const hasSchedules = data.schedules?.length > 0
+        // Default tab: for food types start on menu/offerings; for activities start on pricing or overview
+        let defaultTab = 'overview'
+        if (hasOfferingsData) defaultTab = 'offerings'
+        else if (isFood && hasMenuData) defaultTab = 'menu'
+        else if (hasPricing) defaultTab = 'pricing'
+        else if (hasSchedules) defaultTab = 'schedule'
+        setActiveTab(defaultTab)
 
         // Preload counts for conditional tabs
         Promise.all([
@@ -242,20 +245,26 @@ export default function RestaurantDetail() {
     return { open: true, label: `Open · Closes ${formatTime(todayHours.closes_at) || 'late'}` }
   })()
 
+  const entityType = (business.entity_type || '').toLowerCase()
+  const isFood = ['restaurant','coffee','dessert','bakery','bar'].includes(entityType)
+
   const hasActivityExtras = business.highlights?.length || business.known_for?.length || business.good_for?.length || business.what_makes_it_different
 
   const hasMenu = flatMenuSections.length > 0 || foodRotating.length > 0
   const hasDrinks = flatDrinkSections.length > 0 || drinkRotating.length > 0
   const hasSpecials = allSpecials.length > 0 || dailyFeatures.length > 0 || sides.length > 0
+  const hasHH = !!(business.hh_days || business.hh_sections?.length || business.happy_hour_sections?.length)
 
   const sections = [
+    // Data-driven — only show if data exists, regardless of type
     ...(hasOfferings                     ? [{ id: 'offerings',   label: 'Offerings',   icon: '🎟️' }] : []),
-    ...(hasMenu                          ? [{ id: 'menu',        label: 'Menu',        icon: '🍽️' }] : []),
-    ...(hasDrinks                        ? [{ id: 'drinks',      label: 'Drinks',      icon: '🍷' }] : []),
-    ...(hasSpecials                      ? [{ id: 'specials',    label: 'Specials',    icon: '⭐' }] : []),
-    ...((business.hh_days || business.hh_sections?.length || business.happy_hour_sections?.length) ? [{ id: 'happy-hour', label: 'Happy Hour', icon: '🍺' }] : []),
     ...(pricing.length                   ? [{ id: 'pricing',     label: 'Pricing',     icon: '💰' }] : []),
     ...(schedules.length                 ? [{ id: 'schedule',    label: 'Schedule',    icon: '🗓️' }] : []),
+    // Food-only tabs — only show for food types (or if data somehow exists on non-food)
+    ...((isFood || hasMenu)              ? (hasMenu    ? [{ id: 'menu',       label: 'Menu',       icon: '🍽️' }] : []) : []),
+    ...((isFood || hasDrinks)            ? (hasDrinks  ? [{ id: 'drinks',     label: 'Drinks',     icon: '🍷' }] : []) : []),
+    ...((isFood || hasSpecials)          ? (hasSpecials? [{ id: 'specials',   label: 'Specials',   icon: '⭐' }] : []) : []),
+    ...((isFood || hasHH)               ? (hasHH      ? [{ id: 'happy-hour', label: 'Happy Hour', icon: '🍺' }] : []) : []),
     ...(hours.length                     ? [{ id: 'hours',       label: 'Hours',       icon: '🕐' }] : []),
     ...(events.length                    ? [{ id: 'events',      label: 'Events',      icon: '🎉' }] : []),
     { id: 'overview',    label: 'Overview',    icon: 'ℹ️'  },
@@ -424,26 +433,32 @@ export default function RestaurantDetail() {
           </div>
         )}
 
-        {/* Primary CTA — reserve/order/book gets top billing */}
-        {(business.reservation_url || business.order_url || business.booking_url) && (
-          <div className="primary-cta">
-            {business.reservation_url && (
-              <a href={business.reservation_url} target="_blank" rel="noopener noreferrer" className="btn-primary-cta">
-                🍽️ Make a Reservation
-              </a>
-            )}
-            {business.order_url && (
-              <a href={business.order_url} target="_blank" rel="noopener noreferrer" className="btn-primary-cta">
-                🛵 Order Online
-              </a>
-            )}
-            {business.booking_url && !business.reservation_url && (
-              <a href={business.booking_url} target="_blank" rel="noopener noreferrer" className="btn-primary-cta">
-                📅 Book Now
-              </a>
-            )}
-          </div>
-        )}
+        {/* Primary CTA — type-aware labels */}
+        {(() => {
+          const et = (business.entity_type || '').toLowerCase()
+          const isFood = ['restaurant','coffee','dessert','bakery','bar'].includes(et)
+          const isShopping = et === 'shopping'
+          const isActivity = et === 'activity'
+          const isStay = ['hotel','condo','vacation-rental'].includes(et)
+          const isService = et === 'service'
+          const reserveLabel = isFood ? '🍽️ Make a Reservation' : isStay ? '🛏️ Check Availability' : '📅 Reserve a Spot'
+          const bookLabel = isActivity ? '🎟️ Book This Activity' : isService ? '📅 Schedule Service' : isShopping ? '🛍️ Shop Online' : '📅 Book Now'
+          return (business.reservation_url || business.order_url || business.booking_url) ? (
+            <div className="primary-cta">
+              {business.reservation_url && (
+                <a href={business.reservation_url} target="_blank" rel="noopener noreferrer" className="btn-primary-cta">{reserveLabel}</a>
+              )}
+              {business.order_url && (
+                <a href={business.order_url} target="_blank" rel="noopener noreferrer" className="btn-primary-cta">
+                  {isFood ? '🛵 Order Online' : '🛒 Order / Buy'}
+                </a>
+              )}
+              {business.booking_url && !business.reservation_url && (
+                <a href={business.booking_url} target="_blank" rel="noopener noreferrer" className="btn-primary-cta">{bookLabel}</a>
+              )}
+            </div>
+          ) : null
+        })()}
 
         {/* Secondary Action Buttons */}
         <div className="action-buttons">
@@ -538,44 +553,140 @@ export default function RestaurantDetail() {
                 </div>
               )}
 
-              {/* Amenities grid */}
+              {/* Type-aware features/amenities */}
               {(() => {
-                const amenities = [
-                  business.dine_in           && { icon: '🍽️', label: 'Dine-in' },
-                  business.takeout           && { icon: '🥡', label: 'Takeout' },
-                  business.delivery          && { icon: '🛵', label: 'Delivery' },
-                  business.curbside_pickup   && { icon: '🚗', label: 'Curbside Pickup' },
-                  business.reservable        && { icon: '📅', label: 'Reservations' },
-                  business.outdoor_seating   && { icon: '🌿', label: 'Outdoor Seating' },
-                  business.live_music        && { icon: '🎸', label: 'Live Music' },
+                const et = (business.entity_type || '').toLowerCase()
+                const isFood = ['restaurant','coffee','dessert','bakery','bar'].includes(et)
+                const isActivity = et === 'activity'
+                const isStay = ['hotel','condo','vacation-rental'].includes(et)
+                const isShopping = et === 'shopping'
+                const isPark = et === 'park'
+
+                // Activity / charter / tour quick-facts
+                if (isActivity) {
+                  const facts = [
+                    business.duration_text       && { icon: '⏱', label: business.duration_text },
+                    business.price_from != null   && { icon: '💵', label: `From $${business.price_from}${business.price_unit ? ' / ' + business.price_unit : ''}` },
+                    business.good_for_groups     && { icon: '👥', label: 'Good for Groups' },
+                    business.good_for_children   && { icon: '👶', label: 'Kid Friendly' },
+                    business.allows_dogs         && { icon: '🐕', label: 'Dog Friendly' },
+                    business.outdoor_seating     && { icon: '🌊', label: 'Outdoors' },
+                    business.reservable          && { icon: '📅', label: 'Reservations Available' },
+                    business.wheelchair_accessible_entrance && { icon: '♿', label: 'Accessible' },
+                  ].filter(Boolean)
+                  if (!facts.length) return null
+                  return (
+                    <div className="amenities-section">
+                      <h3>Quick Facts</h3>
+                      <div className="amenities-grid">
+                        {facts.map((a, i) => <div key={i} className="amenity-item">{a.icon} {a.label}</div>)}
+                      </div>
+                    </div>
+                  )
+                }
+
+                // Stay quick-facts
+                if (isStay) {
+                  const facts = [
+                    business.bedrooms  && { icon: '🛏️', label: `${business.bedrooms} Bedroom${business.bedrooms !== 1 ? 's' : ''}` },
+                    business.bathrooms && { icon: '🚿', label: `${business.bathrooms} Bathroom${business.bathrooms !== 1 ? 's' : ''}` },
+                    business.sqft      && { icon: '📐', label: `${business.sqft.toLocaleString()} sqft` },
+                    business.good_for_groups     && { icon: '👥', label: 'Good for Groups' },
+                    business.good_for_children   && { icon: '👶', label: 'Kid Friendly' },
+                    business.allows_dogs         && { icon: '🐕', label: 'Pet Friendly' },
+                    business.outdoor_seating     && { icon: '🌊', label: 'Waterfront' },
+                    business.reservable          && { icon: '📅', label: 'Bookable Online' },
+                    business.wheelchair_accessible_entrance && { icon: '♿', label: 'Accessible' },
+                  ].filter(Boolean)
+                  if (!facts.length) return null
+                  return (
+                    <div className="amenities-section">
+                      <h3>Property Details</h3>
+                      <div className="amenities-grid">
+                        {facts.map((a, i) => <div key={i} className="amenity-item">{a.icon} {a.label}</div>)}
+                      </div>
+                    </div>
+                  )
+                }
+
+                // Shopping / park / service — generic features only
+                if (isShopping || isPark || et === 'service') {
+                  const facts = [
+                    business.outdoor_seating   && { icon: '🌿', label: 'Outdoor' },
+                    business.good_for_groups   && { icon: '👥', label: 'Good for Groups' },
+                    business.good_for_children && { icon: '👶', label: 'Kid Friendly' },
+                    business.allows_dogs       && { icon: '🐕', label: 'Dog Friendly' },
+                    business.reservable        && { icon: '📅', label: 'Appointments Available' },
+                    business.wheelchair_accessible_entrance && { icon: '♿', label: 'Accessible Entrance' },
+                  ].filter(Boolean)
+                  if (!facts.length) return null
+                  return (
+                    <div className="amenities-section">
+                      <h3>Features</h3>
+                      <div className="amenities-grid">
+                        {facts.map((a, i) => <div key={i} className="amenity-item">{a.icon} {a.label}</div>)}
+                      </div>
+                    </div>
+                  )
+                }
+
+                // Food types — full restaurant amenities
+                if (isFood) {
+                  const amenities = [
+                    business.dine_in           && { icon: '🍽️', label: 'Dine-in' },
+                    business.takeout           && { icon: '🥡', label: 'Takeout' },
+                    business.delivery          && { icon: '🛵', label: 'Delivery' },
+                    business.curbside_pickup   && { icon: '🚗', label: 'Curbside Pickup' },
+                    business.reservable        && { icon: '📅', label: 'Reservations' },
+                    business.outdoor_seating   && { icon: '🌿', label: 'Outdoor Seating' },
+                    business.live_music        && { icon: '🎸', label: 'Live Music' },
+                    business.good_for_groups   && { icon: '👥', label: 'Good for Groups' },
+                    business.good_for_children && { icon: '👶', label: 'Kid Friendly' },
+                    business.allows_dogs       && { icon: '🐕', label: 'Dog Friendly' },
+                    business.good_for_watching_sports && { icon: '📺', label: 'Sports Bar' },
+                    business.serves_breakfast  && { icon: '🍳', label: 'Breakfast' },
+                    business.serves_brunch     && { icon: '🥂', label: 'Brunch' },
+                    business.serves_lunch      && { icon: '🥗', label: 'Lunch' },
+                    business.serves_dinner     && { icon: '🍷', label: 'Dinner' },
+                    business.serves_beer       && { icon: '🍺', label: 'Beer' },
+                    business.serves_wine       && { icon: '🍷', label: 'Wine' },
+                    business.serves_cocktails  && { icon: '🍹', label: 'Cocktails' },
+                    business.serves_coffee     && { icon: '☕', label: 'Coffee' },
+                    business.serves_dessert    && { icon: '🍰', label: 'Dessert' },
+                    business.serves_vegetarian && { icon: '🥦', label: 'Vegetarian Options' },
+                    business.wheelchair_accessible_entrance && { icon: '♿', label: 'Accessible Entrance' },
+                    business.wheelchair_accessible_parking  && { icon: '♿', label: 'Accessible Parking' },
+                    business.wheelchair_accessible_restroom && { icon: '♿', label: 'Accessible Restroom' },
+                  ].filter(Boolean)
+                  if (!amenities.length) return null
+                  return (
+                    <div className="amenities-section">
+                      <h3>Amenities & Features</h3>
+                      <div className="amenities-grid">
+                        {amenities.map((a, i) => <div key={i} className="amenity-item">{a.icon} {a.label}</div>)}
+                      </div>
+                    </div>
+                  )
+                }
+
+                // Fallback — generic
+                const facts = [
                   business.good_for_groups   && { icon: '👥', label: 'Good for Groups' },
                   business.good_for_children && { icon: '👶', label: 'Kid Friendly' },
                   business.allows_dogs       && { icon: '🐕', label: 'Dog Friendly' },
-                  business.good_for_watching_sports && { icon: '📺', label: 'Sports Bar' },
-                  business.serves_breakfast  && { icon: '🍳', label: 'Breakfast' },
-                  business.serves_brunch     && { icon: '🥂', label: 'Brunch' },
-                  business.serves_lunch      && { icon: '🥗', label: 'Lunch' },
-                  business.serves_dinner     && { icon: '🍷', label: 'Dinner' },
-                  business.serves_beer       && { icon: '🍺', label: 'Beer' },
-                  business.serves_wine       && { icon: '🍷', label: 'Wine' },
-                  business.serves_cocktails  && { icon: '🍹', label: 'Cocktails' },
-                  business.serves_coffee     && { icon: '☕', label: 'Coffee' },
-                  business.serves_dessert    && { icon: '🍰', label: 'Dessert' },
-                  business.serves_vegetarian && { icon: '🥦', label: 'Vegetarian Options' },
-                  business.wheelchair_accessible_entrance && { icon: '♿', label: 'Accessible Entrance' },
-                  business.wheelchair_accessible_parking  && { icon: '♿', label: 'Accessible Parking' },
-                  business.wheelchair_accessible_restroom && { icon: '♿', label: 'Accessible Restroom' },
+                  business.outdoor_seating   && { icon: '🌿', label: 'Outdoor' },
+                  business.reservable        && { icon: '📅', label: 'Reservations' },
+                  business.wheelchair_accessible_entrance && { icon: '♿', label: 'Accessible' },
                 ].filter(Boolean)
-                return amenities.length > 0 ? (
+                if (!facts.length) return null
+                return (
                   <div className="amenities-section">
-                    <h3>Amenities & Features</h3>
+                    <h3>Features</h3>
                     <div className="amenities-grid">
-                      {amenities.map((a, i) => (
-                        <div key={i} className="amenity-item">{a.icon} {a.label}</div>
-                      ))}
+                      {facts.map((a, i) => <div key={i} className="amenity-item">{a.icon} {a.label}</div>)}
                     </div>
                   </div>
-                ) : null
+                )
               })()}
 
               {business.price_level && (
