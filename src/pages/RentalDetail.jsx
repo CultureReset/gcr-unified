@@ -27,6 +27,8 @@ export default function RentalDetail() {
   const [booking, setBooking] = useState({ name: '', email: '', phone: '', guests: 1, notes: '' })
   const [bookingStatus, setBookingStatus] = useState(null)
   const [lightboxIdx, setLightboxIdx] = useState(null)
+  const [galleryPage, setGalleryPage] = useState(0)
+  const [lightboxOpen, setLightboxOpen] = useState(false)
   const [reviews, setReviews] = useState([])
   const [reviewStats, setReviewStats] = useState(null)
   const [reviewForm, setReviewForm] = useState({ name: '', email: '', rating: 5, title: '', body: '' })
@@ -132,10 +134,8 @@ export default function RentalDetail() {
   const photos = rental.photo_urls || []
   const amenities = rental.amenities || []
   const faqs = rental.faqs || []
-  const [galleryPage, setGalleryPage] = useState(0)
   const GALLERY_PER_PAGE = 9
   const galleryTotal = Math.ceil(photos.length / GALLERY_PER_PAGE)
-  const [lightboxOpen, setLightboxOpen] = useState(false)
 
   const tabs = [
     { id: 'overview', label: 'Overview' },

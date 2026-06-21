@@ -23,6 +23,7 @@ export default function ServiceDetail() {
   const [reviewSubmitting, setReviewSubmitting] = useState(false)
   const [reviewMsg, setReviewMsg] = useState(null)
   const [lightboxIdx, setLightboxIdx] = useState(null)
+  const [galleryPage, setGalleryPage] = useState(0)
 
   useEffect(() => {
     async function load() {
@@ -120,7 +121,6 @@ export default function ServiceDetail() {
   const photos = service.photo_urls || []
   const amenities = service.amenities || []
   const faqs = service.faqs || []
-  const [galleryPage, setGalleryPage] = useState(0)
   const GALLERY_PER_PAGE = 9
   const galleryTotal = Math.ceil(photos.length / GALLERY_PER_PAGE)
 

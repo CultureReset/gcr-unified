@@ -231,8 +231,13 @@ export default function GCRCard({ entity, category, onSave, savedSlugs }) {
   const priceRange = entity.price_range || ''
   const priceLevel = entity.price_level ? '💰'.repeat(Math.min(entity.price_level, 4)) : null
 
-  // Profile URL
-  const profileUrl = `/business/${slug}`
+  // Profile URL — route to the correct page based on entity_type
+  const entityType = (entity.entity_type || '').toLowerCase()
+  const profileUrl = entityType === 'vacation-rental' || entityType === 'condo' || entityType === 'hotel'
+    ? `/rental/${slug}`
+    : entityType === 'service'
+    ? `/service/${slug}`
+    : `/business/${slug}`
   const isFoodPage = FOOD_CATEGORIES.has(category)
 
   // Dedupe action URLs
