@@ -1,0 +1,296 @@
+.artist-profile {
+  min-height: 100vh;
+  background: #f5f5f5;
+  padding-bottom: 40px;
+}
+
+.artist-hero {
+  position: relative;
+  height: 300px;
+  overflow: hidden;
+}
+
+.artist-hero-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.artist-hero-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.8), transparent);
+  padding: 40px 20px 20px;
+  color: white;
+}
+
+.artist-hero-overlay h1 {
+  margin: 0;
+  font-size: 40px;
+  font-weight: 800;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+.artist-profile-content {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 40px 20px;
+}
+
+.section {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.section h2 {
+  margin: 0 0 20px;
+  font-size: 24px;
+  font-weight: 700;
+  color: #1a1a1a;
+  border-bottom: 2px solid #667eea;
+  padding-bottom: 12px;
+}
+
+.bio {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.6;
+  color: #333;
+}
+
+.songs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.song-card {
+  background: #f9f9f9;
+  border: 1px solid #e5e5e5;
+  border-radius: 10px;
+  padding: 16px;
+  transition: all 0.2s;
+}
+
+.song-card:hover {
+  background: #f5f5f5;
+  border-color: #667eea;
+}
+
+.song-title {
+  font-weight: 600;
+  font-size: 15px;
+  color: #1a1a1a;
+  margin-bottom: 6px;
+}
+
+.song-artist {
+  font-size: 13px;
+  color: #666;
+  margin-bottom: 8px;
+}
+
+.song-price {
+  font-size: 14px;
+  font-weight: 700;
+  color: #667eea;
+}
+
+.events-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.event-item {
+  background: #f9f9f9;
+  border-left: 4px solid #667eea;
+  padding: 16px;
+  border-radius: 6px;
+}
+
+.event-date {
+  font-weight: 600;
+  font-size: 14px;
+  color: #667eea;
+  margin-bottom: 6px;
+}
+
+.event-venue {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin-bottom: 4px;
+}
+
+.event-time {
+  font-size: 13px;
+  color: #666;
+}
+
+.contact-section {
+  background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+  border: 1px solid #667eea30;
+}
+
+.contact-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.contact-btn {
+  padding: 14px 16px;
+  background: white;
+  border: 2px solid #e0e0e0;
+  border-radius: 10px;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 14px;
+  text-align: center;
+  transition: all 0.2s;
+  color: #1a1a1a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.contact-btn:hover {
+  border-color: #667eea;
+  background: #667eea;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.contact-btn.venmo {
+  border-color: #3d95ce;
+}
+
+.contact-btn.venmo:hover {
+  background: #3d95ce;
+  border-color: #3d95ce;
+}
+
+.contact-btn.cashapp {
+  border-color: #00d54b;
+}
+
+.contact-btn.cashapp:hover {
+  background: #00d54b;
+  border-color: #00d54b;
+}
+
+.contact-btn.instagram {
+  border-color: #e1306c;
+}
+
+.contact-btn.instagram:hover {
+  background: #e1306c;
+  border-color: #e1306c;
+}
+
+.contact-btn.spotify {
+  border-color: #1db954;
+}
+
+.contact-btn.spotify:hover {
+  background: #1db954;
+  border-color: #1db954;
+}
+
+.contact-btn.youtube {
+  border-color: #ff0000;
+}
+
+.contact-btn.youtube:hover {
+  background: #ff0000;
+  border-color: #ff0000;
+}
+
+.contact-btn.booking {
+  border-color: #667eea;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 12px;
+}
+
+.btn {
+  padding: 14px 28px;
+  border: none;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 15px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-primary {
+  background: #667eea;
+  color: white;
+}
+
+.btn-primary:hover {
+  background: #764ba2;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.artist-profile-loading,
+.artist-profile-error {
+  padding: 60px 20px;
+  text-align: center;
+  font-size: 18px;
+  color: #666;
+  min-height: 100vh;
+}
+
+.artist-profile-error {
+  color: #d32f2f;
+}
+
+@media (max-width: 768px) {
+  .artist-hero {
+    height: 200px;
+  }
+
+  .artist-hero-overlay h1 {
+    font-size: 28px;
+  }
+
+  .artist-profile-content {
+    padding: 20px 16px;
+  }
+
+  .section {
+    padding: 16px;
+  }
+
+  .section h2 {
+    font-size: 20px;
+  }
+
+  .songs-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .contact-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .action-buttons {
+    flex-direction: column;
+  }
+
+  .btn {
+    width: 100%;
+  }
+}
