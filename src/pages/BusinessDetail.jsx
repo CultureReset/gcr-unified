@@ -1,7 +1,14 @@
 import { useEffect, useState, useRef, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { API_BASE } from '../config'
+import ReviewsSection from '../components/ReviewsSection'
+import TeamSection from '../components/TeamSection'
+import GallerySection from '../components/GallerySection'
+import BlogSection from '../components/BlogSection'
+import PoliciesSection from '../components/PoliciesSection'
+import BookingCalendar from '../components/BookingCalendar'
 import './BusinessDetail.css'
+import '../components/MiniSiteComponents.css'
 
 export default function RestaurantDetail() {
   const { slug } = useParams()
@@ -104,6 +111,7 @@ export default function RestaurantDetail() {
   const whatsIncluded = business.whats_included || []
   const faqs = business.faqs || []
   const requirements = business.requirements || []
+  const schedules = business.schedules || []
   // Flexible offerings (entity_sections) — used for rentals, charters, tours, etc.
   const flexSections = (business.sections || [])
     .filter(s => (s.items || []).length > 0)
@@ -229,11 +237,16 @@ export default function RestaurantDetail() {
     ...(hasSpecials                      ? [{ id: 'specials',    label: 'Specials',    icon: '⭐' }] : []),
     ...((business.hh_days || business.hh_sections?.length || business.happy_hour_sections?.length) ? [{ id: 'happy-hour', label: 'Happy Hour', icon: '🍺' }] : []),
     ...(pricing.length                   ? [{ id: 'pricing',     label: 'Pricing',     icon: '💰' }] : []),
+    ...(schedules.length                 ? [{ id: 'schedule',    label: 'Schedule',    icon: '🗓️' }] : []),
     ...(hours.length                     ? [{ id: 'hours',       label: 'Hours',       icon: '🕐' }] : []),
     ...(events.length                    ? [{ id: 'events',      label: 'Events',      icon: '🎉' }] : []),
     { id: 'overview',    label: 'Overview',    icon: 'ℹ️'  },
     ...(hasActivityExtras                ? [{ id: 'experience',  label: 'Experience',  icon: '🎯' }] : []),
     ...(faqs.length                      ? [{ id: 'faqs',        label: 'FAQs',        icon: '❓' }] : []),
+    { id: 'reviews',     label: 'Reviews',     icon: '⭐'  },
+    { id: 'team',        label: 'Team',        icon: '👥'  },
+    { id: 'blog',        label: 'Blog',        icon: '📰' },
+    { id: 'policies',    label: 'Policies',    icon: '📋' },
     { id: 'location',    label: 'Location',    icon: '📍'  },
     ...(photos.length                    ? [{ id: 'gallery',     label: 'Photos',      icon: '📸' }] : []),
   ]
@@ -724,19 +737,44 @@ export default function RestaurantDetail() {
                 <p className="no-data">No pricing info available</p>
               ) : (
                 <div className="pricing-list">
-                  {pricing.map((item, i) => (
-                    <div key={item.id || i} className="pricing-row">
-                      <div className="pricing-name">{item.item_name}</div>
-                      <div className="pricing-right">
-                        {item.price != null ? (
-                          <span className="pricing-price">${item.price % 1 === 0 ? item.price : item.price.toFixed(2)}</span>
-                        ) : (
-                          <span className="pricing-price pricing-call">Call for pricing</span>
-                        )}
-                        {item.description && <div className="pricing-desc">{item.description}</div>}
+                  {pricing.map((item, i) => {
+                    const priceDisplay = item.price_from != null
+                      ? (item.price_to != null && item.price_to !== item.price_from
+                          ? `$${item.price_from}–$${item.price_to}`
+                          : `$${item.price_from}`)
+                      : 'Call for pricing'
+                    const isFree = item.price_from === 0
+                    return (
+                      <div key={item.id || i} className="pricing-row">
+                        <div className="pricing-name">
+                          {item.tier_name || item.item_name}
+                          {item.minimum_age != null && item.price_from === 0 && (
+                            <span className="pricing-age-note"> (under {item.minimum_age} free)</span>
+                          )}
+                          {item.minimum_age != null && item.price_from !== 0 && (
+                            <span className="pricing-age-note"> (ages {item.minimum_age}+)</span>
+                          )}
+                          {(item.capacity_min || item.capacity_max) && (
+                            <span className="pricing-cap-note">
+                              {' '}· up to {item.capacity_max || item.capacity_min} {item.capacity_max === 1 ? 'person' : 'people'}
+                            </span>
+                          )}
+                        </div>
+                        <div className="pricing-right">
+                          <span className={`pricing-price${isFree ? ' pricing-free' : ''}`}>
+                            {isFree ? 'FREE' : priceDisplay}
+                          </span>
+                          {item.price_label && !isFree && (
+                            <span className="pricing-label"> {item.price_label}</span>
+                          )}
+                          {item.duration && (
+                            <div className="pricing-duration">⏱ {item.duration}</div>
+                          )}
+                          {item.description && <div className="pricing-desc">{item.description}</div>}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               )}
               {whatsIncluded.length > 0 && (
@@ -744,7 +782,11 @@ export default function RestaurantDetail() {
                   <h3>✅ What's Included</h3>
                   <ul>
                     {whatsIncluded.map((item, i) => (
-                      <li key={item.id || i}>{item.included_item}</li>
+                      <li key={item.id || i}>
+                        {item.icon && <span>{item.icon} </span>}
+                        {item.item_name || item.included_item}
+                        {item.description && <span className="included-desc"> — {item.description}</span>}
+                      </li>
                     ))}
                   </ul>
                 </div>
@@ -754,7 +796,13 @@ export default function RestaurantDetail() {
                   <h3>📋 Requirements</h3>
                   <ul>
                     {requirements.map((item, i) => (
-                      <li key={item.id || i}>{item.requirement_text}</li>
+                      <li key={item.id || i}>
+                        {item.requirement_name || item.requirement_text}
+                        {item.description && <span className="req-desc"> — {item.description}</span>}
+                        {item.applies_to && item.applies_to !== 'all' && (
+                          <span className="req-applies"> ({item.applies_to})</span>
+                        )}
+                      </li>
                     ))}
                   </ul>
                 </div>
@@ -866,6 +914,46 @@ export default function RestaurantDetail() {
             </section>
           )}
 
+          {/* Schedule (activity departure times / tour schedules) */}
+          {activeTab === 'schedule' && schedules.length > 0 && (
+            <section className="content-section">
+              <h2>🗓️ Schedule & Departures</h2>
+              {(() => {
+                const grouped = schedules.reduce((acc, s) => {
+                  const key = s.schedule_type || s.label || 'Schedule'
+                  if (!acc[key]) acc[key] = []
+                  acc[key].push(s)
+                  return acc
+                }, {})
+                return Object.entries(grouped).map(([type, items]) => (
+                  <div key={type} className="schedule-group">
+                    {Object.keys(grouped).length > 1 && (
+                      <h3 className="schedule-type">{type.replace(/_/g, ' ')}</h3>
+                    )}
+                    <div className="schedule-list">
+                      {items.map((s, i) => (
+                        <div key={s.id || i} className="schedule-row">
+                          <div className="schedule-label">{s.label || s.name || s.schedule_name}</div>
+                          <div className="schedule-time">
+                            {s.time_start && formatTime(s.time_start)}
+                            {s.time_end && ` – ${formatTime(s.time_end)}`}
+                          </div>
+                          {s.days_of_week && (
+                            <div className="schedule-days">{s.days_of_week}</div>
+                          )}
+                          {s.duration && (
+                            <div className="schedule-duration">⏱ {s.duration}</div>
+                          )}
+                          {s.notes && <div className="schedule-notes">{s.notes}</div>}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))
+              })()}
+            </section>
+          )}
+
           {/* Hours */}
           {activeTab === 'hours' && hours.length > 0 && (
             <section className="content-section">
@@ -884,6 +972,40 @@ export default function RestaurantDetail() {
                   </li>
                 ))}
               </ul>
+              {business.secondary_hours?.length > 0 && (() => {
+                const grouped = (business.secondary_hours || []).reduce((acc, h) => {
+                  const key = h.hours_type || 'Other'
+                  if (!acc[key]) acc[key] = []
+                  acc[key].push(h)
+                  return acc
+                }, {})
+                const typeLabels = {
+                  delivery: '🛵 Delivery Hours',
+                  tour_departures: '⛵ Tour Departures',
+                  pickups: '🚗 Pickup Hours',
+                  kitchen_hours: '🍳 Kitchen Hours',
+                }
+                return Object.entries(grouped).map(([type, hrs]) => (
+                  <div key={type} className="secondary-hours-group">
+                    <h3>{typeLabels[type] || type.replace(/_/g, ' ')}</h3>
+                    <ul className="hours-list">
+                      {hrs.filter(h => h.is_active !== false).map((hr, idx) => (
+                        <li key={idx}>
+                          <span className="day">
+                            {['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][hr.day_of_week || 0]}
+                          </span>
+                          <span className="time">
+                            {hr.is_closed
+                              ? 'Closed'
+                              : `${formatTime(hr.opens_at) || '—'} – ${formatTime(hr.closes_at) || '—'}`}
+                          </span>
+                          {hr.description && <span className="hours-note">{hr.description}</span>}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))
+              })()}
             </section>
           )}
 
@@ -912,6 +1034,18 @@ export default function RestaurantDetail() {
               </button>
             </section>
           )}
+
+          {/* Reviews */}
+          {activeTab === 'reviews' && <ReviewsSection slug={slug} />}
+
+          {/* Team */}
+          {activeTab === 'team' && <TeamSection slug={slug} />}
+
+          {/* Blog */}
+          {activeTab === 'blog' && <BlogSection slug={slug} />}
+
+          {/* Policies */}
+          {activeTab === 'policies' && <PoliciesSection slug={slug} />}
 
           {/* Menu */}
           {activeTab === 'menu' && (
