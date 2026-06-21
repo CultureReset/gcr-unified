@@ -151,6 +151,9 @@ export default function GCRCard({ entity, category, onSave, savedSlugs }) {
 
   const isActivity = ACTIVITY_SUBTYPES.has(rawSubtype) || ACTIVITY_SUBTYPES.has(subtypeKey)
   const isSaved = savedSlugs?.has(slug)
+  const entityTypeMain = (entity.entity_type || '').toLowerCase()
+  const isFood = entityTypeMain === 'food' || isFoodPage ||
+    ['restaurant','bar','cafe','coffee','bakery','food','nightlife','pizza','seafood','grill','bistro','diner','bbq'].some(w => rawSubtype.includes(w))
 
   // Status badge
   const status = computeStatus(entity.hours || [])
@@ -188,24 +191,28 @@ export default function GCRCard({ entity, category, onSave, savedSlugs }) {
   if (entity.outdoor_seating)                   addChip('Outdoor Seating',   'vibe',    '🌿')
   if (entity.good_for_watching_sports)          addChip('Sports Bar',        'vibe',    '📺')
   if (entity.allows_dogs)                       addChip('Dog Friendly',      'vibe',    '🐕')
-  if (entity.delivery)                          addChip('Delivery',          'service', '🛵')
-  if (entity.takeout)                           addChip('Takeout',           'service', '🥡')
-  if (entity.dine_in)                           addChip('Dine-in',           'service', '🍽️')
-  if (entity.curbside_pickup)                   addChip('Curbside',          'service', '🚗')
-  if (entity.reservable)                        addChip('Reservations',      'service', '📅')
+  // Universal chips (any business type)
   if (entity.wheelchair_accessible_entrance || entity.wheelchair_accessible) addChip('Accessible', 'service', '♿')
   if (entity.good_for_children)                 addChip('Kid Friendly',      'service', '👶')
   if (entity.good_for_groups)                   addChip('Good for Groups',   'service', '👥')
-  if (entity.serves_breakfast)                  addChip('Breakfast',         'food',    '🍳')
-  if (entity.serves_brunch)                     addChip('Brunch',            'food',    '🥂')
-  if (entity.serves_lunch)                      addChip('Lunch',             'food',    '🥗')
-  if (entity.serves_dinner)                     addChip('Dinner',            'food',    '🍷')
-  if (entity.serves_vegetarian)                 addChip('Vegetarian',        'food',    '🥦')
-  if (entity.serves_dessert)                    addChip('Dessert',           'food',    '🍰')
-  if (entity.serves_coffee)                     addChip('Coffee',            'drink',   '☕')
-  if (entity.serves_beer)                       addChip('Beer',              'drink',   '🍺')
-  if (entity.serves_wine)                       addChip('Wine',              'drink',   '🍷')
-  if (entity.serves_cocktails)                  addChip('Cocktails',         'drink',   '🍹')
+  // Food-only chips — only show for restaurants/bars/cafes
+  if (isFood) {
+    if (entity.delivery)                        addChip('Delivery',          'service', '🛵')
+    if (entity.takeout)                         addChip('Takeout',           'service', '🥡')
+    if (entity.dine_in)                         addChip('Dine-in',           'service', '🍽️')
+    if (entity.curbside_pickup)                 addChip('Curbside',          'service', '🚗')
+    if (entity.reservable)                      addChip('Reservations',      'service', '📅')
+    if (entity.serves_breakfast)                addChip('Breakfast',         'food',    '🍳')
+    if (entity.serves_brunch)                   addChip('Brunch',            'food',    '🥂')
+    if (entity.serves_lunch)                    addChip('Lunch',             'food',    '🥗')
+    if (entity.serves_dinner)                   addChip('Dinner',            'food',    '🍷')
+    if (entity.serves_vegetarian)               addChip('Vegetarian',        'food',    '🥦')
+    if (entity.serves_dessert)                  addChip('Dessert',           'food',    '🍰')
+    if (entity.serves_coffee)                   addChip('Coffee',            'drink',   '☕')
+    if (entity.serves_beer)                     addChip('Beer',              'drink',   '🍺')
+    if (entity.serves_wine)                     addChip('Wine',              'drink',   '🍷')
+    if (entity.serves_cocktails)                addChip('Cocktails',         'drink',   '🍹')
+  }
 
   // rawTags kept for live_music detection & image badges
   const rawTags = (entity.tags || [])
@@ -254,7 +261,14 @@ export default function GCRCard({ entity, category, onSave, savedSlugs }) {
   return (
     <div className="gcr-card" onClick={() => navigate(profileUrl)}>
       {/* Image */}
-      <div className="gcr-card-img" style={{ backgroundImage: `url(${hero})` }}>
+      <div className="gcr-card-img">
+        <img
+          src={hero}
+          alt=""
+          className="gcr-card-img-bg"
+          onError={e => { e.currentTarget.src = 'https://images.unsplash.com/photo-1504674900968-08049c043914?w=600&q=80' }}
+          loading="lazy"
+        />
         <div className="gcr-card-badge">{icon} {subtype}</div>
 
         {status && (

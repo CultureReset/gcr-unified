@@ -334,8 +334,15 @@ export default function RestaurantDetail() {
             <div
               key={idx}
               className={`carousel-slide ${idx === currentSlide ? 'active' : ''}`}
-              style={{ backgroundImage: `url(${photo.image_url || photo.url || photo})` }}
-            />
+            >
+              <img
+                src={photo.image_url || photo.url || ''}
+                alt=""
+                className="carousel-slide-img"
+                onError={e => { e.currentTarget.src = 'https://images.unsplash.com/photo-1504674900968-08049c043914?w=600&q=80' }}
+                loading="lazy"
+              />
+            </div>
           ))}
           <div className="carousel-overlay" />
 

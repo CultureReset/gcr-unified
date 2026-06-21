@@ -30,9 +30,17 @@
   position: relative;
   width: 100%;
   aspect-ratio: 16 / 9;
-  background-size: cover;
-  background-position: center;
   background-color: #1a3a4a;
+  overflow: hidden;
+}
+.gcr-card-img-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
 }
 
 .gcr-card-badge {
