@@ -879,26 +879,24 @@ export default function RestaurantDetail() {
               ) : (
                 <div className="pricing-list">
                   {pricing.map((item, i) => {
-                    const priceDisplay = item.price_from != null
-                      ? (item.price_to != null && item.price_to !== item.price_from
-                          ? `$${item.price_from}–$${item.price_to}`
-                          : `$${item.price_from}`)
+                    // Support both real DB schema (item_name, price) and extended schema (tier_name, price_from/to)
+                    const name = item.tier_name || item.item_name
+                    const priceVal = item.price_from ?? item.price
+                    const priceDisplay = priceVal != null
+                      ? (item.price_to != null && item.price_to !== priceVal
+                          ? `$${priceVal}–$${item.price_to}`
+                          : `$${priceVal}`)
                       : 'Call for pricing'
-                    const isFree = item.price_from === 0
+                    const isFree = priceVal === 0
                     return (
                       <div key={item.id || i} className="pricing-row">
                         <div className="pricing-name">
-                          {item.tier_name || item.item_name}
-                          {item.minimum_age != null && item.price_from === 0 && (
+                          {name}
+                          {item.minimum_age != null && priceVal === 0 && (
                             <span className="pricing-age-note"> (under {item.minimum_age} free)</span>
                           )}
-                          {item.minimum_age != null && item.price_from !== 0 && (
+                          {item.minimum_age != null && priceVal !== 0 && (
                             <span className="pricing-age-note"> (ages {item.minimum_age}+)</span>
-                          )}
-                          {(item.capacity_min || item.capacity_max) && (
-                            <span className="pricing-cap-note">
-                              {' '}· up to {item.capacity_max || item.capacity_min} {item.capacity_max === 1 ? 'person' : 'people'}
-                            </span>
                           )}
                         </div>
                         <div className="pricing-right">
@@ -925,7 +923,7 @@ export default function RestaurantDetail() {
                     {whatsIncluded.map((item, i) => (
                       <li key={item.id || i}>
                         {item.icon && <span>{item.icon} </span>}
-                        {item.item_name || item.included_item}
+                        {item.included_item || item.item_name}
                         {item.description && <span className="included-desc"> — {item.description}</span>}
                       </li>
                     ))}
@@ -938,7 +936,7 @@ export default function RestaurantDetail() {
                   <ul>
                     {requirements.map((item, i) => (
                       <li key={item.id || i}>
-                        {item.requirement_name || item.requirement_text}
+                        {item.requirement_text || item.requirement_name}
                         {item.description && <span className="req-desc"> — {item.description}</span>}
                         {item.applies_to && item.applies_to !== 'all' && (
                           <span className="req-applies"> ({item.applies_to})</span>
