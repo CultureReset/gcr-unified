@@ -334,7 +334,7 @@ export default function RestaurantDetail() {
             <div
               key={idx}
               className={`carousel-slide ${idx === currentSlide ? 'active' : ''}`}
-              style={{ backgroundImage: `url(${photo.image_url || photo})` }}
+              style={{ backgroundImage: `url(${photo.image_url || photo.url || photo})` }}
             />
           ))}
           <div className="carousel-overlay" />
@@ -1446,7 +1446,7 @@ export default function RestaurantDetail() {
             <h2>📸 Photos</h2>
             <div className="gallery-grid">
               {photos.slice(galleryPage * GALLERY_PER_PAGE, (galleryPage + 1) * GALLERY_PER_PAGE).map((photo, idx) => (
-                <img key={idx} src={photo.image_url} alt="" className="gallery-img" />
+                <img key={idx} src={photo.image_url || photo.url} alt="" className="gallery-img" />
               ))}
             </div>
             {galleryTotal > 1 && (
