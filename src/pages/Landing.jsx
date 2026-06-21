@@ -96,8 +96,8 @@ export default function Landing() {
         const open = hhs.filter(b => {
           const days = (b.hh_days || '').toLowerCase()
           if (!days.includes(todayName.slice(0, 3))) return false
-          const start = b.hh_start_time ? parseInt(b.hh_start_time.split(':')[0]) : 0
-          const end = b.hh_end_time ? parseInt(b.hh_end_time.split(':')[0]) : 23
+          const start = b.hh_start ? parseInt(b.hh_start.split(':')[0]) : 0
+          const end = b.hh_end ? parseInt(b.hh_end.split(':')[0]) : 23
           return curHour >= start && curHour <= end
         })
         setHappeningHH(open.slice(0, 4))
@@ -254,7 +254,7 @@ export default function Landing() {
                   {happeningHH.map((b, i) => (
                     <div key={i} className="ld-hn-item" onClick={() => b.slug && navigate(`/business/${b.slug}`)}>
                       <strong>{b.name || b.entity_name}</strong>
-                      {b.hh_start_time && <span> · until {fmt12(b.hh_end_time)}</span>}
+                      {b.hh_start && <span> · until {fmt12(b.hh_end)}</span>}
                     </div>
                   ))}
                 </div>

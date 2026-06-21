@@ -216,12 +216,12 @@ export default function RestaurantDetail() {
     const now = new Date()
     const toMins = t => { if (!t) return null; const [h, m] = t.split(':').map(Number); return h * 60 + m }
     const nowMins = now.getHours() * 60 + now.getMinutes()
-    const openMins = toMins(todayHours.open_time)
-    const closeMins = toMins(todayHours.close_time)
+    const openMins = toMins(todayHours.opens_at)
+    const closeMins = toMins(todayHours.closes_at)
     if (openMins == null) return null
-    if (nowMins < openMins) return { open: false, label: `Opens at ${formatTime(todayHours.open_time)}` }
+    if (nowMins < openMins) return { open: false, label: `Opens at ${formatTime(todayHours.opens_at)}` }
     if (closeMins && nowMins > closeMins) return { open: false, label: `Closed · Opens ${today}` }
-    return { open: true, label: `Open · Closes ${formatTime(todayHours.close_time) || 'late'}` }
+    return { open: true, label: `Open · Closes ${formatTime(todayHours.closes_at) || 'late'}` }
   })()
 
   const hasActivityExtras = business.highlights?.length || business.known_for?.length || business.good_for?.length || business.what_makes_it_different
@@ -376,8 +376,8 @@ export default function RestaurantDetail() {
           <div className={`open-status ${openStatus.open ? 'open' : 'closed'}`}>
             <span className="open-dot" />
             {openStatus.label}
-            {todayHours && !todayHours.is_closed && openStatus.open && todayHours.open_time && (
-              <span className="open-hours-today"> · {formatTime(todayHours.open_time)}–{formatTime(todayHours.close_time)}</span>
+            {todayHours && !todayHours.is_closed && openStatus.open && todayHours.opens_at && (
+              <span className="open-hours-today"> · {formatTime(todayHours.opens_at)}–{formatTime(todayHours.closes_at)}</span>
             )}
           </div>
         )}
