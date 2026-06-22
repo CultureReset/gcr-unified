@@ -37,11 +37,7 @@ export default function CategoryListings() {
   const [entities, setEntities] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  const [savedSlugs, setSavedSlugs] = useState(new Set())
-
-  useEffect(() => {
-    setSavedSlugs(new Set((savedPlaces || []).map(p => p.slug)))
-  }, [savedPlaces])
+  const savedSlugs = new Set((savedPlaces || []).map(p => p.slug))
   const [search, setSearch] = useState('')
   const [activeFilter, setActiveFilter] = useState('all')
   const [activeSort, setActiveSort] = useState('default')

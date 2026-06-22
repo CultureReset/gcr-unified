@@ -48,11 +48,7 @@ export default function CategoryPage() {
   const [error, setError] = useState(null)
   const [offset, setOffset] = useState(0)
   const [hasMore, setHasMore] = useState(true)
-  const [savedSlugs, setSavedSlugs] = useState(new Set())
-
-  useEffect(() => {
-    setSavedSlugs(new Set((savedPlaces || []).map(p => p.slug)))
-  }, [savedPlaces])
+  const savedSlugs = new Set((savedPlaces || []).map(p => p.slug))
 
   const handleSave = (entity) => {
     const slug = entity.slug || entity.id
