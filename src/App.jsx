@@ -45,7 +45,7 @@ import { onAuthStateChanged } from 'firebase/auth'
 // On app load, if Supabase token is missing but Firebase still has a user,
 // silently re-issue a GCR session so the user stays logged in (PWA / home screen).
 const API = import.meta.env.VITE_API_BASE || 'https://gcr-api-clean.vercel.app'
-onAuthStateChanged(auth, async (firebaseUser) => {
+if (auth) onAuthStateChanged(auth, async (firebaseUser) => {
   if (!firebaseUser) return
   const hasToken = !!localStorage.getItem('gcr_access_token')
   if (hasToken) return

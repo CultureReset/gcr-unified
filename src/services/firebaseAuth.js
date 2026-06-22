@@ -2,21 +2,31 @@ import { initializeApp } from 'firebase/app'
 import { getAuth, signInWithPhoneNumber, RecaptchaVerifier } from 'firebase/auth'
 
 const firebaseConfig = {
-  apiKey:            import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain:        import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId:         import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket:     import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId:             import.meta.env.VITE_FIREBASE_APP_ID,
+  apiKey:            import.meta.env.VITE_FIREBASE_API_KEY || '',
+  authDomain:        import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || '',
+  projectId:         import.meta.env.VITE_FIREBASE_PROJECT_ID || '',
+  storageBucket:     import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || '',
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '',
+  appId:             import.meta.env.VITE_FIREBASE_APP_ID || '',
 }
 
-const app = initializeApp(firebaseConfig)
-export const auth = getAuth(app)
+let app = null
+let auth = null
+
+try {
+  app = initializeApp(firebaseConfig)
+  auth = getAuth(app)
+} catch (err) {
+  console.error('Firebase initialization failed:', err)
+}
+
+export { auth }
 
 let confirmationResult = null
 let recaptchaVerifier = null
 
 function getVerifier() {
+  if (!auth) throw new Error('Firebase not initialized')
   if (recaptchaVerifier) return recaptchaVerifier
   const container = document.getElementById('recaptcha-container')
   if (!container) throw new Error('reCAPTCHA container missing — load the auth page first.')
@@ -38,6 +48,7 @@ export function setupRecaptcha() {
 }
 
 export async function sendFirebaseOTP(phoneE164) {
+  if (!auth) throw new Error('Firebase not initialized')
   const verifier = getVerifier()
   try {
     confirmationResult = await signInWithPhoneNumber(auth, phoneE164, verifier)
@@ -56,6 +67,7 @@ export async function sendFirebaseOTP(phoneE164) {
 }
 
 export async function confirmFirebaseOTP(code) {
+  if (!auth) throw new Error('Firebase not initialized')
   if (!confirmationResult) throw new Error('No pending OTP — send code first.')
   try {
     const result = await confirmationResult.confirm(code)
