@@ -173,3 +173,41 @@
   border-radius: 10px;
   border: 1px solid var(--border);
 }
+
+.btn-sms-signup {
+  display: block;
+  width: 100%;
+  padding: 16px;
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  color: white;
+  font-size: 17px;
+  font-weight: 700;
+  text-align: center;
+  border-radius: 14px;
+  text-decoration: none;
+  letter-spacing: 0.3px;
+}
+
+.auth-sms-hint {
+  text-align: center;
+  font-size: 12px;
+  color: var(--text3);
+  margin: 6px 0 0;
+}
+
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 16px 0 4px;
+  color: var(--text3);
+  font-size: 12px;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}

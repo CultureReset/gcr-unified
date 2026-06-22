@@ -282,6 +282,16 @@ export default function Auth() {
             <h2>{authMethod === 'phone' ? 'Get a text to sign in' : mode === 'signup' ? 'Create your account' : 'Welcome back'}</h2>
             <p>{authMethod === 'phone' ? "We'll text you a code — no password needed." : mode === 'signup' ? 'Save your trip across devices with an email + password.' : 'Sign in to see your saved places & itinerary.'}</p>
 
+            {/* One-tap SMS signup */}
+            <a
+              href="sms:+12513135464?body=BEACH"
+              className="btn-sms-signup"
+            >
+              📱 Text BEACH to Sign Up / Sign In
+            </a>
+            <p className="auth-sms-hint">Tap above — opens your messages app, just hit send</p>
+            <div className="auth-divider"><span>or sign in with phone number</span></div>
+
             {/* Method toggle */}
             <div className="auth-mode-toggle">
               <button
