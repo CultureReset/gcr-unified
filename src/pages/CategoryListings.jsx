@@ -33,7 +33,7 @@ const TYPE_MAP = {
 export default function CategoryListings() {
   const { category } = useParams()
   const navigate = useNavigate()
-  const { userLocation, requestLocation, savedPlaces } = useApp()
+  const { userLocation, requestLocation, savedPlaces, addSavedPlace, removeSavedPlace } = useApp()
   const [entities, setEntities] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -97,13 +97,19 @@ export default function CategoryListings() {
     loadEntities()
   }, [category, userLocation])
 
-  const handleSave = (entity) => {
+  const handleSave = async (entity) => {
     const slug = entity.slug || entity.id
-    setSavedSlugs(prev => {
-      const next = new Set(prev)
-      next.has(slug) ? next.delete(slug) : next.add(slug)
-      return next
-    })
+    const isSaved = savedSlugs.has(slug)
+    try {
+      if (isSaved) {
+        const item = savedPlaces.find(p => p.slug === slug)
+        if (item) await removeSavedPlace(item.id)
+      } else {
+        await addSavedPlace(entity)
+      }
+    } catch (err) {
+      console.error('Failed to save:', err)
+    }
   }
 
   const searchLower = search.toLowerCase()

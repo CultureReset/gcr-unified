@@ -39,7 +39,7 @@ const HERO_IMAGES = {
 export default function CategoryPage() {
   const location = useLocation()
   const navigate = useNavigate()
-  const { savedPlaces } = useApp()
+  const { savedPlaces, addSavedPlace, removeSavedPlace } = useApp()
   const category = location.pathname.slice(1) // Remove leading slash
   const [entities, setEntities] = useState([])
   const [allTags, setAllTags] = useState([])
@@ -50,13 +50,19 @@ export default function CategoryPage() {
   const [hasMore, setHasMore] = useState(true)
   const savedSlugs = new Set((savedPlaces || []).map(p => p.slug))
 
-  const handleSave = (entity) => {
+  const handleSave = async (entity) => {
     const slug = entity.slug || entity.id
-    setSavedSlugs(prev => {
-      const next = new Set(prev)
-      next.has(slug) ? next.delete(slug) : next.add(slug)
-      return next
-    })
+    const isSaved = savedSlugs.has(slug)
+    try {
+      if (isSaved) {
+        const item = savedPlaces.find(p => p.slug === slug)
+        if (item) await removeSavedPlace(item.id)
+      } else {
+        await addSavedPlace(entity)
+      }
+    } catch (err) {
+      console.error('Failed to save:', err)
+    }
   }
 
   const config = CATEGORY_CONFIG[category]

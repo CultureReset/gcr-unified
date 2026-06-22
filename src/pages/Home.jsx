@@ -10,7 +10,7 @@ import './Home.css'
 
 export default function Home() {
   const navigate = useNavigate()
-  const { tourist, savedPlaces, itinerary, seenSlugs, locationSharingEnabled, enableLocationSharing, userId } = useApp()
+  const { tourist, savedPlaces, itinerary, seenSlugs, locationSharingEnabled, enableLocationSharing, userId, addSavedPlace, removeSavedPlace } = useApp()
   const [businesses, setBusinesses] = useState([])
   const [businessesLoading, setBusinessesLoading] = useState(true)
   const [liveNow, setLiveNow] = useState([])
@@ -86,18 +86,14 @@ export default function Home() {
 
     try {
       const isSaved = savedSlugs.has(slug)
+      const business = businesses.find(b => b.slug === slug)
 
       if (isSaved) {
-        await unsaveItem(slug)
-        setSavedSlugs(prev => {
-          const next = new Set(prev)
-          next.delete(slug)
-          return next
-        })
+        const item = savedPlaces.find(p => p.slug === slug)
+        if (item) await removeSavedPlace(item.id)
         setToast({ message: 'Removed from saved', type: 'info' })
       } else {
-        await saveItem(slug)
-        setSavedSlugs(prev => new Set(prev).add(slug))
+        if (business) await addSavedPlace(business)
         setToast({ message: 'Saved!', type: 'success' })
       }
     } catch (err) {
