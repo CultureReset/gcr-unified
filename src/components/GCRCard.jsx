@@ -129,9 +129,10 @@ export default function GCRCard({ entity, category, onSave, savedSlugs }) {
 
   // Find best photo: prefer cover photo, then first photo, then hero/cover fields
   const coverPhoto = entity.photos?.find(p => p.is_cover) || entity.photos?.[0]
+  const FALLBACK = 'https://images.unsplash.com/photo-1504674900968-08049c043914?w=600&q=80'
   const hero = entity.hero_image_url || entity.cover_url ||
     coverPhoto?.url || coverPhoto?.image_url ||
-    `https://images.unsplash.com/photo-1504674900968-08049c043914?w=600&q=80`
+    FALLBACK
 
   const phone = entity.phone || ''
   const dir = entity.directions_url || ''
