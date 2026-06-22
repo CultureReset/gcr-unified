@@ -151,6 +151,7 @@ export default function Auth() {
     setLoading(true); setError(''); setInfo('')
     try {
       const { idToken, firebaseUser } = await confirmFirebaseOTP(code)
+      console.log('About to send to backend:', { phone: normalizePhone(phone), idToken: idToken?.substring(0, 20) + '...' })
       // Send Firebase ID token to backend to create/find GCR tourist profile
       const r = await fetch(`${API}/api/tourist-auth/phone-verify`, {
         method: 'POST',
@@ -158,6 +159,7 @@ export default function Auth() {
         body: JSON.stringify({ phone: normalizePhone(phone), idToken }),
       })
       const d = await r.json()
+      console.log('Backend response:', { status: r.status, data: d })
       if (!r.ok) {
         setError(d.error || `Sign-in failed (${r.status}) — try again.`)
         return

@@ -57,9 +57,15 @@ export async function sendFirebaseOTP(phoneE164) {
 
 export async function confirmFirebaseOTP(code) {
   if (!confirmationResult) throw new Error('No pending OTP — send code first.')
-  const result = await confirmationResult.confirm(code)
-  const idToken = await result.user.getIdToken()
-  return { idToken, firebaseUser: result.user }
+  try {
+    const result = await confirmationResult.confirm(code)
+    const idToken = await result.user.getIdToken()
+    console.log('confirmFirebaseOTP success:', { idToken, phone: result.user.phoneNumber })
+    return { idToken, firebaseUser: result.user }
+  } catch (err) {
+    console.error('confirmFirebaseOTP failed:', err)
+    throw new Error(err.message || 'Invalid code — try again.')
+  }
 }
 
 export function resetRecaptcha() {
