@@ -59,8 +59,15 @@ export async function confirmFirebaseOTP(code) {
   if (!confirmationResult) throw new Error('No pending OTP — send code first.')
   try {
     const result = await confirmationResult.confirm(code)
-    const idToken = await result.user.getIdToken()
-    console.log('confirmFirebaseOTP success:', { idToken, phone: result.user.phoneNumber })
+    if (!result?.user) throw new Error('No user returned from confirm()')
+
+    let idToken = result.user.getIdToken ? await result.user.getIdToken() : null
+    if (!idToken) {
+      idToken = await auth.currentUser?.getIdToken()
+    }
+    if (!idToken) throw new Error('Could not get ID token after confirmation')
+
+    console.log('confirmFirebaseOTP success:', { idToken: idToken.substring(0, 20) + '...', phone: result.user.phoneNumber })
     return { idToken, firebaseUser: result.user }
   } catch (err) {
     console.error('confirmFirebaseOTP failed:', err)
