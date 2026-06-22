@@ -33,11 +33,15 @@ const TYPE_MAP = {
 export default function CategoryListings() {
   const { category } = useParams()
   const navigate = useNavigate()
-  const { userLocation, requestLocation } = useApp()
+  const { userLocation, requestLocation, savedPlaces } = useApp()
   const [entities, setEntities] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [savedSlugs, setSavedSlugs] = useState(new Set())
+
+  useEffect(() => {
+    setSavedSlugs(new Set((savedPlaces || []).map(p => p.slug)))
+  }, [savedPlaces])
   const [search, setSearch] = useState('')
   const [activeFilter, setActiveFilter] = useState('all')
   const [activeSort, setActiveSort] = useState('default')

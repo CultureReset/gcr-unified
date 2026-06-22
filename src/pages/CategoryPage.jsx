@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
+import { useApp } from '../context/AppContext'
 import GCRCard from '../components/GCRCard'
 import { API_BASE } from '../config'
 import { subtypeToCategory, formatSubtypeLabel } from '../categoryMap'
@@ -38,6 +39,7 @@ const HERO_IMAGES = {
 export default function CategoryPage() {
   const location = useLocation()
   const navigate = useNavigate()
+  const { savedPlaces } = useApp()
   const category = location.pathname.slice(1) // Remove leading slash
   const [entities, setEntities] = useState([])
   const [allTags, setAllTags] = useState([])
@@ -47,6 +49,10 @@ export default function CategoryPage() {
   const [offset, setOffset] = useState(0)
   const [hasMore, setHasMore] = useState(true)
   const [savedSlugs, setSavedSlugs] = useState(new Set())
+
+  useEffect(() => {
+    setSavedSlugs(new Set((savedPlaces || []).map(p => p.slug)))
+  }, [savedPlaces])
 
   const handleSave = (entity) => {
     const slug = entity.slug || entity.id
