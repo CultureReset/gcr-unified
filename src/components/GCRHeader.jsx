@@ -52,23 +52,6 @@ export default function GCRHeader() {
   const { userId } = useApp()
   const headerRef = useRef(null)
   const [showLoyalty, setShowLoyalty] = useState(false)
-  const [installPrompt, setInstallPrompt] = useState(null)
-  const [installed, setInstalled] = useState(false)
-
-  useEffect(() => {
-    const handler = e => { e.preventDefault(); setInstallPrompt(e) }
-    window.addEventListener('beforeinstallprompt', handler)
-    window.addEventListener('appinstalled', () => setInstalled(true))
-    return () => window.removeEventListener('beforeinstallprompt', handler)
-  }, [])
-
-  async function handleInstall() {
-    if (!installPrompt) return
-    installPrompt.prompt()
-    const { outcome } = await installPrompt.userChoice
-    if (outcome === 'accepted') setInstalled(true)
-    setInstallPrompt(null)
-  }
 
   const currentPath = location.pathname.slice(1)
   const activeCat = CATEGORIES.find(c => c.id === currentPath)
@@ -99,11 +82,6 @@ export default function GCRHeader() {
             <button className="header-auth-btn" onClick={() => navigate('/profile')}>👤</button>
           ) : (
             <button className="header-auth-btn" onClick={() => navigate('/auth')}>Sign In</button>
-          )}
-          {!installed && (
-            <button className="install-btn" onClick={handleInstall}>
-              📲 Install App
-            </button>
           )}
         </div>
       </div>
