@@ -153,6 +153,7 @@ export default function GCRCard({ entity, category, onSave, savedSlugs }) {
   const isActivity = ACTIVITY_SUBTYPES.has(rawSubtype) || ACTIVITY_SUBTYPES.has(subtypeKey)
   const isSaved = savedSlugs?.has(slug)
   const entityTypeMain = (entity.entity_type || '').toLowerCase()
+  const isFoodPage = FOOD_CATEGORIES.has(category)
   const isFood = entityTypeMain === 'food' || isFoodPage ||
     ['restaurant','bar','cafe','coffee','bakery','food','nightlife','pizza','seafood','grill','bistro','diner','bbq'].some(w => rawSubtype.includes(w))
 
@@ -242,7 +243,6 @@ export default function GCRCard({ entity, category, onSave, savedSlugs }) {
   // All entity table records go to /business/:slug — reads from entity table via /api/gcr/entity/:slug
   // /rental/:slug and /service/:slug are for bookable_resources (separate booking system)
   const profileUrl = `/business/${slug}`
-  const isFoodPage = FOOD_CATEGORIES.has(category)
 
   // Dedupe action URLs
   const usedUrls = new Set()
