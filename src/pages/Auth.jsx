@@ -133,12 +133,13 @@ export default function Auth() {
     if (normalized.length < 10) { setError('Enter a valid US phone number'); return }
     setLoading(true); setError(''); setInfo('')
     try {
-      await sendFirebaseOTP(normalized)
+      // Phone auth disabled
+      // await sendFirebaseOTP(normalized)
       setDigits(['', '', '', '', '', ''])
       setStep('verify-code')
     } catch (err) {
-      resetRecaptcha()
-      setupRecaptcha()
+      // resetRecaptcha()
+      // setupRecaptcha()
       setError(err.message || 'Could not send code — try again.')
     }
     finally { setLoading(false) }
@@ -148,6 +149,10 @@ export default function Auth() {
     const code = digits.join('')
     if (code.length < 6) return
     setLoading(true); setError(''); setInfo('')
+    setError('Phone authentication disabled. Use email sign in instead.')
+    setLoading(false)
+    // Phone auth disabled
+    /*
     try {
       const { idToken, firebaseUser } = await confirmFirebaseOTP(code)
       if (!idToken || typeof idToken !== 'string') {
@@ -191,18 +196,12 @@ export default function Auth() {
       setError(err.message || 'Invalid code — try again.')
     }
     finally { setLoading(false) }
+    */
   }
 
   async function resendPhoneOTP() {
-    resetRecaptcha()
-    setLoading(true); setError(''); setInfo('')
-    try {
-      await sendFirebaseOTP(normalizePhone(phone))
-      setInfo('New code sent.')
-    } catch (err) {
-      setError(err.message || 'Failed to resend — try again.')
-    }
-    finally { setLoading(false) }
+    // Phone auth disabled
+    setError('Phone authentication disabled. Use email sign in instead.')
   }
 
   async function resendCode() {
