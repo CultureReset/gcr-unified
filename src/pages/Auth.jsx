@@ -140,6 +140,7 @@ export default function Auth() {
       setStep('verify-code')
     } catch (err) {
       resetRecaptcha()
+      setupRecaptcha()
       setError(err.message || 'Could not send code — try again.')
     }
     finally { setLoading(false) }
@@ -151,15 +152,18 @@ export default function Auth() {
     setLoading(true); setError(''); setInfo('')
     try {
       const { idToken, firebaseUser } = await confirmFirebaseOTP(code)
-      console.log('About to send to backend:', { phone: normalizePhone(phone), idToken: idToken?.substring(0, 20) + '...' })
-      // Send Firebase ID token to backend to create/find GCR tourist profile
+      if (!idToken || typeof idToken !== 'string') {
+        setError('Could not get auth token — please request a new code.')
+        resetRecaptcha()
+        setStep('input')
+        return
+      }
       const r = await fetch(`${API}/api/tourist-auth/phone-verify`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ phone: normalizePhone(phone), idToken }),
       })
       const d = await r.json()
-      console.log('Backend response:', { status: r.status, data: d })
       if (!r.ok) {
         setError(d.error || `Sign-in failed (${r.status}) — try again.`)
         return
