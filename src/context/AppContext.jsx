@@ -1,6 +1,8 @@
 import { createContext, useContext, useEffect, useRef, useState } from 'react'
 import { API_BASE as API } from '../config'
 import * as locationService from '../services/locationService'
+import { auth } from '../services/firebaseAuth'
+import { onAuthStateChanged } from 'firebase/auth'
 
 const AppContext = createContext(null)
 
@@ -81,6 +83,36 @@ export function AppProvider({ children }) {
   useEffect(() => {
     if (!getToken()) return
     hydrateFromApi()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Firebase PWA re-auth: if no GCR token but Firebase has a user, exchange for GCR token
+  useEffect(() => {
+    if (!auth) return
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (!firebaseUser) return
+      const hasToken = !!getToken()
+      if (hasToken) return
+      try {
+        const idToken = await firebaseUser.getIdToken()
+        const phone = firebaseUser.phoneNumber
+        const r = await fetch(`${API}/api/tourist-auth/phone-verify`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ phone, idToken }),
+        })
+        if (!r.ok) return
+        const d = await r.json()
+        if (d.access_token) {
+          localStorage.setItem('gcr_access_token', d.access_token)
+          localStorage.setItem('gcr_user_id', d.tourist?.user_id || '')
+          if (d.refresh_token) localStorage.setItem('gcr_refresh_token', d.refresh_token)
+          if (d.expires_at) localStorage.setItem('gcr_expires_at', String(d.expires_at))
+          await hydrateFromApi()
+        }
+      } catch {}
+    })
+    return () => unsubscribe()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 

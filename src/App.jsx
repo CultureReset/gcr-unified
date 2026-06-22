@@ -40,34 +40,6 @@ import BottomNav from './components/BottomNav'
 import InstallBanner from './components/InstallBanner'
 import GCRHeader from './components/GCRHeader'
 import AiChat from './components/AiChat'
-import { auth } from './services/firebaseAuth'
-import { onAuthStateChanged } from 'firebase/auth'
-
-// On app load, if Supabase token is missing but Firebase still has a user,
-// silently re-issue a GCR session so the user stays logged in (PWA / home screen).
-const API = import.meta.env.VITE_API_BASE || 'https://gcr-api-clean.vercel.app'
-if (auth) onAuthStateChanged(auth, async (firebaseUser) => {
-  if (!firebaseUser) return
-  const hasToken = !!localStorage.getItem('gcr_access_token')
-  if (hasToken) return
-  try {
-    const idToken = await firebaseUser.getIdToken()
-    const phone = firebaseUser.phoneNumber
-    const r = await fetch(`${API}/api/tourist-auth/phone-verify`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ phone, idToken }),
-    })
-    if (!r.ok) return
-    const d = await r.json()
-    if (d.access_token) {
-      localStorage.setItem('gcr_access_token', d.access_token)
-      localStorage.setItem('gcr_user_id', d.tourist?.user_id || '')
-      if (d.refresh_token) localStorage.setItem('gcr_refresh_token', d.refresh_token)
-      if (d.expires_at)    localStorage.setItem('gcr_expires_at', String(d.expires_at))
-    }
-  } catch {}
-})
 
 function RequireAuth({ children }) {
   const { userId } = useApp()
