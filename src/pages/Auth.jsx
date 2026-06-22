@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useSearchParams, useLocation, Link } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import { API_BASE as API } from '../config'
-import { sendFirebaseOTP, confirmFirebaseOTP, resetRecaptcha, setupRecaptcha } from '../services/firebaseAuth'
+// Firebase phone auth disabled - use email/password only
+// import { sendFirebaseOTP, confirmFirebaseOTP, resetRecaptcha, setupRecaptcha } from '../services/firebaseAuth'
 import './Auth.css'
 
 export default function Auth() {
@@ -24,9 +25,6 @@ export default function Auth() {
   const { setSessionFromLogin } = useApp()
   const returnTo = location.state?.from || null
 
-  useEffect(() => {
-    setupRecaptcha()
-  }, [])
 
   useEffect(() => {
     if (step === 'verify-code') {
