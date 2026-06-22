@@ -25,6 +25,10 @@ export default function Auth() {
   const returnTo = location.state?.from || null
 
   useEffect(() => {
+    setupRecaptcha()
+  }, [])
+
+  useEffect(() => {
     if (step === 'verify-code') {
       setTimeout(() => inputRefs.current[0]?.focus(), 50)
     }

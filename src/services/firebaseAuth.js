@@ -20,11 +20,16 @@ function getVerifier() {
   if (recaptchaVerifier) return recaptchaVerifier
   const container = document.getElementById('recaptcha-container')
   if (!container) throw new Error('reCAPTCHA container missing — load the auth page first.')
-  recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-    size: 'invisible',
-    callback: () => {},
-    'expired-callback': () => { resetRecaptcha() },
-  })
+  try {
+    recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+      size: 'invisible',
+      callback: () => {},
+      'expired-callback': () => { resetRecaptcha() },
+    })
+  } catch (err) {
+    console.error('RecaptchaVerifier creation failed:', err)
+    throw new Error(`reCAPTCHA initialization failed: ${err.message}`)
+  }
   return recaptchaVerifier
 }
 
@@ -34,8 +39,20 @@ export function setupRecaptcha() {
 
 export async function sendFirebaseOTP(phoneE164) {
   const verifier = getVerifier()
-  confirmationResult = await signInWithPhoneNumber(auth, phoneE164, verifier)
-  return confirmationResult
+  try {
+    confirmationResult = await signInWithPhoneNumber(auth, phoneE164, verifier)
+    return confirmationResult
+  } catch (err) {
+    console.error('signInWithPhoneNumber failed:', err)
+    if (err.code === 'auth/user-disabled') {
+      throw new Error('This phone number has been disabled.')
+    } else if (err.code === 'auth/too-many-requests') {
+      throw new Error('Too many attempts. Try again later.')
+    } else if (err.code === 'auth/invalid-phone-number') {
+      throw new Error('Invalid phone number. Check the format.')
+    }
+    throw new Error(err.message || 'Failed to send SMS — check phone number and try again.')
+  }
 }
 
 export async function confirmFirebaseOTP(code) {
