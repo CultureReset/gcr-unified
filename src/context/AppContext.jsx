@@ -115,10 +115,15 @@ export function AppProvider({ children }) {
   async function hydrateFromApi() {
     try {
       const d = await apiGet('/api/tourist/me')
-      if (!d) { setUserId(null); return null }
+      if (!d) {
+        setUserId(null)
+        setSavedPlaces([])
+        setSuperLikedPlaces([])
+        return null
+      }
       setUserId(d.user?.id || null)
 
-      const saves = (d.saves || []).map(toSaveRow)
+      const saves = Array.isArray(d.saves) ? d.saves.map(toSaveRow) : []
       const supers = saves.filter(s => s.is_super_like)
 
       setSavedPlaces(saves)
@@ -127,7 +132,7 @@ export function AppProvider({ children }) {
       setSuperLikedPlaces(supers)
       localStorage.setItem('gcr_super', JSON.stringify(supers))
 
-      if (d.itinerary) {
+      if (d.itinerary && d.itinerary.days) {
         const it = { days: d.itinerary.days, destination: d.itinerary.destination, _id: d.itinerary.id }
         setItinerary(it)
         localStorage.setItem('gcr_itinerary', JSON.stringify(it))
@@ -147,6 +152,8 @@ export function AppProvider({ children }) {
       return null
     } catch (e) {
       console.error('Failed to hydrate from API:', e)
+      setSavedPlaces([])
+      setSuperLikedPlaces([])
       return null
     }
   }
