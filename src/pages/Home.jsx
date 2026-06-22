@@ -17,7 +17,11 @@ export default function Home() {
   const [showLocationBanner, setShowLocationBanner] = useState(false)
   const [requestingPermission, setRequestingPermission] = useState(false)
   const [toast, setToast] = useState(null)
-  const [savedSlugs, setSavedSlugs] = useState(new Set())
+  const [savedSlugs, setSavedSlugs] = useState(() => new Set((savedPlaces || []).map(p => p.slug)))
+
+  useEffect(() => {
+    setSavedSlugs(new Set((savedPlaces || []).map(p => p.slug)))
+  }, [savedPlaces])
 
   useEffect(() => {
     let cancelled = false
