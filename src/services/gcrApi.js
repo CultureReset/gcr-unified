@@ -519,3 +519,13 @@ export async function unsaveItem(entitySlug) {
     throw err
   }
 }
+
+export async function fetchHomeFeed() {
+  try {
+    const r = await fetch(`${GCR_API}/home-feed`);
+    if (!r.ok) throw new Error('home-feed failed');
+    return await r.json();
+  } catch {
+    return { events: [], specials: [], happyHours: [], liveMusic: [], thingsToDo: [] };
+  }
+}

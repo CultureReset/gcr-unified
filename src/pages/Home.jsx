@@ -1,53 +1,54 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import Toast from '../components/Toast'
-import { SkeletonGrid } from '../components/SkeletonLoader'
 import { CATEGORIES } from '../data/categories'
-import { fetchBusinesses, fetchLiveNow, saveItem, unsaveItem } from '../services/gcrApi'
-import * as locationService from '../services/locationService'
+import { fetchHomeFeed, saveItem, unsaveItem } from '../services/gcrApi'
 import './Home.css'
+
+function formatTime(t) {
+  if (!t) return ''
+  const [h, m] = t.split(':').map(Number)
+  const ampm = h >= 12 ? 'PM' : 'AM'
+  const hour = h % 12 || 12
+  return `${hour}:${String(m).padStart(2, '0')} ${ampm}`
+}
+
+function SlideRow({ title, children, empty }) {
+  const ref = useRef(null)
+  if (!children || children.length === 0) return null
+  return (
+    <div className="slide-section">
+      <h3 className="section-title">{title}</h3>
+      <div className="slide-row" ref={ref}>
+        {children}
+        {empty && <div className="slide-empty">{empty}</div>}
+      </div>
+    </div>
+  )
+}
+
+function EntityImg({ url, name }) {
+  const [err, setErr] = useState(false)
+  if (!url || err) return <div className="card-img-placeholder" />
+  return <img src={url} alt={name} onError={() => setErr(true)} />
+}
 
 export default function Home() {
   const navigate = useNavigate()
-  const { tourist, savedPlaces, itinerary, seenSlugs, locationSharingEnabled, enableLocationSharing, userId, addSavedPlace, removeSavedPlace } = useApp()
-  const [businesses, setBusinesses] = useState([])
-  const [businessesLoading, setBusinessesLoading] = useState(true)
-  const [liveNow, setLiveNow] = useState([])
-  const [showLocationBanner, setShowLocationBanner] = useState(false)
-  const [requestingPermission, setRequestingPermission] = useState(false)
+  const { tourist, savedPlaces, itinerary, addSavedPlace, removeSavedPlace, userId } = useApp()
+  const [feed, setFeed] = useState(null)
+  const [loading, setLoading] = useState(true)
   const [toast, setToast] = useState(null)
   const savedSlugs = new Set((savedPlaces || []).map(p => p.slug))
 
   useEffect(() => {
     let cancelled = false
-    setBusinessesLoading(true)
-    fetchBusinesses()
-      .then(d => { if (!cancelled) setBusinesses(d) })
-      .catch(() => {
-        if (!cancelled) setBusinesses([])
-      })
-      .finally(() => {
-        if (!cancelled) setBusinessesLoading(false)
-      })
+    fetchHomeFeed()
+      .then(d => { if (!cancelled) { setFeed(d); setLoading(false) } })
+      .catch(() => { if (!cancelled) setLoading(false) })
     return () => { cancelled = true }
   }, [])
-
-  useEffect(() => {
-    let cancelled = false
-    const uid = tourist?.id || null
-    fetchLiveNow(uid)
-      .then(d => { if (!cancelled) setLiveNow(d) })
-      .catch(() => {})
-    return () => { cancelled = true }
-  }, [tourist?.id])
-
-  useEffect(() => {
-    // Show location banner after user has swiped 5+ times and hasn't enabled location sharing
-    if (seenSlugs.length >= 5 && !locationSharingEnabled && userId) {
-      setShowLocationBanner(true)
-    }
-  }, [seenSlugs.length, locationSharingEnabled, userId])
 
   const greeting = () => {
     const h = new Date().getHours()
@@ -56,60 +57,41 @@ export default function Home() {
     return 'Good evening'
   }
 
-  const handleEnableLocation = async () => {
-    setRequestingPermission(true)
-    try {
-      // Request browser permission
-      const permission = await locationService.requestLocationPermission()
-      if (permission) {
-        // User granted permission, enable location sharing
-        await enableLocationSharing({
-          geofence_radius_miles: 1.0,
-          sms_frequency: 'once_per_day',
-          sms_categories: ['food', 'nightlife', 'activities', 'stay']
-        })
-        setShowLocationBanner(false)
-      }
-    } catch (e) {
-      console.error('Error requesting location:', e)
-    } finally {
-      setRequestingPermission(false)
-    }
-  }
-
-  const handleSaveItem = async (e, slug) => {
+  const handleSave = async (e, slug) => {
     e.stopPropagation()
-    if (!userId) {
-      navigate('/auth')
-      return
-    }
-
+    if (!userId) { navigate('/auth'); return }
     try {
-      const isSaved = savedSlugs.has(slug)
-      const business = businesses.find(b => b.slug === slug)
-
-      if (isSaved) {
+      if (savedSlugs.has(slug)) {
         const item = savedPlaces.find(p => p.slug === slug)
         if (item) await removeSavedPlace(item.id)
-        setToast({ message: 'Removed from saved', type: 'info' })
+        setToast({ message: 'Removed', type: 'info' })
       } else {
-        if (business) await addSavedPlace(business)
+        const biz = feed && [...(feed.events||[]), ...(feed.thingsToDo||[])].find(b => (b.entity?.slug||b.entity_slug||b.slug) === slug)
+        if (biz?.entity || biz) await addSavedPlace(biz.entity || biz)
         setToast({ message: 'Saved!', type: 'success' })
       }
-    } catch (err) {
-      setToast({ message: err.message || 'Failed to save', type: 'error' })
-    }
+    } catch { setToast({ message: 'Error saving', type: 'error' }) }
   }
+
+  const events     = feed?.events     || []
+  const specials   = feed?.specials   || []
+  const happyHours = feed?.happyHours || []
+  const liveMusic  = feed?.liveMusic  || []
+  const thingsToDo = feed?.thingsToDo || []
+
+  const hasContent = events.length || specials.length || happyHours.length || liveMusic.length || thingsToDo.length
 
   return (
     <div className="home-page page safe-top safe-bottom">
+
+      {/* Header */}
       <div className="home-header">
         <div className="home-greeting">
-          <h2>{greeting()}{tourist?.name ? `, ${tourist.name}` : ''}! 👋</h2>
+          <h2>{greeting()}{tourist?.name ? `, ${tourist.name.split(' ')[0]}` : ''}! 👋</h2>
           <p className="home-dest">
             📍 {tourist?.destination || 'Gulf Coast'}
-            {tourist?.arrival && ` · ${new Date(tourist.arrival).toLocaleDateString('en-US', {month:'short', day:'numeric'})}`}
-            {tourist?.departure && ` – ${new Date(tourist.departure).toLocaleDateString('en-US', {month:'short', day:'numeric'})}`}
+            {tourist?.arrival && ` · ${new Date(tourist.arrival).toLocaleDateString('en-US',{month:'short',day:'numeric'})}`}
+            {tourist?.departure && ` – ${new Date(tourist.departure).toLocaleDateString('en-US',{month:'short',day:'numeric'})}`}
           </p>
         </div>
         <button className="home-avatar" onClick={() => navigate('/profile')}>
@@ -117,141 +99,161 @@ export default function Home() {
         </button>
       </div>
 
-      {showLocationBanner && (
-        <div className="stay-banner">
-          <span>📍</span>
-          <div>
-            <div className="stay-banner-title">Get personalized nearby offers?</div>
-            <div className="stay-banner-sub">We'll send SMS when you're near places you'll love</div>
-          </div>
-          <div style={{display:'flex',gap:'8px'}}>
-            <button
-              className="stay-banner-btn"
-              onClick={() => setShowLocationBanner(false)}
-              style={{background:'transparent',border:'1px solid rgba(255,255,255,.2)',padding:'6px 12px',borderRadius:'4px'}}
-            >
-              Not Now
-            </button>
-            <button
-              className="stay-banner-btn"
-              onClick={handleEnableLocation}
-              disabled={requestingPermission}
-              style={{padding:'6px 12px'}}
-            >
-              {requestingPermission ? 'Allow...' : 'Allow →'}
-            </button>
-          </div>
-        </div>
-      )}
-
-      {tourist?.stay_status === 'looking' && (
-        <div className="stay-banner">
-          <span>🏨</span>
-          <div>
-            <div className="stay-banner-title">Still need a place to stay?</div>
-            <div className="stay-banner-sub">We'll show hotels & condos in your deck</div>
-          </div>
-          <button className="stay-banner-btn" onClick={() => navigate('/swipe/hotels')}>Browse →</button>
-        </div>
-      )}
-
+      {/* Quick stats */}
       <div className="home-stats">
-        <div className="stat">
-          <div className="stat-num">{savedPlaces.length}</div>
-          <div className="stat-label">Saved</div>
-        </div>
+        <div className="stat"><div className="stat-num">{savedPlaces.length}</div><div className="stat-label">Saved</div></div>
         <div className="stat-divider" />
-        <div className="stat">
-          <div className="stat-num">{tourist?.trip_days || '—'}</div>
-          <div className="stat-label">Days</div>
-        </div>
+        <div className="stat"><div className="stat-num">{tourist?.trip_days || '—'}</div><div className="stat-label">Days</div></div>
         <div className="stat-divider" />
-        <div className="stat">
-          <div className="stat-num">{itinerary ? itinerary.days.length : '—'}</div>
-          <div className="stat-label">Days Planned</div>
-        </div>
+        <div className="stat"><div className="stat-num">{itinerary ? itinerary.days.length : '—'}</div><div className="stat-label">Planned</div></div>
       </div>
 
-      <button className="stay-banner" onClick={() => navigate('/groups')} style={{width:'100%',border:'none',cursor:'pointer',background:'linear-gradient(135deg,rgba(14,165,233,.15),rgba(124,106,247,.15))',borderColor:'rgba(124,106,247,.3)'}}>
-        <span>👥</span>
-        <div style={{flex:1,textAlign:'left'}}>
-          <div className="stay-banner-title">Plan with friends</div>
-          <div className="stay-banner-sub">Swipe together, see overlaps, build a shared trip</div>
-        </div>
-        <span className="stay-banner-btn">Open →</span>
-      </button>
-
-      {liveNow.length > 0 && (
-        <>
-          <h3 className="section-title">⚡ Happening Right Now</h3>
-          <div className="live-row">
-            {liveNow.map(b => (
-              <div key={b.slug} className="live-card-wrapper">
-                <button className="live-card" onClick={() => navigate(`/business/${b.slug}`)}>
-                  <div className="live-card-img">
-                    {b.hero_image_url
-                      ? <img src={b.hero_image_url} alt={b.name} onError={e => { e.target.style.display='none' }} />
-                      : <div className="live-card-img-placeholder" />
-                    }
-                    {b.is_match && <div className="live-match-dot">⚡</div>}
-                  </div>
-                  <div className="live-card-body">
-                    <div className="live-card-name">{b.name}</div>
-                    {b.signals?.slice(0, 2).map((sig, i) => (
-                      <div key={i}>
-                        <div className="live-card-signal">{sig.label}</div>
-                        {sig.status && <div className="live-card-status">{sig.status}</div>}
-                      </div>
-                    ))}
-                    {b.signals?.[0]?.detail && (
-                      <div className="live-card-detail">{b.signals[0].detail}</div>
-                    )}
-                  </div>
-                </button>
-                <button
-                  className={`live-card-save ${savedSlugs.has(b.slug) ? 'saved' : ''}`}
-                  onClick={(e) => handleSaveItem(e, b.slug)}
-                  title={savedSlugs.has(b.slug) ? 'Remove from saved' : 'Save this item'}
-                >
-                  {savedSlugs.has(b.slug) ? '❤️' : '🤍'}
-                </button>
+      {/* Loading skeletons */}
+      {loading && (
+        <div className="feed-skeletons">
+          {[1,2,3].map(i => (
+            <div key={i} className="skeleton-section">
+              <div className="skeleton-title" />
+              <div className="skeleton-row">
+                {[1,2,3].map(j => <div key={j} className="skeleton-card-h" />)}
               </div>
-            ))}
-          </div>
-        </>
-      )}
-
-      <h3 className="section-title">What do you want to explore?</h3>
-
-      {businessesLoading ? (
-        <div className="skeleton-grid" style={{gridTemplateColumns:'1fr 1fr',gap:'12px'}}>
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="skeleton-card" style={{height:'140px'}} />
+            </div>
           ))}
         </div>
-      ) : (
-        <div className="category-grid">
-          {CATEGORIES.map(cat => {
-            const count = cat.id === 'all'
-              ? businesses.length
-              : businesses.filter(b => b.category === cat.id).length
+      )}
+
+      {/* ── SLIDE ROWS ────────────────────────────────────────── */}
+
+      {/* Happy Hours NOW */}
+      {!loading && happyHours.length > 0 && (
+        <SlideRow title="🍺 Happy Hour Right Now">
+          {happyHours.map(b => (
+            <button key={b.slug} className="slide-card hh-card" onClick={() => navigate(`/business/${b.slug}`)}>
+              <div className="slide-card-img">
+                <EntityImg url={b.hero_image_url} name={b.name} />
+                <span className="live-badge">LIVE</span>
+              </div>
+              <div className="slide-card-body">
+                <div className="slide-card-name">{b.name}</div>
+                {b.hh_description && <div className="slide-card-sub">{b.hh_description}</div>}
+                <div className="slide-card-time">Until {formatTime(b.hh_end)}</div>
+              </div>
+            </button>
+          ))}
+        </SlideRow>
+      )}
+
+      {/* Events Tonight */}
+      {!loading && events.length > 0 && (
+        <SlideRow title="🎉 Events Tonight">
+          {events.map(ev => {
+            const ent = ev.entity || {}
             return (
-              <button
-                key={cat.id}
-                className="category-card"
-                style={{ '--cat-color': cat.color }}
-                onClick={() => navigate(`/swipe/${cat.id}`)}
-              >
-                <span className="cat-emoji">{cat.emoji}</span>
-                <div className="cat-label">{cat.label}</div>
-                <div className="cat-count">{count} spots</div>
-                <div className="cat-glow" />
+              <button key={ev.id} className="slide-card event-card" onClick={() => navigate(`/business/${ev.entity_slug}`)}>
+                <div className="slide-card-img event-img">
+                  <EntityImg url={ev.image_url || ent.hero_image_url} name={ev.event_name} />
+                  {ev.start_time && <span className="time-badge">{formatTime(ev.start_time)}</span>}
+                </div>
+                <div className="slide-card-body">
+                  <div className="slide-card-name">{ev.event_name}</div>
+                  <div className="slide-card-venue">{ent.name}</div>
+                  {ev.cover_charge > 0 && <div className="slide-card-cover">${ev.cover_charge} cover</div>}
+                  {ev.cover_charge === 0 && <div className="slide-card-free">Free</div>}
+                </div>
               </button>
             )
           })}
+        </SlideRow>
+      )}
+
+      {/* Live Music */}
+      {!loading && liveMusic.length > 0 && (
+        <SlideRow title="🎸 Live Music Tonight">
+          {liveMusic.map(ev => {
+            const ent = ev.entity || {}
+            return (
+              <button key={ev.id} className="slide-card music-card" onClick={() => navigate(`/business/${ev.entity_slug}`)}>
+                <div className="slide-card-img music-img">
+                  <EntityImg url={ev.image_url || ent.hero_image_url} name={ev.artist_name || ev.event_name} />
+                  {ev.start_time && <span className="time-badge">{formatTime(ev.start_time)}</span>}
+                </div>
+                <div className="slide-card-body">
+                  <div className="slide-card-name">{ev.artist_name || ev.event_name}</div>
+                  <div className="slide-card-venue">{ent.name}</div>
+                </div>
+              </button>
+            )
+          })}
+        </SlideRow>
+      )}
+
+      {/* Specials */}
+      {!loading && specials.length > 0 && (
+        <SlideRow title="⭐ Deals & Specials">
+          {specials.map(sp => {
+            const ent = sp.entity || {}
+            return (
+              <button key={sp.id} className="slide-card special-card" onClick={() => navigate(`/business/${sp.entity_slug}`)}>
+                <div className="slide-card-img special-img">
+                  <EntityImg url={sp.image_url || ent.hero_image_url} name={sp.title || sp.special_name} />
+                  <span className="deal-badge">DEAL</span>
+                </div>
+                <div className="slide-card-body">
+                  <div className="slide-card-name">{sp.title || sp.special_name}</div>
+                  <div className="slide-card-venue">{ent.name}</div>
+                  {sp.discount_text && <div className="slide-card-discount">{sp.discount_text}</div>}
+                </div>
+              </button>
+            )
+          })}
+        </SlideRow>
+      )}
+
+      {/* Things To Do */}
+      {!loading && thingsToDo.length > 0 && (
+        <SlideRow title="🌊 Things To Do">
+          {thingsToDo.map(b => (
+            <button key={b.slug} className="slide-card activity-card" onClick={() => navigate(`/business/${b.slug}`)}>
+              <div className="slide-card-img activity-img">
+                <EntityImg url={b.hero_image_url} name={b.name} />
+                {b.rating && <span className="rating-badge">⭐ {b.rating}</span>}
+              </div>
+              <div className="slide-card-body">
+                <div className="slide-card-name">{b.name}</div>
+                {b.city && <div className="slide-card-venue">{b.city}</div>}
+              </div>
+            </button>
+          ))}
+        </SlideRow>
+      )}
+
+      {/* Empty state */}
+      {!loading && !hasContent && (
+        <div className="feed-empty">
+          <div className="feed-empty-icon">🌅</div>
+          <div className="feed-empty-title">Good things are coming</div>
+          <div className="feed-empty-sub">Events and specials will show up here as businesses add them</div>
         </div>
       )}
 
+      {/* Category grid */}
+      <h3 className="section-title" style={{marginTop: 28}}>🗺️ Explore by Category</h3>
+      <div className="category-grid">
+        {CATEGORIES.map(cat => (
+          <button
+            key={cat.id}
+            className="category-card"
+            style={{ '--cat-color': cat.color }}
+            onClick={() => navigate(`/swipe/${cat.id}`)}
+          >
+            <span className="cat-emoji">{cat.emoji}</span>
+            <div className="cat-label">{cat.label}</div>
+            <div className="cat-glow" />
+          </button>
+        ))}
+      </div>
+
+      {/* Build itinerary prompt */}
       {savedPlaces.length >= 3 && (
         <div className="build-banner">
           <div>
@@ -264,32 +266,7 @@ export default function Home() {
         </div>
       )}
 
-      {!businessesLoading && businesses.length > 0 && (
-        <>
-          <h3 className="section-title">Trending on the Gulf Coast</h3>
-          <div className="trending-row">
-            {businesses.slice(0,3).map(b => (
-              <button key={b.id} className="trending-card" onClick={() => navigate(`/business/${b.slug}`)}>
-                {b.hero_image_url && <img src={b.hero_image_url} alt={b.name} />}
-                <div className="trending-info">
-                  <div className="trending-name">{b.name}</div>
-                  <div className="trending-meta">
-                    {b.rating ? `⭐ ${b.rating}` : ''}
-                    {b.rating && b.price_range ? ' · ' : ''}
-                    {b.price_range || ''}
-                  </div>
-                </div>
-              </button>
-            ))}
-          </div>
-        </>
-      )}
-
-      <Toast
-        message={toast?.message}
-        type={toast?.type}
-        onClose={() => setToast(null)}
-      />
+      <Toast message={toast?.message} type={toast?.type} onClose={() => setToast(null)} />
     </div>
   )
 }
