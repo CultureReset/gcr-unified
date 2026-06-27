@@ -50,7 +50,7 @@ html, body {
   min-height: 100dvh;
   position: relative;
   background: #fff;
-  padding-top: 110px;
+  padding-top: var(--gcr-header-h, 164px);
 }
 
 .app-shell.no-header {
