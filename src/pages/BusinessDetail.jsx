@@ -90,7 +90,7 @@ export default function RestaurantDetail() {
     observerRef.current?.disconnect()
     const els = Object.entries(subSectionRefs.current)
     if (!els.length) return
-    const headerH = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--gcr-header-h') || '156')
+    const headerH = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--gcr-header-h') || '148')
     observerRef.current = new IntersectionObserver(
       entries => {
         const visible = entries.filter(e => e.isIntersecting)
@@ -105,7 +105,7 @@ export default function RestaurantDetail() {
   const scrollToSubSection = useCallback((id) => {
     const el = subSectionRefs.current[id]
     if (!el) return
-    const headerH = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--gcr-header-h') || '156')
+    const headerH = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--gcr-header-h') || '148')
     const tabsH = 100
     const top = el.getBoundingClientRect().top + window.scrollY - headerH - tabsH
     window.scrollTo({ top, behavior: 'smooth' })

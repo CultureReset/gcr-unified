@@ -50,11 +50,52 @@ html, body {
   min-height: 100dvh;
   position: relative;
   background: #fff;
-  padding-top: var(--gcr-header-h, 128px);
+  padding-top: var(--gcr-header-h, 148px);
 }
 
 .app-shell.no-header {
   padding-top: 0;
+}
+
+/* ── Global page-wrapper header offset ──────────────────────
+   Every page component wraps its content in a top-level div.
+   The app-shell already has padding-top = header height, so
+   these inner wrappers must NOT add their own offset — but they
+   also must not collapse the app-shell padding by going
+   position:absolute or having overflow issues.
+   If any page wrapper accidentally resets the offset, this
+   ensures they all respect the header clearance.
+──────────────────────────────────────────────────────────── */
+.detail-page,
+.artist-listings-container,
+.auth-page,
+.book-container,
+.browse-container,
+.building-page,
+.category-page,
+.confirmation-container,
+.deals-page,
+.events-page,
+.group-page,
+.home-page,
+.itin-page,
+.landing-page,
+.list-page,
+.profile-page,
+.staying-page,
+.saves-page,
+.search-page,
+.services-page,
+.setup-page,
+.swipe-page,
+.restaurant-menu-page,
+.service-detail-page,
+.rental-detail-page,
+.artist-profile-page {
+  /* pages sit inside .app-shell which already clears the header.
+     Override any accidental negative margin or position:absolute
+     that would cause content to slide under the fixed header. */
+  position: relative;
 }
 
 button { cursor: pointer; border: none; outline: none; font-family: inherit; }

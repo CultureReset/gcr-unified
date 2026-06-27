@@ -24,7 +24,7 @@
   background: var(--card);
   border-bottom: 1px solid var(--border);
   position: sticky;
-  top: 0;
+  top: var(--gcr-header-h, 128px);
   z-index: 100;
 }
 

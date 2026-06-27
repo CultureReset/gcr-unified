@@ -60,8 +60,14 @@ export default function GCRHeader() {
   useEffect(() => {
     const el = headerRef.current
     if (!el) return
-    const update = () => document.documentElement.style.setProperty('--gcr-header-h', el.offsetHeight + 'px')
+    const update = () => {
+      const h = el.offsetHeight
+      document.documentElement.style.setProperty('--gcr-header-h', h + 'px')
+    }
+    // Fire immediately, then after fonts/images load
     update()
+    setTimeout(update, 100)
+    setTimeout(update, 500)
     const ro = new ResizeObserver(update)
     ro.observe(el)
     return () => ro.disconnect()
