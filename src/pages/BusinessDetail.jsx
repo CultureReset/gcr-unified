@@ -280,6 +280,8 @@ export default function RestaurantDetail() {
   const fishSpecies = business.fish_species || []
   const loyaltyProgram = business.loyalty_program || null
   const announcements = business.announcements || []
+  const socialPosts = business.social_posts || []
+  const hasSocialPosts = socialPosts.length > 0
   const bookableResources = business.bookable_resources || []
 
   // Has-data flags for new tabs
@@ -323,7 +325,8 @@ export default function RestaurantDetail() {
     ...(faqs.length   ? [{ id: 'faqs',      label: 'FAQs',         icon: '❓' }] : []),
     { id: 'reviews', label: reviewCount > 0 ? `Reviews (${reviewCount})` : 'Reviews', icon: '⭐' },
     ...(hasTeam     ? [{ id: 'team',     label: 'Team',     icon: '👥' }] : []),
-    ...(hasBlog     ? [{ id: 'blog',     label: 'Blog',     icon: '📰' }] : []),
+    ...(hasBlog        ? [{ id: 'blog',     label: 'Blog',     icon: '📰' }] : []),
+    ...(hasSocialPosts ? [{ id: 'social',   label: 'Social',   icon: '📱' }] : []),
     ...(hasPolicies ? [{ id: 'policies', label: 'Policies', icon: '📋' }] : []),
     { id: 'location', label: 'Location', icon: '📍' },
     ...(photos.length ? [{ id: 'gallery', label: `Photos (${photos.length})`, icon: '📸' }] : []),
@@ -1449,6 +1452,38 @@ export default function RestaurantDetail() {
               {!dailyFeatures.length && !allSpecials.length && !sides.length && (
                 <p className="no-data">No specials right now</p>
               )}
+            </section>
+          )}
+
+          {/* SOCIAL FEED */}
+          {activeTab === 'social' && (
+            <section className="content-section">
+              <h2>📱 Social Feed</h2>
+              <div className="social-feed-grid">
+                {socialPosts.map(post => (
+                  <a
+                    key={post.id}
+                    href={post.post_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="social-feed-card"
+                  >
+                    {post.image_url
+                      ? <img src={post.image_url} alt={post.card_title || 'Post'} className="social-feed-img" />
+                      : <div className="social-feed-placeholder">
+                          {post.source === 'instagram' ? '📸' : '📘'}
+                        </div>
+                    }
+                    <div className="social-feed-body">
+                      <span className="social-feed-source">
+                        {post.source === 'instagram' ? '📸 Instagram' : post.source === 'facebook' ? '📘 Facebook' : '📱 Social'}
+                      </span>
+                      {post.caption && <p className="social-feed-caption">{post.caption.slice(0, 120)}{post.caption.length > 120 ? '…' : ''}</p>}
+                      <span className="social-feed-link">View post →</span>
+                    </div>
+                  </a>
+                ))}
+              </div>
             </section>
           )}
 

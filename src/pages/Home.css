@@ -424,3 +424,23 @@
 .feed-empty-icon { font-size: 48px; margin-bottom: 12px; }
 .feed-empty-title { font-size: 17px; font-weight: 800; color: #fff; margin-bottom: 6px; }
 .feed-empty-sub { font-size: 14px; line-height: 1.5; }
+
+/* ── Social Feed cards ──────────────────────────────────────── */
+.social-img { background: #0f172a; }
+.social-placeholder {
+  width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 36px;
+  background: linear-gradient(135deg, rgba(14,165,233,0.1), rgba(124,106,247,0.1));
+}
+.source-badge {
+  position: absolute;
+  top: 7px; right: 7px;
+  background: rgba(0,0,0,0.65);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 99px;
+  backdrop-filter: blur(4px);
+}

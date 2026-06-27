@@ -78,8 +78,9 @@ export default function Home() {
   const happyHours = feed?.happyHours || []
   const liveMusic  = feed?.liveMusic  || []
   const thingsToDo = feed?.thingsToDo || []
+  const socialPosts = feed?.socialPosts || []
 
-  const hasContent = events.length || specials.length || happyHours.length || liveMusic.length || thingsToDo.length
+  const hasContent = events.length || specials.length || happyHours.length || liveMusic.length || thingsToDo.length || socialPosts.length
 
   return (
     <div className="home-page page safe-top safe-bottom">
@@ -234,6 +235,38 @@ export default function Home() {
           <div className="feed-empty-title">Good things are coming</div>
           <div className="feed-empty-sub">Events and specials will show up here as businesses add them</div>
         </div>
+      )}
+
+      {/* Social Feed */}
+      {!loading && socialPosts.length > 0 && (
+        <SlideRow title="📱 From the Gulf Coast">
+          {socialPosts.map(post => (
+            <button
+              key={post.id}
+              className="slide-card social-card"
+              onClick={() => post.entity_slug
+                ? navigate(`/business/${post.entity_slug}`)
+                : window.open(post.post_url, '_blank')
+              }
+            >
+              <div className="slide-card-img social-img">
+                {post.image_url
+                  ? <img src={post.image_url} alt={post.card_entity_name || 'Post'} />
+                  : <div className="social-placeholder">
+                      <span>{post.source === 'instagram' ? '📸' : '📘'}</span>
+                    </div>
+                }
+                <span className="source-badge">
+                  {post.source === 'instagram' ? '📸 IG' : post.source === 'facebook' ? '📘 FB' : '📱'}
+                </span>
+              </div>
+              <div className="slide-card-body">
+                <div className="slide-card-name">{post.card_title || post.card_entity_name || 'Gulf Coast'}</div>
+                {post.caption && <div className="slide-card-sub">{post.caption.slice(0, 60)}{post.caption.length > 60 ? '…' : ''}</div>}
+              </div>
+            </button>
+          ))}
+        </SlideRow>
       )}
 
       {/* Category grid */}
