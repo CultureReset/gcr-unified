@@ -1325,3 +1325,92 @@
 .included-desc { font-size: 13px; color: #9ca3af; }
 .req-desc { font-size: 13px; color: #9ca3af; }
 .req-applies { font-size: 12px; color: #b45309; font-weight: 600; }
+
+/* ── New industry tabs ─────────────────────────────────── */
+
+/* Announcements */
+.announcement-banner { padding: 12px 18px; font-size: 14px; font-weight: 700; text-align: center; }
+.announcement-banner { background: #fef3c7; color: #92400e; border-bottom: 1px solid #fde68a; }
+.announcement-alert { background: #fee2e2; color: #991b1b; border-bottom: 1px solid #fca5a5; }
+.announcement-promo { background: #d1fae5; color: #065f46; border-bottom: 1px solid #6ee7b7; }
+
+/* Rooms */
+.property-meta-row { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 16px; color: var(--text-muted, #6b7280); font-size: 14px; }
+.room-list { display: grid; gap: 14px; }
+.room-card { background: var(--card-bg, #f9fafb); border: 1px solid var(--border, #e5e7eb); border-radius: 14px; padding: 16px; }
+.room-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.room-name { font-weight: 800; font-size: 16px; }
+.room-price { font-weight: 900; font-size: 20px; color: var(--gcr-teal, #0a8472); }
+.room-unit { font-size: 13px; font-weight: 600; color: #6b7280; }
+.room-specs { display: flex; flex-wrap: wrap; gap: 10px; font-size: 13px; color: #6b7280; margin-bottom: 8px; }
+.room-desc { font-size: 14px; margin: 6px 0 0; color: #4b5563; }
+.fees-section { margin-top: 20px; }
+.fee-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border, #e5e7eb); font-size: 14px; }
+
+/* Amenities */
+.amenity-group { margin-bottom: 20px; }
+.amenity-badge { font-size: 11px; background: #ede9fe; color: #5b21b6; border-radius: 99px; padding: 2px 7px; margin-left: 6px; }
+.amenity-item.unavailable { opacity: 0.45; }
+
+/* Stay links */
+.stay-links-list { display: grid; gap: 10px; }
+.stay-link-btn { display: block; padding: 14px 18px; background: var(--gcr-teal, #0a8472); color: white; border-radius: 12px; text-decoration: none; font-weight: 700; font-size: 15px; text-align: center; }
+.stay-link-btn:hover { opacity: 0.9; }
+.bookable-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border, #e5e7eb); font-size: 14px; }
+
+/* Services */
+.packages-section { margin-bottom: 24px; }
+.package-list { display: grid; gap: 12px; }
+.package-card { border: 1px solid var(--border, #e5e7eb); border-radius: 14px; padding: 16px; }
+.package-head { display: flex; justify-content: space-between; margin-bottom: 8px; }
+.package-name { font-weight: 800; font-size: 15px; }
+.package-price { font-weight: 900; color: var(--gcr-teal, #0a8472); }
+.package-desc { font-size: 14px; color: #4b5563; margin: 4px 0; }
+.package-includes { font-size: 13px; color: #065f46; margin: 6px 0 0; padding-left: 16px; }
+.service-category { margin-bottom: 24px; }
+.service-list { display: grid; gap: 10px; }
+.service-row { display: flex; justify-content: space-between; align-items: flex-start; padding: 12px 0; border-bottom: 1px solid var(--border, #e5e7eb); }
+.service-name { font-weight: 700; font-size: 15px; }
+.service-duration { font-size: 13px; color: #6b7280; margin-left: 8px; }
+.service-desc { font-size: 13px; color: #6b7280; margin: 4px 0 0; }
+.service-price { font-weight: 900; font-size: 16px; color: var(--gcr-teal, #0a8472); flex-shrink: 0; margin-left: 12px; }
+.class-schedule-section { margin-top: 24px; }
+.class-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border, #e5e7eb); font-size: 14px; }
+.class-name { font-weight: 700; }
+.class-time, .class-duration, .class-cap { color: #6b7280; }
+.class-day { font-weight: 800; color: var(--gcr-teal, #0a8472); }
+
+/* Products */
+.product-category { margin-bottom: 24px; }
+.product-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.product-card { border: 1px solid var(--border, #e5e7eb); border-radius: 14px; padding: 14px; }
+.product-head { display: flex; justify-content: space-between; margin-bottom: 6px; }
+.product-name { font-weight: 700; font-size: 14px; }
+.product-price { font-weight: 900; color: var(--gcr-teal, #0a8472); }
+.product-desc { font-size: 13px; color: #6b7280; margin: 4px 0 0; }
+.out-of-stock { font-size: 12px; color: #ef4444; font-weight: 700; display: block; margin-top: 4px; }
+
+/* Park */
+.access-info { background: var(--card-bg, #f9fafb); border-radius: 12px; padding: 14px; margin-bottom: 20px; }
+.access-info p { margin: 6px 0; font-size: 14px; }
+.facilities-section, .rules-section { margin-top: 20px; }
+.rules-list { font-size: 14px; line-height: 1.7; padding-left: 18px; }
+
+/* Meeting point */
+.meeting-point-card { border: 1px solid var(--border, #e5e7eb); border-radius: 14px; padding: 16px; margin-bottom: 14px; }
+.meeting-point-card h3 { margin: 0 0 10px; }
+.meeting-point-card p { font-size: 14px; margin: 6px 0; color: #4b5563; }
+
+/* Fish species */
+.fish-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+.fish-card { border: 1px solid var(--border, #e5e7eb); border-radius: 12px; padding: 12px; text-align: center; }
+.fish-name { display: block; font-weight: 700; font-size: 15px; }
+.fish-season { display: block; font-size: 12px; color: #6b7280; margin-top: 4px; }
+
+/* Loyalty button */
+.btn-loyalty { background: linear-gradient(135deg, #7c3aed, #a855f7); color: white; }
+
+@media (max-width: 480px) {
+  .product-grid { grid-template-columns: 1fr; }
+  .fish-grid { grid-template-columns: 1fr 1fr; }
+}

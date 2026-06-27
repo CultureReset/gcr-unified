@@ -247,6 +247,11 @@ export default function RestaurantDetail() {
 
   const entityType = (business.entity_type || '').toLowerCase()
   const isFood = ['restaurant','coffee','dessert','bakery','bar'].includes(entityType)
+  const isStay = ['hotel','condo','vacation-rental'].includes(entityType)
+  const isActivity = entityType === 'activity'
+  const isService = entityType === 'service'
+  const isShopping = entityType === 'shopping'
+  const isPark = entityType === 'park'
 
   const hasActivityExtras = business.highlights?.length || business.known_for?.length || business.good_for?.length || business.what_makes_it_different
 
@@ -255,21 +260,67 @@ export default function RestaurantDetail() {
   const hasSpecials = allSpecials.length > 0 || dailyFeatures.length > 0 || sides.length > 0
   const hasHH = !!(business.hh_days || business.hh_sections?.length || business.happy_hour_sections?.length)
 
+  // Industry-specific data from API
+  const roomTypes = business.room_types || []
+  const amenities = business.amenities || []
+  const propertyFees = business.property_fees || []
+  const stayLinks = business.stay_links || []
+  const propertyDetails = business.property_details || null
+  const serviceCategories = business.service_categories || []
+  const serviceMenu = business.service_menu || []
+  const servicePackages = business.service_packages || []
+  const classSchedule = business.class_schedule || []
+  const productCategories = business.product_categories || []
+  const products = business.products || []
+  const facilities = business.facilities || []
+  const spotRules = business.spot_rules || []
+  const accessInfo = business.access_info || null
+  const meetingPoints = business.meeting_points || []
+  const activityOptions = business.activity_options || []
+  const fishSpecies = business.fish_species || []
+  const loyaltyProgram = business.loyalty_program || null
+  const announcements = business.announcements || []
+  const bookableResources = business.bookable_resources || []
+
+  // Has-data flags for new tabs
+  const hasRooms = roomTypes.length > 0
+  const hasServices = serviceMenu.length > 0 || serviceCategories.length > 0 || servicePackages.length > 0 || classSchedule.length > 0
+  const hasProducts = products.length > 0
+  const hasParkInfo = facilities.length > 0 || spotRules.length > 0 || accessInfo
+  const hasMeetingPoints = meetingPoints.length > 0
+  const hasFishSpecies = fishSpecies.length > 0
+  const hasActivityOptions = activityOptions.length > 0
+  const hasAmenities = amenities.length > 0
+
   const sections = [
-    // Data-driven — only show if data exists, regardless of type
-    ...(hasOfferings                     ? [{ id: 'offerings',   label: 'Offerings',   icon: '🎟️' }] : []),
-    ...(pricing.length                   ? [{ id: 'pricing',     label: 'Pricing',     icon: '💰' }] : []),
-    ...(schedules.length                 ? [{ id: 'schedule',    label: 'Schedule',    icon: '🗓️' }] : []),
-    // Food-only tabs — only show for food types (or if data somehow exists on non-food)
-    ...((isFood || hasMenu)              ? (hasMenu    ? [{ id: 'menu',       label: 'Menu',       icon: '🍽️' }] : []) : []),
-    ...((isFood || hasDrinks)            ? (hasDrinks  ? [{ id: 'drinks',     label: 'Drinks',     icon: '🍷' }] : []) : []),
-    ...((isFood || hasSpecials)          ? (hasSpecials? [{ id: 'specials',   label: 'Specials',   icon: '⭐' }] : []) : []),
-    ...((isFood || hasHH)               ? (hasHH      ? [{ id: 'happy-hour', label: 'Happy Hour', icon: '🍺' }] : []) : []),
-    ...(hours.length                     ? [{ id: 'hours',       label: 'Hours',       icon: '🕐' }] : []),
-    ...(events.length                    ? [{ id: 'events',      label: 'Events',      icon: '🎉' }] : []),
-    { id: 'overview',    label: 'Overview',    icon: 'ℹ️'  },
-    ...(hasActivityExtras                ? [{ id: 'experience',  label: 'Experience',  icon: '🎯' }] : []),
-    ...(faqs.length                      ? [{ id: 'faqs',        label: 'FAQs',        icon: '❓' }] : []),
+    // Data-driven — show if data exists regardless of type
+    ...(hasOfferings                     ? [{ id: 'offerings',   label: 'Offerings',    icon: '🎟️' }] : []),
+    ...(pricing.length                   ? [{ id: 'pricing',     label: 'Pricing',      icon: '💰' }] : []),
+    ...(schedules.length                 ? [{ id: 'schedule',    label: 'Schedule',     icon: '🗓️' }] : []),
+    // Food tabs
+    ...((isFood || hasMenu)   ? (hasMenu    ? [{ id: 'menu',       label: 'Menu',        icon: '🍽️' }] : []) : []),
+    ...((isFood || hasDrinks) ? (hasDrinks  ? [{ id: 'drinks',     label: 'Drinks',      icon: '🍷' }] : []) : []),
+    ...((isFood || hasSpecials)? (hasSpecials?[{ id: 'specials',   label: 'Specials',    icon: '⭐' }] : []) : []),
+    ...((isFood || hasHH)     ? (hasHH      ? [{ id: 'happy-hour', label: 'Happy Hour',  icon: '🍺' }] : []) : []),
+    // Stay tabs
+    ...(hasRooms      ? [{ id: 'rooms',     label: 'Rooms',        icon: '🛏️' }] : []),
+    ...(hasAmenities  ? [{ id: 'amenities', label: 'Amenities',    icon: '✨' }] : []),
+    ...(stayLinks.length ? [{ id: 'book-stay', label: 'Book / Links', icon: '🔗' }] : []),
+    // Service tabs
+    ...(hasServices   ? [{ id: 'services',  label: 'Services',     icon: '💆' }] : []),
+    // Shop tabs
+    ...(hasProducts   ? [{ id: 'products',  label: 'Products',     icon: '🛍️' }] : []),
+    // Park tabs
+    ...(hasParkInfo   ? [{ id: 'park-info', label: 'Park Info',    icon: '🌳' }] : []),
+    // Activity extras
+    ...(hasMeetingPoints  ? [{ id: 'meeting',  label: 'Meeting Point', icon: '📌' }] : []),
+    ...(hasFishSpecies    ? [{ id: 'fish',     label: 'Fish Species',  icon: '🐟' }] : []),
+    // Common
+    ...(hours.length  ? [{ id: 'hours',     label: 'Hours',        icon: '🕐' }] : []),
+    ...(events.length ? [{ id: 'events',    label: 'Events',       icon: '🎉' }] : []),
+    { id: 'overview',   label: 'Overview',   icon: 'ℹ️' },
+    ...(hasActivityExtras ? [{ id: 'experience', label: 'Experience', icon: '🎯' }] : []),
+    ...(faqs.length   ? [{ id: 'faqs',      label: 'FAQs',         icon: '❓' }] : []),
     { id: 'reviews', label: reviewCount > 0 ? `Reviews (${reviewCount})` : 'Reviews', icon: '⭐' },
     ...(hasTeam     ? [{ id: 'team',     label: 'Team',     icon: '👥' }] : []),
     ...(hasBlog     ? [{ id: 'blog',     label: 'Blog',     icon: '📰' }] : []),
@@ -405,6 +456,13 @@ export default function RestaurantDetail() {
         </div>
       )}
 
+      {/* Announcement Banner */}
+      {announcements.length > 0 && announcements.filter(a => a.active).map(a => (
+        <div key={a.id} className={`announcement-banner announcement-${a.type || 'banner'}`}>
+          {a.message}
+        </div>
+      ))}
+
       {/* Happy Hour Banner */}
       {business.hh_days && (
         <div className="hh-banner">
@@ -485,6 +543,14 @@ export default function RestaurantDetail() {
           {business.website_url && (
             <a href={business.website_url} target="_blank" rel="noopener noreferrer" className="btn btn-website">
               🌐 Website
+            </a>
+          )}
+          {loyaltyProgram && (
+            <a
+              href={`sms:${loyaltyProgram.sms_number}?body=Text%20${loyaltyProgram.keyword}%20to%20join`}
+              className="btn btn-loyalty"
+            >
+              🎁 Join Loyalty
             </a>
           )}
         </div>
@@ -1385,6 +1451,319 @@ export default function RestaurantDetail() {
               )}
             </section>
           )}
+
+          {/* ROOMS — Hotel / Condo / Vacation Rental */}
+          {activeTab === 'rooms' && (
+            <section className="content-section">
+              <h2>🛏️ Rooms & Units</h2>
+              {propertyDetails && (
+                <div className="property-meta-row">
+                  {propertyDetails.check_in_time && <span>Check-in: {propertyDetails.check_in_time}</span>}
+                  {propertyDetails.check_out_time && <span>Check-out: {propertyDetails.check_out_time}</span>}
+                  {propertyDetails.total_rooms && <span>{propertyDetails.total_rooms} rooms</span>}
+                  {propertyDetails.star_rating && <span>{'⭐'.repeat(Math.round(propertyDetails.star_rating))}</span>}
+                </div>
+              )}
+              {roomTypes.length === 0 ? (
+                <p className="no-data">No room types listed yet</p>
+              ) : (
+                <div className="room-list">
+                  {roomTypes.map((room, i) => (
+                    <div key={room.id || i} className="room-card">
+                      <div className="room-head">
+                        <span className="room-name">{room.name}</span>
+                        {room.price_per_night != null && (
+                          <span className="room-price">${room.price_per_night}<span className="room-unit">/night</span></span>
+                        )}
+                      </div>
+                      <div className="room-specs">
+                        {room.beds && <span>🛏️ {room.beds}</span>}
+                        {room.sleeps && <span>👥 Sleeps {room.sleeps}</span>}
+                        {room.bedrooms && <span>🚪 {room.bedrooms} bed{room.bedrooms !== 1 ? 's' : ''}</span>}
+                        {room.bathrooms && <span>🚿 {room.bathrooms} bath</span>}
+                        {room.sqft && <span>📐 {room.sqft.toLocaleString()} sqft</span>}
+                        {room.view && <span>🌊 {room.view}</span>}
+                        {room.floor && <span>🏢 {room.floor}</span>}
+                      </div>
+                      {room.description && <p className="room-desc">{room.description}</p>}
+                    </div>
+                  ))}
+                </div>
+              )}
+              {propertyFees.length > 0 && (
+                <div className="fees-section">
+                  <h3>Fees</h3>
+                  {propertyFees.map((fee, i) => (
+                    <div key={fee.id || i} className="fee-row">
+                      <span>{fee.name}{!fee.mandatory && ' (optional)'}</span>
+                      <span>${fee.amount} {fee.type?.replace(/_/g, ' ')}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+          )}
+
+          {/* AMENITIES — Hotel / Stay */}
+          {activeTab === 'amenities' && (
+            <section className="content-section">
+              <h2>✨ Amenities</h2>
+              {amenities.length === 0 ? (
+                <p className="no-data">No amenities listed yet</p>
+              ) : (
+                <>
+                  {/* Group by category */}
+                  {(() => {
+                    const grouped = amenities.reduce((acc, a) => {
+                      const cat = a.category || 'General'
+                      if (!acc[cat]) acc[cat] = []
+                      acc[cat].push(a)
+                      return acc
+                    }, {})
+                    return Object.entries(grouped).map(([cat, items]) => (
+                      <div key={cat} className="amenity-group">
+                        {Object.keys(grouped).length > 1 && <h3>{cat}</h3>}
+                        <div className="amenities-grid">
+                          {items.map((a, i) => (
+                            <div key={a.id || i} className="amenity-item">
+                              {a.icon && <span>{a.icon} </span>}
+                              {a.name}
+                              {a.is_shared === false && <span className="amenity-badge">In-unit</span>}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))
+                  })()}
+                </>
+              )}
+            </section>
+          )}
+
+          {/* BOOK / STAY LINKS */}
+          {activeTab === 'book-stay' && (
+            <section className="content-section">
+              <h2>🔗 Book This Property</h2>
+              <div className="stay-links-list">
+                {stayLinks.map((link, i) => (
+                  <a key={link.id || i} href={link.url} target="_blank" rel="noopener noreferrer" className="stay-link-btn">
+                    {link.label} →
+                  </a>
+                ))}
+              </div>
+              {bookableResources.length > 0 && (
+                <div style={{marginTop:20}}>
+                  <h3>Available Units</h3>
+                  {bookableResources.map((r, i) => (
+                    <div key={r.id || i} className="bookable-row">
+                      <span>{r.name}</span>
+                      {r.capacity && <span>👥 {r.capacity}</span>}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+          )}
+
+          {/* SERVICES — Salon / Spa / Gym / Service */}
+          {activeTab === 'services' && (
+            <section className="content-section">
+              <h2>💆 Services</h2>
+              {servicePackages.length > 0 && (
+                <div className="packages-section">
+                  <h3>Packages</h3>
+                  <div className="package-list">
+                    {servicePackages.map((pkg, i) => (
+                      <div key={pkg.id || i} className="package-card">
+                        <div className="package-head">
+                          <span className="package-name">{pkg.name}</span>
+                          {pkg.price != null && <span className="package-price">${pkg.price}</span>}
+                        </div>
+                        {pkg.description && <p className="package-desc">{pkg.description}</p>}
+                        {pkg.includes?.length > 0 && (
+                          <ul className="package-includes">
+                            {pkg.includes.map((inc, j) => <li key={j}>✓ {inc}</li>)}
+                          </ul>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {serviceCategories.length > 0 ? (
+                serviceCategories.map(cat => {
+                  const catServices = serviceMenu.filter(s => s.category_id === cat.id)
+                  return catServices.length ? (
+                    <div key={cat.id} className="service-category">
+                      <h3>{cat.name}</h3>
+                      <div className="service-list">
+                        {catServices.map((svc, i) => (
+                          <div key={svc.id || i} className="service-row">
+                            <div className="service-info">
+                              <span className="service-name">{svc.name}</span>
+                              {svc.duration_minutes && <span className="service-duration">⏱ {svc.duration_minutes}min</span>}
+                              {svc.description && <p className="service-desc">{svc.description}</p>}
+                            </div>
+                            {svc.price != null && <span className="service-price">${svc.price}</span>}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null
+                })
+              ) : serviceMenu.length > 0 ? (
+                <div className="service-list">
+                  {serviceMenu.map((svc, i) => (
+                    <div key={svc.id || i} className="service-row">
+                      <div className="service-info">
+                        <span className="service-name">{svc.name}</span>
+                        {svc.duration_minutes && <span className="service-duration">⏱ {svc.duration_minutes}min</span>}
+                        {svc.description && <p className="service-desc">{svc.description}</p>}
+                      </div>
+                      {svc.price != null && <span className="service-price">${svc.price}</span>}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="no-data">No services listed yet</p>
+              )}
+              {classSchedule.length > 0 && (
+                <div className="class-schedule-section">
+                  <h3>Class Schedule</h3>
+                  {classSchedule.map((cls, i) => (
+                    <div key={cls.id || i} className="class-row">
+                      <div>
+                        <span className="class-name">{cls.class_name}</span>
+                        {cls.start_time && <span className="class-time"> · {cls.start_time}</span>}
+                        {cls.duration_minutes && <span className="class-duration"> · {cls.duration_minutes}min</span>}
+                        {cls.capacity && <span className="class-cap"> · {cls.capacity} spots</span>}
+                      </div>
+                      <span className="class-day">
+                        {['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][cls.day_of_week] || cls.day_of_week}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+          )}
+
+          {/* PRODUCTS — Shopping */}
+          {activeTab === 'products' && (
+            <section className="content-section">
+              <h2>🛍️ Products</h2>
+              {productCategories.length > 0 ? (
+                productCategories.map(cat => {
+                  const catProducts = products.filter(p => p.category_id === cat.id)
+                  return catProducts.length ? (
+                    <div key={cat.id} className="product-category">
+                      <h3>{cat.name}</h3>
+                      <div className="product-grid">
+                        {catProducts.map((prod, i) => (
+                          <div key={prod.id || i} className="product-card">
+                            <div className="product-head">
+                              <span className="product-name">{prod.name}</span>
+                              <span className="product-price">${prod.price}</span>
+                            </div>
+                            {prod.description && <p className="product-desc">{prod.description}</p>}
+                            {!prod.in_stock && <span className="out-of-stock">Out of stock</span>}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null
+                })
+              ) : products.length > 0 ? (
+                <div className="product-grid">
+                  {products.map((prod, i) => (
+                    <div key={prod.id || i} className="product-card">
+                      <div className="product-head">
+                        <span className="product-name">{prod.name}</span>
+                        <span className="product-price">${prod.price}</span>
+                      </div>
+                      {prod.description && <p className="product-desc">{prod.description}</p>}
+                      {!prod.in_stock && <span className="out-of-stock">Out of stock</span>}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="no-data">No products listed yet</p>
+              )}
+            </section>
+          )}
+
+          {/* PARK INFO */}
+          {activeTab === 'park-info' && (
+            <section className="content-section">
+              <h2>🌳 Park Information</h2>
+              {accessInfo && (
+                <div className="access-info">
+                  {accessInfo.entry_point && <p>🚗 <strong>Entry:</strong> {accessInfo.entry_point}</p>}
+                  {accessInfo.parking_note && <p>🅿️ <strong>Parking:</strong> {accessInfo.parking_note}</p>}
+                  {accessInfo.fee != null && accessInfo.fee > 0 && <p>💵 <strong>Entry fee:</strong> ${accessInfo.fee}</p>}
+                  {accessInfo.fee === 0 && <p>✅ <strong>Free entry</strong></p>}
+                </div>
+              )}
+              {facilities.length > 0 && (
+                <div className="facilities-section">
+                  <h3>Facilities</h3>
+                  <div className="amenities-grid">
+                    {facilities.map((f, i) => (
+                      <div key={f.id || i} className={`amenity-item ${f.available === false ? 'unavailable' : ''}`}>
+                        {f.available === false ? '❌' : '✅'} {f.name}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {spotRules.length > 0 && (
+                <div className="rules-section">
+                  <h3>Rules</h3>
+                  <ul className="rules-list">
+                    {spotRules.map((r, i) => (
+                      <li key={r.id || i}>{r.rule}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </section>
+          )}
+
+          {/* MEETING POINT — Activity / Charter */}
+          {activeTab === 'meeting' && (
+            <section className="content-section">
+              <h2>📌 Meeting Point</h2>
+              {meetingPoints.map((mp, i) => (
+                <div key={mp.id || i} className="meeting-point-card">
+                  <h3>{mp.name}</h3>
+                  {mp.address && <p>📍 {mp.address}</p>}
+                  {mp.instructions && <p>{mp.instructions}</p>}
+                  {mp.parking_note && <p>🅿️ {mp.parking_note}</p>}
+                  {mp.lat && mp.lng && (
+                    <a href={`https://maps.google.com/?q=${mp.lat},${mp.lng}`} target="_blank" rel="noopener noreferrer" className="btn btn-directions">
+                      📍 Get Directions
+                    </a>
+                  )}
+                </div>
+              ))}
+            </section>
+          )}
+
+          {/* FISH SPECIES — Charter / Fishing */}
+          {activeTab === 'fish' && (
+            <section className="content-section">
+              <h2>🐟 Fish Species</h2>
+              <div className="fish-grid">
+                {fishSpecies.map((f, i) => (
+                  <div key={f.id || i} className="fish-card">
+                    <span className="fish-name">{f.species}</span>
+                    {f.season && <span className="fish-season">Season: {f.season}</span>}
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
         </main>
 
         {/* Sidebar */}
