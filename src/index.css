@@ -32,7 +32,8 @@ html, body {
   font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
   min-height: 100vh;
   min-height: 100dvh;
-  overflow-x: hidden;
+  /* NOTE: do NOT set overflow-x:hidden here — it breaks position:sticky on child elements.
+     Horizontal overflow is controlled on #root instead. */
 }
 
 #root {
@@ -41,6 +42,7 @@ html, body {
   display: flex;
   justify-content: center;
   background: #fff;
+  overflow-x: hidden; /* moved from body to here so sticky still works */
 }
 
 .app-shell {
