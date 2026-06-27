@@ -46,7 +46,7 @@
   flex-direction: column;
   gap: 10px;
   position: sticky;
-  top: var(--gcr-header-h, 156px);
+  top: var(--gcr-header-h, 128px);
   z-index: 50;
   backdrop-filter: blur(8px);
 }

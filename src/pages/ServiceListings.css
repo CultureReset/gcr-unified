@@ -17,7 +17,7 @@
   background:#fff; border-bottom:1px solid #e2e8f0; 
   padding:.6rem 1rem; display:flex; gap:.4rem; overflow-x:auto; 
   scrollbar-width:none; 
-  position:sticky; top:var(--gcr-header-h, 164px); z-index:20; 
+  position:sticky; top:var(--gcr-header-h, 128px); z-index:20; 
 }
 .services-type-bar::-webkit-scrollbar { display:none; }
 .services-type-btn { 

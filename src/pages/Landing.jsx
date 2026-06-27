@@ -37,6 +37,7 @@ export default function Landing() {
   const [happeningHH, setHappeningHH] = useState([])
   const [happeningActivities, setHappeningActivities] = useState([])
   const [featured, setFeatured] = useState([])
+  const [showLoyalty, setShowLoyalty] = useState(false)
 
   const doSearch = useCallback(() => {
     if (searchVal.trim()) navigate(`/search?q=${encodeURIComponent(searchVal.trim())}`)
@@ -163,6 +164,10 @@ export default function Landing() {
           <div className="ld-hero-actions">
             <button className="ld-hero-btn-swipe" onClick={() => navigate('/swipe/restaurants')}>👆 Start Swiping</button>
             <button className="ld-hero-btn-signin" onClick={() => navigate('/auth')}>Sign In / Sign Up</button>
+          </div>
+          <div className="ld-hero-promo-row">
+            <button className="ld-promo-btn gold" onClick={() => setShowLoyalty(true)}>📲 Sign Up for Promos & Deals 🎁</button>
+            <button className="ld-promo-btn teal" onClick={() => navigate('/events')}>📅 Master Calendar 🎉</button>
           </div>
         </div>
         <div className="ld-wave">

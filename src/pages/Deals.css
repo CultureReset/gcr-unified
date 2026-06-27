@@ -143,7 +143,7 @@
   background: #fff;
   border-bottom: 1px solid var(--deal-line);
   position: sticky;
-  top: var(--gcr-header-h, 164px);
+  top: var(--gcr-header-h, 128px);
   z-index: 20;
 }
 .deals-filters {

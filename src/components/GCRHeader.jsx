@@ -101,12 +101,6 @@ export default function GCRHeader() {
         ))}
       </div>
 
-      {/* Row 3: Action Strip */}
-      <div className="gcr-action-strip">
-        <button className="strip-btn gold" onClick={() => setShowLoyalty(true)}>📲 Sign Up for Promos 🎁</button>
-        <button className="strip-btn teal">📅 Master Calendar 🎉</button>
-      </div>
-
       {showLoyalty && <LoyaltyModal onClose={() => setShowLoyalty(false)} />}
     </header>
   )

@@ -498,7 +498,7 @@
 /* Sticky Tabs */
 .sticky-tabs {
   position: sticky;
-  top: var(--gcr-header-h, 156px);
+  top: var(--gcr-header-h, 128px);
   z-index: 99;
   background: rgba(255,255,255,.97);
   backdrop-filter: blur(8px);
@@ -538,7 +538,7 @@
 }
 
 .menu-section-anchor {
-  scroll-margin-top: calc(var(--gcr-header-h, 156px) + 110px);
+  scroll-margin-top: calc(var(--gcr-header-h, 128px) + 110px);
 }
 
 .tabs-scroll {

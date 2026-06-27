@@ -7,7 +7,7 @@
 .staying-hero-stats { display:flex; gap:1.5rem; flex-wrap:wrap; font-size:.88rem; color:rgba(255,255,255,.7); }
 .staying-hero-stats b { color:#f5b731; font-size:1.1rem; margin-right:.2rem; }
 
-.staying-type-bar { background:#fff; border-bottom:1px solid rgba(0,0,0,.08); padding:.6rem 1rem; display:flex; gap:.4rem; overflow-x:auto; scrollbar-width:none; position:sticky; top:var(--gcr-header-h,164px); z-index:20; }
+.staying-type-bar { background:#fff; border-bottom:1px solid rgba(0,0,0,.08); padding:.6rem 1rem; display:flex; gap:.4rem; overflow-x:auto; scrollbar-width:none; position:sticky; top:var(--gcr-header-h,128px); z-index:20; }
 .staying-type-bar::-webkit-scrollbar { display:none; }
 .staying-type-btn { display:inline-flex; align-items:center; gap:.35rem; padding:.5rem .85rem; border-radius:999px; border:1.5px solid rgba(0,0,0,.12); background:#fff; font-size:.82rem; font-weight:800; white-space:nowrap; cursor:pointer; color:#5e7080; font-family:inherit; transition:.15s; }
 .staying-type-btn:hover { border-color:#0a8472; color:#0a8472; }

@@ -131,8 +131,8 @@
   transform: translateY(-1px);
 }
 
-/* Action Strip */
-.gcr-action-strip {
+/* Action Strip — moved to Landing page */
+.gcr-action-strip { display: none; } .gcr-action-strip-HIDDEN {
   display: flex;
   gap: 6px;
   padding: 0 8px 8px;
