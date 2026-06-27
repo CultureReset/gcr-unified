@@ -36,6 +36,7 @@ import ServiceListings from './pages/ServiceListings'
 import ServiceDetail from './pages/ServiceDetail'
 import BookService from './pages/BookService'
 import Confirmation from './pages/Confirmation'
+import Deals from './pages/Deals'
 import BottomNav from './components/BottomNav'
 import InstallBanner from './components/InstallBanner'
 import GCRHeader from './components/GCRHeader'
@@ -134,6 +135,7 @@ function AppRoutes() {
         <Route path="/coffee" element={<CategoryPage />} />
         <Route path="/happy-hours" element={<CategoryPage />} />
         <Route path="/events" element={<Events />} />
+        <Route path="/deals" element={<Deals />} />
         <Route path="/things-to-do" element={<CategoryPage />} />
         <Route path="/public-spots" element={<CategoryPage />} />
         <Route path="/feed" element={<CategoryPage />} />

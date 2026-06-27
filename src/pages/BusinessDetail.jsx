@@ -1029,7 +1029,11 @@ export default function RestaurantDetail() {
                               <div key={ev.id || i} className="event-row">
                                 <div className="event-row-info">
                                   <div className="event-row-name">{ev.event_name || ev.name}</div>
-                                  {ev.artist_name && <div className="event-row-artist">🎤 {ev.artist_name}</div>}
+                                  {ev.artist_name && (
+                                    ev.artist_slug
+                                      ? <div className="event-row-artist" style={{cursor:'pointer',color:'var(--gcr-teal,#0a8472)',textDecoration:'underline'}} onClick={(e)=>{e.stopPropagation();navigate('/artist/'+ev.artist_slug)}}>🎤 {ev.artist_name} →</div>
+                                      : <div className="event-row-artist">🎤 {ev.artist_name}</div>
+                                  )}
                                   {(ev.start_time || ev.end_time) && (
                                     <div className="event-row-time">
                                       {formatTime(ev.start_time)}{ev.end_time ? ` – ${formatTime(ev.end_time)}` : ''}
@@ -1047,7 +1051,11 @@ export default function RestaurantDetail() {
                           <div key={ev.id || i} className="event-row">
                             <div className="event-row-info">
                               <div className="event-row-name">{ev.event_name || ev.name}</div>
-                              {ev.artist_name && <div className="event-row-artist">🎤 {ev.artist_name}</div>}
+                              {ev.artist_name && (
+                                    ev.artist_slug
+                                      ? <div className="event-row-artist" style={{cursor:'pointer',color:'var(--gcr-teal,#0a8472)',textDecoration:'underline'}} onClick={(e)=>{e.stopPropagation();navigate('/artist/'+ev.artist_slug)}}>🎤 {ev.artist_name} →</div>
+                                      : <div className="event-row-artist">🎤 {ev.artist_name}</div>
+                                  )}
                               {ev.recurring && ev.day_of_week && <div className="event-row-time">Every {ev.day_of_week}</div>}
                             </div>
                           </div>

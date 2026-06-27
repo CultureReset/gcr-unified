@@ -39,6 +39,7 @@ const CATEGORIES = [
   { id: 'things-to-do', label: 'Things To Do', emoji: '🎯' },
   { id: 'services', label: 'Services', emoji: '🛠️' },
   { id: 'public-spots', label: 'Public Spots', emoji: '✨' },
+  { id: 'deals', label: '🔥 Deals', emoji: '🔥' },
   { id: 'feed', label: 'Live Feed', emoji: '📡' },
   { id: 'shopping', label: 'Shopping', emoji: '🛍️' },
   { id: 'staying', label: 'Staying', emoji: '🏨' },
