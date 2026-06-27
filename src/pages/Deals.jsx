@@ -334,7 +334,7 @@ function PostDealModal({ onClose, onSuccess }) {
             <label className="modal-label">Deal headline * (keep it punchy)</label>
             <input
               className="modal-input"
-              placeholder='e.g. "⚡ 2 spots open on tonight's sunset cruise"'
+              placeholder="e.g. 2 spots open on tonights sunset cruise — be punchy!"
               value={form.headline}
               onChange={e => set('headline', e.target.value)}
             />
