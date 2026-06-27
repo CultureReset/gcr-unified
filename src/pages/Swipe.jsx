@@ -175,8 +175,37 @@ export default function Swipe() {
   }, [seenSlugs])
 
   if (loading || !deckReady) return (
-    <div className="swipe-page" style={{display:'flex',alignItems:'center',justifyContent:'center',color:'#fff'}}>
-      <div>Loading…</div>
+    <div className="swipe-page page safe-top safe-bottom">
+      <div className="swipe-header">
+        <button className="back-btn-sm close-btn" onClick={() => window.history.back()}>
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} width={20} height={20}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+        </button>
+        <div className="swipe-title"><span>{catInfo.emoji}</span><span>Swipe Your Trip</span></div>
+        <div style={{width:40}} />
+      </div>
+      <div className="cat-tabs">
+        {CAT_TABS.map(tab => (
+          <div key={tab.id} className={`cat-tab ${category === tab.id ? 'active' : ''}`}>
+            <span>{tab.emoji}</span><span>{tab.label}</span>
+          </div>
+        ))}
+      </div>
+      <div className="cards-container">
+        <div className="swipe-card-wrapper" style={{position:'relative'}}>
+          <div className="business-card" style={{animation:'shimmer 1.4s infinite'}}>
+            <div className="card-image-wrap" style={{background:'rgba(255,255,255,0.06)'}} />
+            <div className="card-body">
+              <div style={{height:22,width:'60%',background:'rgba(255,255,255,0.08)',borderRadius:8,marginBottom:10}} />
+              <div style={{height:14,width:'40%',background:'rgba(255,255,255,0.05)',borderRadius:8}} />
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="swipe-actions">
+        <div className="action-btn nope" style={{opacity:0.3}} />
+        <div className="action-btn super" style={{opacity:0.3}} />
+        <div className="action-btn like" style={{opacity:0.3}} />
+      </div>
     </div>
   )
   if (error) return (
@@ -574,50 +603,45 @@ function BusinessCard({ business, isTop, onDetail, userLocation }) {
         )}
       </div>
 
-      {/* Body */}
-      <div className="card-body">
-        {/* Colored tags */}
-        {displayedTags.length > 0 && (
-          <div className="card-tags">
-            {displayedTags.map(tag => (
-              <span key={tag} className={`card-tag ${tagColor(tag)}`}>{tag}</span>
-            ))}
-          </div>
-        )}
+      {/* Tags overlaid on image bottom-left */}
+      {displayedTags.length > 0 && (
+        <div className="card-tags-overlay">
+          {displayedTags.slice(0,3).map(tag => (
+            <span key={tag} className={`card-tag ${tagColor(tag)}`}>{tag}</span>
+          ))}
+        </div>
+      )}
 
-        {/* Live Music / Happy Hour badges */}
+      {/* Info overlaid at bottom of image */}
+      <div className="card-overlay-info">
+        <div className="card-name-row">
+          <h3 className="card-name">{business.name}</h3>
+          {business.rating ? <div className="card-rating">⭐ {business.rating}</div> : null}
+        </div>
+        <div className="card-meta-row">
+          {business.city && <span>📍 {business.city}</span>}
+          {business.price_range && <><span className="dot">·</span><span>{business.price_range}</span></>}
+          {distLabel && <><span className="dot">·</span><span>🚗 {distLabel}</span></>}
+        </div>
         {(business.live_music || business.happy_hour || business.duration) && (
-          <div className="card-badges">
-            {business.live_music && <span className="badge badge-live">🎵 Live Music</span>}
-            {business.happy_hour && <span className="badge badge-happy">🍹 Happy Hour {business.happy_hour.split('-')[0].trim()}</span>}
+          <div className="card-badges" style={{marginTop:6}}>
+            {business.live_music && <span className="badge badge-live">🎵 Live</span>}
+            {business.happy_hour && <span className="badge badge-happy">🍹 HH</span>}
             {business.duration && <span className="badge badge-music">⏱ {business.duration}</span>}
           </div>
         )}
+      </div>
 
-        <div className="card-info">
-          <div className="card-name-row">
-            <h3 className="card-name">{business.name}</h3>
-            {business.rating ? <div className="rating">⭐ {business.rating}</div> : null}
-          </div>
-
-          {desc && <div className="card-desc">{desc}</div>}
-
-          <div className="card-meta-row">
-            {business.city && <span>📍 {business.city}</span>}
-            {business.city && business.price_range && <span className="dot">·</span>}
-            {business.price_range && <span>{business.price_range}</span>}
-            {distLabel && <><span className="dot">·</span><span className="card-distance">🚗 {distLabel}</span></>}
-          </div>
-        </div>
-
-        {isTop && (
-          <div className="card-ctas"
-            onTouchStart={e => e.stopPropagation()}
-            onTouchMove={e => e.stopPropagation()}
-            onTouchEnd={e => e.stopPropagation()}
-            onPointerDown={e => e.stopPropagation()}
-            onPointerUp={e => e.stopPropagation()}
-          >
+      {/* Body — CTAs only */}
+      {isTop && (
+        <div className="card-body"
+          onTouchStart={e => e.stopPropagation()}
+          onTouchMove={e => e.stopPropagation()}
+          onTouchEnd={e => e.stopPropagation()}
+          onPointerDown={e => e.stopPropagation()}
+          onPointerUp={e => e.stopPropagation()}
+        >
+          <div className="card-ctas">
             {business.booking_url && (
               <a className="cta-book pressable" href={business.booking_url} target="_blank" rel="noopener noreferrer"
                 onClick={e => e.stopPropagation()}>
@@ -627,11 +651,11 @@ function BusinessCard({ business, isTop, onDetail, userLocation }) {
             <button className="cta-detail pressable"
               onPointerUp={e => { e.stopPropagation(); onDetail() }}
               onClick={e => { e.stopPropagation(); onDetail() }}>
-              More Info
+              More Info →
             </button>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   )
 }

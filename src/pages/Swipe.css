@@ -68,7 +68,7 @@
   display: flex;
   gap: 6px;
   overflow-x: auto;
-  padding: 0 16px 4px;
+  padding: 2px 16px 8px;
   scrollbar-width: none;
 }
 .cat-tabs::-webkit-scrollbar { display: none; }
@@ -76,8 +76,8 @@
   display: flex;
   align-items: center;
   gap: 5px;
-  padding: 7px 14px;
-  border-radius: 20px;
+  padding: 8px 16px;
+  border-radius: 99px;
   font-size: 13px;
   font-weight: 600;
   white-space: nowrap;
@@ -186,35 +186,46 @@
 
 .swipe-flash {
   position: fixed;
-  top: 50%;
+  top: 38%;
   left: 50%;
   transform: translate(-50%, -50%);
-  font-size: 22px;
+  font-size: 36px;
   font-weight: 900;
-  padding: 14px 28px;
-  border-radius: 16px;
+  padding: 12px 32px;
+  border-radius: 14px;
   z-index: 200;
   pointer-events: none;
-  animation: flashIn 0.15s ease;
+  letter-spacing: 2px;
+  animation: flashIn 0.18s cubic-bezier(0.175,0.885,0.32,1.275);
 }
 
 .swipe-flash.like {
-  background: rgba(34,197,94,0.9);
+  background: rgba(34,197,94,0.95);
   color: white;
-  border: 3px solid #22c55e;
-  transform: translate(-50%, -50%) rotate(-8deg);
+  border: 4px solid #22c55e;
+  transform: translate(-50%, -50%) rotate(-12deg);
+  box-shadow: 0 8px 40px rgba(34,197,94,0.4);
 }
 
 .swipe-flash.nope {
-  background: rgba(239,68,68,0.9);
+  background: rgba(239,68,68,0.95);
   color: white;
-  border: 3px solid #ef4444;
-  transform: translate(-50%, -50%) rotate(8deg);
+  border: 4px solid #ef4444;
+  transform: translate(-50%, -50%) rotate(12deg);
+  box-shadow: 0 8px 40px rgba(239,68,68,0.4);
+}
+
+.swipe-flash.super {
+  background: rgba(250,204,21,0.95);
+  color: #000;
+  border: 4px solid #fbbf24;
+  transform: translate(-50%, -50%) rotate(-6deg);
+  box-shadow: 0 8px 40px rgba(250,204,21,0.4);
 }
 
 @keyframes flashIn {
-  from { opacity: 0; transform: translate(-50%, -50%) scale(0.7) rotate(-8deg); }
-  to { opacity: 1; }
+  from { opacity: 0; transform: translate(-50%, -50%) scale(0.5) rotate(-12deg); }
+  to   { opacity: 1; }
 }
 
 .cards-container {
@@ -249,7 +260,7 @@
 
 .card-image-wrap {
   position: relative;
-  height: clamp(180px, calc(100dvh - 420px), 300px);
+  height: clamp(260px, calc(100dvh - 320px), 420px);
   background: linear-gradient(135deg, #1a1a2e 0%, #12121f 100%);
 }
 
@@ -262,15 +273,19 @@
 
 .card-image-overlay {
   position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 60%;
-  background: linear-gradient(to bottom, transparent, rgba(10,10,20,0.9));
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    rgba(0,0,0,0.08) 0%,
+    transparent 30%,
+    transparent 40%,
+    rgba(0,0,0,0.6) 70%,
+    rgba(0,0,0,0.92) 100%
+  );
 }
 
 .card-body {
-  padding: 14px 16px 16px;
+  padding: 12px 16px 14px;
 }
 
 .card-badges {
@@ -291,10 +306,11 @@
 }
 
 .card-name {
-  font-size: 20px;
-  font-weight: 800;
+  font-size: 22px;
+  font-weight: 900;
   color: white;
-  letter-spacing: -0.3px;
+  letter-spacing: -0.4px;
+  line-height: 1.1;
 }
 
 .card-subtitle {
@@ -357,44 +373,47 @@
 .swipe-actions {
   display: flex;
   justify-content: center;
-  gap: 24px;
-  padding: 12px 20px calc(90px + env(safe-area-inset-bottom));
+  align-items: center;
+  gap: 20px;
+  padding: 10px 20px calc(86px + env(safe-area-inset-bottom));
 }
 
 .action-btn {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
-  width: 72px;
-  height: 72px;
+  gap: 3px;
   border-radius: 50%;
   font-size: 10px;
-  font-weight: 800;
+  font-weight: 900;
   letter-spacing: 0.5px;
-  transition: transform 0.15s;
+  transition: transform 0.12s, box-shadow 0.12s;
   justify-content: center;
+  width: 64px;
+  height: 64px;
 }
 
-.action-btn:active { transform: scale(0.9); }
+.action-btn:active { transform: scale(0.88); }
 
 .action-btn.nope {
-  background: rgba(239,68,68,0.15);
-  border: 2px solid rgba(239,68,68,0.4);
+  background: rgba(239,68,68,0.12);
+  border: 2.5px solid rgba(239,68,68,0.5);
   color: #fca5a5;
+  box-shadow: 0 4px 20px rgba(239,68,68,0.15);
 }
 
-.action-btn.nope span:first-child { font-size: 20px; }
+.action-btn.nope span:first-child { font-size: 22px; }
 
 .action-btn.like {
-  background: rgba(34,197,94,0.15);
-  border: 2px solid rgba(34,197,94,0.4);
+  background: rgba(34,197,94,0.12);
+  border: 2.5px solid rgba(34,197,94,0.5);
   color: #86efac;
-  width: 84px;
-  height: 84px;
+  width: 80px;
+  height: 80px;
+  box-shadow: 0 4px 24px rgba(34,197,94,0.2);
 }
 
-.action-btn.like span:first-child { font-size: 24px; }
+.action-btn.like span:first-child { font-size: 28px; }
 
 .all-done {
   text-align: center;
@@ -614,4 +633,87 @@
   letter-spacing: 0.3px;
   z-index: 2;
   pointer-events: none;
+}
+
+/* ── Card overlay info (name/meta on image) ─────────────────── */
+.card-overlay-info {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 16px 16px 14px;
+  z-index: 2;
+}
+
+.card-overlay-info .card-name-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.card-rating {
+  font-size: 14px;
+  font-weight: 800;
+  color: #fbbf24;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.card-overlay-info .card-meta-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px;
+  font-size: 12px;
+  color: rgba(255,255,255,0.75);
+}
+
+/* Tags overlaid on image */
+.card-tags-overlay {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  z-index: 2;
+}
+
+/* When card has overlay, body is just CTAs */
+.business-card .card-body {
+  padding: 10px 14px 12px;
+}
+
+/* Tighten super button */
+.action-btn.super {
+  background: rgba(250,204,21,0.12);
+  border: 2.5px solid rgba(250,204,21,0.5);
+  color: #fde68a;
+  width: 56px;
+  height: 56px;
+  box-shadow: 0 4px 16px rgba(250,204,21,0.1);
+}
+.action-btn.super span:first-child { font-size: 20px; }
+
+/* Hint arrows */
+.swipe-hint {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 28px 0;
+}
+.hint-nope {
+  font-size: 12px;
+  font-weight: 800;
+  color: #ef4444;
+  opacity: 0.5;
+  letter-spacing: 1px;
+}
+.hint-like {
+  font-size: 12px;
+  font-weight: 800;
+  color: #22c55e;
+  opacity: 0.5;
+  letter-spacing: 1px;
 }
