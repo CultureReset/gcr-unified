@@ -51,21 +51,22 @@
 }
 .hn-teal { color: var(--hn-teal); }
 
-/* Weather bar */
+/* Weather bar — full-width strip directly under header */
 .hn-wx-bar {
   display: flex;
   align-items: center;
-  gap: 8px;
-  background: rgba(255,255,255,.1);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255,255,255,.18);
-  border-radius: 999px;
-  padding: 7px 14px;
+  gap: 10px;
+  background: #051525;
+  border-bottom: 1px solid rgba(255,255,255,.08);
+  padding: 9px 18px;
   font-size: 13px;
   font-weight: 700;
-  width: max-content;
-  max-width: 100%;
+  width: 100%;
   flex-wrap: wrap;
+  color: #fff;
+  position: sticky;
+  top: 62px;
+  z-index: 40;
 }
 .hn-wx-temp { color: var(--hn-gold); font-weight: 900; }
 .hn-wx-cond { color: rgba(255,255,255,.75); }

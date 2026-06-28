@@ -248,76 +248,42 @@ export default function Landing() {
 
   // Weather
   useEffect(() => {
-    // National Weather Service API — most accurate for US locations, no key needed
-    // Step 1: get the grid point for Gulf Shores, AL
-    fetch('https://api.weather.gov/points/30.246,-87.701')
+    // Single call to Open-Meteo — current conditions only
+    const WX_URL = 'https://api.open-meteo.com/v1/forecast' +
+      '?latitude=30.246&longitude=-87.701' +
+      '&current=temperature_2m,apparent_temperature,weathercode,windspeed_10m,wind_gusts_10m' +
+      '&daily=temperature_2m_max,temperature_2m_min' +
+      '&temperature_unit=fahrenheit&wind_speed_unit=mph' +
+      '&forecast_days=1&timezone=America%2FChicago'
+
+    fetch(WX_URL)
       .then(r => r.json())
-      .then(meta => {
-        const obs  = meta?.properties?.observationStations
-        const fore = meta?.properties?.forecastHourly
-        // Step 2: get current conditions from nearest observation station
-        Promise.all([
-          fetch(obs + '?limit=1').then(r => r.json()),
-          fetch(fore).then(r => r.json())
-        ]).then(([stationsData, hourlyData]) => {
-          const stationId = stationsData?.features?.[0]?.properties?.stationIdentifier
-          if (!stationId) return
-          fetch(`https://api.weather.gov/stations/${stationId}/observations/latest`)
-            .then(r => r.json())
-            .then(obs => {
-              const p    = obs?.properties
-              if (!p) return
-              const tempC = p.temperature?.value
-              const feelsC = p.heatIndex?.value ?? p.windChill?.value ?? tempC
-              const toF  = c => c != null ? Math.round(c * 9/5 + 32) : null
-              const desc = (p.textDescription || '').toLowerCase()
-              const wind = Math.round((p.windSpeed?.value || 0) * 0.621371) // km/h to mph
-              const gusts = Math.round((p.windGust?.value || 0) * 0.621371)
-              // Current icon/label from description
-              const getIcon = (d) => {
-                if (d.includes('thunder')) return { icon:'⛈️', label:'Thunderstorms' }
-                if (d.includes('snow')) return { icon:'🌨️', label:'Snow' }
-                if (d.includes('rain') || d.includes('shower')) return { icon:'🌧️', label:'Rain' }
-                if (d.includes('drizzle')) return { icon:'🌦️', label:'Drizzle' }
-                if (d.includes('fog')) return { icon:'🌫️', label:'Foggy' }
-                if (d.includes('overcast') || d.includes('cloudy')) return { icon:'☁️', label:'Cloudy' }
-                if (d.includes('mostly cloudy') || d.includes('partly')) return { icon:'⛅', label:'Partly Cloudy' }
-                if (d.includes('mostly clear') || d.includes('few clouds')) return { icon:'🌤️', label:'Mostly Clear' }
-                if (d.includes('clear') || d.includes('sunny') || d.includes('fair')) return { icon:'☀️', label:'Clear' }
-                return { icon:'🌤️', label: p.textDescription || 'Partly Cloudy' }
-              }
-              const { icon, label } = getIcon(desc)
-              // Get hi/lo from hourly forecast
-              const periods = hourlyData?.properties?.periods || []
-              const hi = periods.slice(0,24).reduce((m,p2) => Math.max(m, p2.temperature||0), 0)
-              const lo = periods.slice(0,24).reduce((m,p2) => Math.min(m, p2.temperature||99), 99)
-              const beachStatus = (desc.includes('thunder') || gusts > 35)
-                ? { label:'🚩 Beach Advisory', color:'#ff4444' }
-                : (desc.includes('rain') || wind > 25)
-                ? { label:'🟡 Swim Caution', color:'#ffbb00' }
-                : { label:'🏖️ Beach Open', color:'#6ef0b8' }
-              setWeather({
-                temp: toF(tempC),
-                feels: toF(feelsC),
-                wind, gusts,
-                icon, label,
-                hi: hi || null,
-                lo: lo < 99 ? lo : null,
-                beachStatus,
-              })
-            })
-        })
+      .then(d => {
+        const c    = d?.current
+        const day  = d?.daily
+        if (!c) return
+
+        // Open-Meteo uses 'weathercode' (no underscore) in current block
+        const code = c.weathercode ?? 0
+        const temp = Math.round(c.temperature_2m)
+        const feels = Math.round(c.apparent_temperature)
+        const wind = Math.round(c.windspeed_10m || 0)
+        const gusts = Math.round(c.wind_gusts_10m || 0)
+        const hi   = day ? Math.round(day.temperature_2m_max[0]) : null
+        const lo   = day ? Math.round(day.temperature_2m_min[0]) : null
+
+        const icon  = WX_ICON[code]  || '🌤️'
+        const label = WX_LABEL[code] || 'Partly Cloudy'
+
+        const beachStatus =
+          (code >= 95 || gusts > 35) ? { label: '🚩 Beach Advisory', color: '#ff4444' } :
+          (code >= 61 || wind > 25)  ? { label: '🟡 Swim Caution',   color: '#ffbb00' } :
+                                       { label: '🏖️ Beach Open',     color: '#6ef0b8' }
+
+        setWeather({ temp, feels, wind, gusts, hi, lo, code, icon, label, beachStatus })
       })
-      .catch(() => {
-        // Fallback to open-meteo if NWS fails
-        fetch('https://api.open-meteo.com/v1/forecast?latitude=30.246&longitude=-87.701&current=temperature_2m,apparent_temperature,weathercode,windspeed_10m&temperature_unit=fahrenheit&wind_speed_unit=mph&timezone=America%2FChicago')
-          .then(r => r.json())
-          .then(d => {
-            const c = d.current
-            const code = c.weathercode ?? 0
-            setWeather({ temp: Math.round(c.temperature_2m), feels: Math.round(c.apparent_temperature), wind: Math.round(c.windspeed_10m), code, label: WX_LABEL[code] || 'Partly Cloudy', icon: WX_ICON[code] || '🌤️', beachStatus: { label:'🏖️ Beach Open', color:'#6ef0b8' } })
-          }).catch(() => {})
-      })
+      .catch(() => {})
+
   }, [])
 
   // Home feed (happy hours, live music, events)
@@ -395,21 +361,21 @@ export default function Landing() {
     <div className="hn-page">
       <GCRHeader />
 
+      {/* ── WEATHER BAR — directly under header, no gap ── */}
+      <div className="hn-wx-bar">
+        <span>{wxIcon} <strong>{weather ? `${weather.temp}°F` : '...'}</strong></span>
+        <span className="hn-wx-cond">{wxLabel}</span>
+        {weather?.hi > 0 && <span className="hn-wx-hi-lo">↑{weather.hi}° ↓{weather.lo}°</span>}
+        {weather?.wind > 0 && <span className="hn-wx-wind">💨 {weather.wind}mph</span>}
+        <span className="hn-wx-beach" style={weather?.beachStatus?.color ? {color: weather.beachStatus.color} : {}}>
+          {weather?.beachStatus?.label || '🏖️ Beach Open'}
+        </span>
+      </div>
+
       {/* ── HERO ──────────────────────────────────────────────── */}
       <section className="hn-hero" style={{ backgroundImage: `url(${HERO_IMG})` }}>
         <div className="hn-hero-overlay" />
         <div className="hn-hero-content">
-
-          {/* Weather inline */}
-          <div className="hn-wx-bar">
-            <span>{wxIcon} {weather ? `${weather.temp}°F` : '...'}</span>
-            <span className="hn-wx-cond">{wxLabel}</span>
-            {weather?.hi > 0 && <span className="hn-wx-hi-lo">↑{weather.hi}° ↓{weather.lo}°</span>}
-            {weather?.wind > 0 && <span className="hn-wx-wind">💨 {weather.wind}mph</span>}
-            <span className="hn-wx-beach" style={weather?.beachStatus?.color ? {color: weather.beachStatus.color} : {}}>
-              {weather?.beachStatus?.label || '🏖️ Beach Open'}
-            </span>
-          </div>
 
           <h1 className="hn-hero-h1">Everything<br/>on the<br/><span className="hn-teal">Gulf Coast</span></h1>
 
