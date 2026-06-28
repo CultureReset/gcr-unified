@@ -23,8 +23,15 @@ const CATEGORIES = [
 
 function imgUrl(url, slug) {
   if (!url) return null
-  if (url.startsWith('http')) return url
-  if (url.startsWith('/photos/') && slug) return `${SUPABASE_URL}/${slug}/photo_01.jpg`
+  if (url.startsWith('https://') || url.startsWith('http://')) return url
+  // broken /photos/slug/file.jpg path — reconstruct Supabase URL
+  if (url.startsWith('/photos/')) {
+    const parts = url.split('/')
+    const pathSlug = parts[2]
+    const file = parts[3] || 'photo_01.jpg'
+    if (pathSlug) return `${SUPABASE_URL}/${pathSlug}/${file}`
+    if (slug) return `${SUPABASE_URL}/${slug}/photo_01.jpg`
+  }
   return null
 }
 
