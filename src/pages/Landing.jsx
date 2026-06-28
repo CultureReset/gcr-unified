@@ -439,6 +439,35 @@ export default function Landing() {
           </div>
         </div>
       </footer>
+
+      {/* ── SMS Signup Modal ── */}
+      {showLoyalty && (
+        <div
+          className="ld-loyalty-overlay"
+          onClick={() => setShowLoyalty(false)}
+        >
+          <div
+            className="ld-loyalty-modal"
+            onClick={e => e.stopPropagation()}
+          >
+            <button className="ld-loyalty-close" onClick={() => setShowLoyalty(false)}>✕</button>
+            <div style={{ fontSize: '2.5rem', marginBottom: '.5rem' }}>📲</div>
+            <h2 style={{ fontSize: '1.4rem', fontWeight: 900, marginBottom: '.5rem', color: '#1a1a1a' }}>Get Gulf Coast Deals</h2>
+            <p style={{ fontSize: '.92rem', color: '#555', marginBottom: '1.25rem', lineHeight: 1.5 }}>
+              Text <strong>BEACH</strong> to get exclusive promos, happy hour alerts &amp; last-minute deals sent to your phone.
+            </p>
+            <a
+              className="ld-loyalty-sms"
+              href="sms:2519777770?body=BEACH"
+            >
+              📱 Text BEACH to Sign Up
+            </a>
+            <p style={{ fontSize: '.78rem', color: '#aaa', marginTop: '.85rem' }}>
+              Opens your Messages app pre-filled. Just hit send.
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
