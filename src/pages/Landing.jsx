@@ -240,6 +240,7 @@ export default function Landing() {
   const [restaurants, setRestaurants] = useState([])
   const [activities, setActivities]   = useState([])
   const [loading, setLoading]         = useState(true)
+  const [stays, setStays]             = useState([])
 
   const doSearch = useCallback(() => {
     if (searchVal.trim()) navigate(`/search?q=${encodeURIComponent(searchVal.trim())}`)
@@ -311,6 +312,26 @@ export default function Landing() {
         setLoading(false)
       })
       .catch(() => setLoading(false))
+  }, [])
+
+  // Stays / condos rail
+  useEffect(() => {
+    fetch(`${API_BASE}/api/gcr/entities?type=staying&limit=50`)
+      .then(r => r.json())
+      .then(d => {
+        const all = d.entities || []
+        const sorted = all
+          .filter(e => e.hero_image_url && e.hero_image_url.startsWith('https://'))
+          .filter(e => e.city && ['Gulf Shores','Orange Beach'].includes(e.city))
+          .sort((a, b) => (b.rating || 0) - (a.rating || 0))
+        // fallback to any with photos if no GS/OB results
+        setStays(
+          sorted.length >= 3
+            ? sorted.slice(0, 10)
+            : all.filter(e => e.hero_image_url?.startsWith('https://')).slice(0, 10)
+        )
+      })
+      .catch(() => {})
   }, [])
 
   const wxIcon = weather ? (WX_ICON[weather.code] || '🌤️') : '🌤️'
@@ -481,13 +502,19 @@ export default function Landing() {
             navigate={navigate}
           />
           <Rail id="stay-rail">
-            {[
-              { slug:'turquoise-place', name:'Turquoise Place', city:'Orange Beach', entity_subtype:'Condo Resort', rating:'4.8', hero_image_url:`${SUPABASE_URL}/turquoise-place/photo_01.jpg`, icon:'🌊' },
-              { slug:'phoenix-west', name:'Phoenix West', city:'Orange Beach', entity_subtype:'Condo', rating:'4.7', hero_image_url:`${SUPABASE_URL}/phoenix-west/photo_01.jpg`, icon:'🏢' },
-              { slug:'caribe-resort', name:'Caribe Resort', city:'Orange Beach', entity_subtype:'Resort', rating:'4.6', hero_image_url:`${SUPABASE_URL}/caribe-resort/photo_01.jpg`, icon:'🏖️' },
-            ].map(item => (
-              <BizCard key={item.slug} item={item} badge={item.entity_subtype} badgeColor="blue" sub={item.city} onClick={() => navigate(`/business/${item.slug}`)} />
-            ))}
+            {stays.length > 0
+              ? stays.map(item => (
+                  <BizCard
+                    key={item.slug}
+                    item={item}
+                    badge={item.entity_subtype?.replace(/_/g,' ').replace(/\w/g,c=>c.toUpperCase()) || 'Stay'}
+                    badgeColor="blue"
+                    sub={item.city}
+                    onClick={() => navigate(`/business/${item.slug}`)}
+                  />
+                ))
+              : [1,2,3].map(i => <div key={i} className="hn-card hn-skeleton" />)
+            }
           </Rail>
         </section>
 
