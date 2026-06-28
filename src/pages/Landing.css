@@ -27,13 +27,13 @@
 /* ── HERO ───────────────────────────────────────────── */
 .hn-hero {
   position: relative;
-  min-height: 58vh;
   background-size: cover;
-  background-position: center;
+  background-position: center top;
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
-  padding-bottom: 60px;
+  padding-top: 80px;
+  padding-bottom: 52px;
 }
 .hn-hero-overlay {
   position: absolute;
@@ -48,6 +48,9 @@
   max-width: 680px;
   margin: 0 auto;
   width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 .hn-teal { color: var(--hn-teal); }
 
@@ -63,7 +66,6 @@
   padding: 7px 14px;
   font-size: 13px;
   font-weight: 700;
-  margin-bottom: 14px;
   width: max-content;
   max-width: 100%;
   flex-wrap: wrap;
@@ -76,11 +78,11 @@
 
 /* Hero headline */
 .hn-hero-h1 {
-  font-size: clamp(42px, 12vw, 72px);
+  font-size: clamp(38px, 10vw, 64px);
   line-height: .88;
   letter-spacing: -.07em;
   font-weight: 1000;
-  margin: 0 0 18px;
+  margin: 0;
   text-shadow: 0 4px 20px rgba(0,0,0,.4);
 }
 
@@ -93,7 +95,6 @@
   border-radius: 999px;
   padding: 6px 6px 6px 16px;
   box-shadow: 0 16px 40px rgba(0,0,0,.35);
-  margin-bottom: 14px;
 }
 .hn-search-icon { font-size: 18px; flex-shrink: 0; }
 .hn-search-input {
@@ -158,7 +159,7 @@
   right: 0;
   z-index: 2;
 }
-.hn-wave svg { width: 100%; height: 52px; display: block; }
+.hn-wave svg { width: 100%; height: 28px; display: block; }
 
 /* ── MAIN BODY ──────────────────────────────────────── */
 .hn-main {
@@ -168,7 +169,7 @@
 
 /* ── CATEGORIES ─────────────────────────────────────── */
 .hn-cats {
-  padding: 18px 0 4px 18px;
+  padding: 12px 0 4px 18px;
 }
 .hn-mini-card {
   display: flex;
@@ -200,7 +201,7 @@
 
 /* ── SECTION ────────────────────────────────────────── */
 .hn-sec {
-  padding: 22px 0 8px 18px;
+  padding: 16px 0 8px 18px;
 }
 .hn-sec-light {
   background: rgba(255,255,255,.03);
