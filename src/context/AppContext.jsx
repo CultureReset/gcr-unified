@@ -443,7 +443,7 @@ export function AppProvider({ children }) {
       savedPlaces, addSavedPlace, removeSavedPlace,
       superLikedPlaces, addSuperLike, removeSuperLike,
       itinerary, saveItinerary,
-      seenSlugs, recordSwipe, resetSeenSlugs,
+      seenSlugs, recordSwipe, resetSeenSlugs, setSeenSlugs,
       userLocation, requestLocation, geocodeStay,
       locationSharingEnabled, enableLocationSharing, disableLocationSharing,
       userId, logout,

@@ -51,7 +51,7 @@ function tagColor(tag) {
 export default function Swipe() {
   const { category } = useParams()
   const navigate = useNavigate()
-  const { addSavedPlace, removeSavedPlace, savedPlaces, addSuperLike, tourist, seenSlugs, recordSwipe, resetSeenSlugs, userLocation, requestLocation, geocodeStay } = useApp()
+  const { addSavedPlace, removeSavedPlace, savedPlaces, addSuperLike, tourist, seenSlugs, setSeenSlugs, recordSwipe, resetSeenSlugs, userLocation, requestLocation, geocodeStay } = useApp()
 
   const [allBusinesses, setAllBusinesses] = useState([])
   const [pool, setPool] = useState([])
@@ -69,6 +69,8 @@ export default function Swipe() {
   const [smsSubmitting, setSmsSubmitting] = useState(false)
   const [smsDone, setSmsDone] = useState(() => !!localStorage.getItem('gcr_sms_opted'))
   const [prefMap, setPrefMap] = useState({})
+  const [swipingDir, setSwipingDir] = useState(null)
+  const [undoStack, setUndoStack] = useState([]) // { business, action: 'like'|'nope'|'super' }
   const swipeCountRef = useRef(0)
   const pageRef = useRef(null)
 
@@ -240,14 +242,17 @@ export default function Swipe() {
   }
 
   function onSwipe(direction, business) {
+    setSwipingDir(null)
     if (direction === 'right') {
       addSavedPlace(resolveReal(business))
       setLikedCount(p => p + 1)
       flash('like')
       recordSwipe(business, 'like')
+      setUndoStack(prev => [...prev.slice(-4), { business, action: 'like' }])
     } else {
       flash('nope')
       recordSwipe(business, 'nope')
+      setUndoStack(prev => [...prev.slice(-4), { business, action: 'nope' }])
     }
     // swipe-count based SMS trigger
     if (!smsDone && swipeCountRef.current < 0) {
@@ -268,6 +273,7 @@ export default function Swipe() {
     setLikedCount(p => p + 1)
     setCards(prev => refillDeck(prev.slice(0, -1)))
     flash('like')
+    setUndoStack(prev => [...prev.slice(-4), { business: top, action: 'like' }])
   }
 
   function pressNope() {
@@ -276,6 +282,7 @@ export default function Swipe() {
     recordSwipe(top, 'nope')
     setCards(prev => refillDeck(prev.slice(0, -1)))
     flash('nope')
+    setUndoStack(prev => [...prev.slice(-4), { business: top, action: 'nope' }])
   }
 
   function pressSuper() {
@@ -286,6 +293,32 @@ export default function Swipe() {
     setLikedCount(p => p + 1)
     setCards(prev => refillDeck(prev.slice(0, -1)))
     flash('super')
+    setUndoStack(prev => [...prev.slice(-4), { business: top, action: 'super' }])
+  }
+
+  function pressUndo() {
+    if (undoStack.length === 0) return
+    const last = undoStack[undoStack.length - 1]
+    setUndoStack(prev => prev.slice(0, -1))
+    // Reverse the action
+    if (last.action === 'like') {
+      removeSavedPlace(last.business.id)
+      setLikedCount(p => Math.max(0, p - 1))
+    } else if (last.action === 'super') {
+      removeSavedPlace(last.business.id)
+      setLikedCount(p => Math.max(0, p - 1))
+    }
+    // Put the card back on top of the deck
+    setCards(prev => {
+      const without = prev.filter(b => b.id !== last.business.id)
+      return [...without, last.business]
+    })
+    // Remove from seenSlugs so it doesn't get filtered
+    setSeenSlugs(prev => {
+      const updated = prev.filter(s => s !== last.business.slug)
+      localStorage.setItem('gcr_seen', JSON.stringify(updated))
+      return updated
+    })
   }
 
   const allGone = deckReady && cards.length === 0 && pool.filter(b => !seenSlugs.includes(b.slug)).length === 0
@@ -389,15 +422,16 @@ export default function Swipe() {
                 <TinderCard
                   key={business.id}
                   onSwipe={(dir) => onSwipe(dir, business)}
-                  onCardLeftScreen={() => onCardLeftScreen(business)}
+                  onCardLeftScreen={() => { setSwipingDir(null); onCardLeftScreen(business) }}
+                  onSwipingDirection={(dir) => { if (index === cards.length - 1) setSwipingDir(dir) }}
                   preventSwipe={['up', 'down']}
                   className="swipe-card-wrapper"
                 >
                   {business._isPromo
                     ? <PromoCard card={business} isTop={index === cards.length - 1} onDetail={() => navigate(business.linked_slug ? `/business/${business.linked_slug}` : '#')} />
                     : business._isSponsored
-                      ? <SponsoredCard business={business} isTop={index === cards.length - 1} onDetail={() => navigate(`/business/${business._sponsorSlug}`)} userLocation={userLocation} />
-                      : <BusinessCard business={business} isTop={index === cards.length - 1} onDetail={() => navigate(`/business/${business.slug}`)} userLocation={userLocation} />
+                      ? <SponsoredCard business={business} isTop={index === cards.length - 1} onDetail={() => navigate(`/business/${business._sponsorSlug}`)} userLocation={userLocation} swipingDir={index === cards.length - 1 ? swipingDir : null} />
+                      : <BusinessCard business={business} isTop={index === cards.length - 1} onDetail={() => navigate(`/business/${business.slug}`)} userLocation={userLocation} swipingDir={index === cards.length - 1 ? swipingDir : null} />
                   }
                 </TinderCard>
               ))
@@ -418,6 +452,15 @@ export default function Swipe() {
                 <span>♥</span>
                 <span>LIKE</span>
               </button>
+              <button
+                className={`action-btn undo ${undoStack.length === 0 ? 'disabled' : ''}`}
+                onClick={pressUndo}
+                disabled={undoStack.length === 0}
+                aria-label="Undo last swipe"
+              >
+                <span>↩</span>
+                <span>UNDO</span>
+              </button>
             </div>
           )}
         </>
@@ -436,7 +479,7 @@ export default function Swipe() {
         <div style={{position:'fixed',inset:0,zIndex:9000,display:'flex',alignItems:'flex-end',background:'rgba(0,0,0,.5)'}}
              onClick={e => { if(e.target===e.currentTarget) setSmsPrompt(false) }}>
           <div style={{width:'100%',background:'#0f172a',borderRadius:'20px 20px 0 0',padding:'28px 24px 40px',boxShadow:'0 -8px 40px rgba(0,0,0,.5)'}}>
-            <div style={{width:40,height:4,background:'#334155',borderRadius:999,margin:'0 auto 20px'}}></div>
+            <div style={{width:40,height:4,background:'#0ea5e9',borderRadius:999,margin:'0 auto 20px',opacity:0.5}}></div>
             <div style={{fontSize:24,textAlign:'center',marginBottom:8}}>📲</div>
             <h3 style={{textAlign:'center',color:'#fff',fontSize:18,fontWeight:900,margin:'0 0 6px'}}>Get deals while you're here</h3>
             <p style={{textAlign:'center',color:'rgba(255,255,255,.6)',fontSize:14,margin:'0 0 20px',lineHeight:1.5}}>
@@ -467,7 +510,7 @@ export default function Swipe() {
                 setSmsSubmitting(false)
               }}
               disabled={smsSubmitting}
-              style={{width:'100%',background:'linear-gradient(135deg,#7c3aed,#a855f7)',color:'#fff',border:'none',borderRadius:10,padding:'14px',fontSize:16,fontWeight:800,cursor:'pointer',marginBottom:10}}
+              style={{width:'100%',background:'linear-gradient(135deg,#0ea5e9,#0369a1)',color:'#fff',border:'none',borderRadius:10,padding:'14px',fontSize:16,fontWeight:800,cursor:'pointer',marginBottom:10}}
             >
               {smsSubmitting ? 'Saving…' : 'Yes, text me deals 🎉'}
             </button>
@@ -542,7 +585,7 @@ export default function Swipe() {
   )
 }
 
-function BusinessCard({ business, isTop, onDetail, userLocation }) {
+function BusinessCard({ business, isTop, onDetail, userLocation, swipingDir }) {
   const [photoIdx, setPhotoIdx] = useState(0)
   const ptrRef = useRef(null)
   const distMiles = userLocation
@@ -590,6 +633,18 @@ function BusinessCard({ business, isTop, onDetail, userLocation }) {
         )}
         <div className="card-image-overlay" />
 
+        {/* Drag direction tint + stamp */}
+        {swipingDir === 'right' && (
+          <div className="card-drag-tint like-tint">
+            <span className="drag-stamp like-stamp">LIKE ♥</span>
+          </div>
+        )}
+        {swipingDir === 'left' && (
+          <div className="card-drag-tint nope-tint">
+            <span className="drag-stamp nope-stamp">NOPE ✕</span>
+          </div>
+        )}
+
         {business.verified && (
           <div className="card-featured-badge">⭐ Featured</div>
         )}
@@ -603,17 +658,16 @@ function BusinessCard({ business, isTop, onDetail, userLocation }) {
         )}
       </div>
 
-      {/* Tags overlaid on image bottom-left */}
-      {displayedTags.length > 0 && (
-        <div className="card-tags-overlay">
-          {displayedTags.slice(0,3).map(tag => (
-            <span key={tag} className={`card-tag ${tagColor(tag)}`}>{tag}</span>
-          ))}
-        </div>
-      )}
-
       {/* Info overlaid at bottom of image */}
       <div className="card-overlay-info">
+        {/* Tags above name — no longer collide with top-left badges */}
+        {displayedTags.length > 0 && (
+          <div className="card-tags-overlay-bottom">
+            {displayedTags.slice(0,3).map(tag => (
+              <span key={tag} className={`card-tag ${tagColor(tag)}`}>{tag}</span>
+            ))}
+          </div>
+        )}
         <div className="card-name-row">
           <h3 className="card-name">{business.name}</h3>
           {business.rating ? <div className="card-rating">⭐ {business.rating}</div> : null}
@@ -641,7 +695,7 @@ function BusinessCard({ business, isTop, onDetail, userLocation }) {
           onPointerDown={e => e.stopPropagation()}
           onPointerUp={e => e.stopPropagation()}
         >
-          <div className="card-ctas">
+          <div className="card-ctas" style={!business.booking_url ? {gridTemplateColumns:'1fr'} : undefined}>
             {business.booking_url && (
               <a className="cta-book pressable" href={business.booking_url} target="_blank" rel="noopener noreferrer"
                 onClick={e => e.stopPropagation()}>
@@ -711,7 +765,7 @@ function PromoCard({ card, isTop, onDetail }) {
   )
 }
 
-function SponsoredCard({ business, isTop, onDetail, userLocation }) {
+function SponsoredCard({ business, isTop, onDetail, userLocation, swipingDir }) {
   const [photoIdx, setPhotoIdx] = useState(0)
   const ptrRef = useRef(null)
   const distMiles = userLocation
@@ -753,6 +807,16 @@ function SponsoredCard({ business, isTop, onDetail, userLocation }) {
             onError={e => { try { e.target.style.display='none'; if (e.target.parentNode) e.target.parentNode.style.background='linear-gradient(135deg,#92400e,#d97706)' } catch {} }} />
         )}
         <div className="card-image-overlay" />
+        {swipingDir === 'right' && (
+          <div className="card-drag-tint like-tint">
+            <span className="drag-stamp like-stamp">LIKE ♥</span>
+          </div>
+        )}
+        {swipingDir === 'left' && (
+          <div className="card-drag-tint nope-tint">
+            <span className="drag-stamp nope-stamp">NOPE ✕</span>
+          </div>
+        )}
         <div className="card-sponsored-badge">⭐ Sponsored</div>
         {allPhotos.length > 1 && (
           <div className="card-photo-counter">{photoIdx + 1}/{allPhotos.length}</div>

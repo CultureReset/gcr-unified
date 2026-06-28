@@ -697,7 +697,96 @@
 }
 .action-btn.super span:first-child { font-size: 20px; }
 
-/* Hint arrows */
+/* ── Tags moved to overlay bottom (above name) — no badge collision ── */
+.card-tags-overlay-bottom {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-bottom: 8px;
+  z-index: 2;
+}
+
+/* Keep old overlay class for any remaining uses */
+.card-tags-overlay {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  z-index: 2;
+}
+
+/* ── Drag direction tint overlay ── */
+.card-drag-tint {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.08s;
+  pointer-events: none;
+}
+
+.like-tint {
+  background: rgba(34, 197, 94, 0.35);
+}
+
+.nope-tint {
+  background: rgba(239, 68, 68, 0.35);
+}
+
+.drag-stamp {
+  font-size: 32px;
+  font-weight: 900;
+  letter-spacing: 3px;
+  padding: 10px 22px;
+  border-radius: 12px;
+  border-width: 4px;
+  border-style: solid;
+  transform: rotate(-15deg);
+  text-transform: uppercase;
+}
+
+.like-stamp {
+  color: #22c55e;
+  border-color: #22c55e;
+  background: rgba(0,0,0,0.55);
+  text-shadow: 0 2px 8px rgba(0,0,0,0.6);
+}
+
+.nope-stamp {
+  color: #ef4444;
+  border-color: #ef4444;
+  background: rgba(0,0,0,0.55);
+  transform: rotate(15deg);
+  text-shadow: 0 2px 8px rgba(0,0,0,0.6);
+}
+
+/* ── Undo button ── */
+.action-btn.undo {
+  background: rgba(148, 163, 184, 0.1);
+  border: 2px solid rgba(148, 163, 184, 0.35);
+  color: #94a3b8;
+  width: 52px;
+  height: 52px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+}
+
+.action-btn.undo span:first-child { font-size: 20px; }
+
+.action-btn.undo.disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.action-btn.undo:not(.disabled):active {
+  transform: scale(0.88);
+}
+
+
+/* ── Hint arrows (restored) ── */
 .swipe-hint {
   display: flex;
   justify-content: space-between;
