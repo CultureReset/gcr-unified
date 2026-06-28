@@ -33,7 +33,7 @@
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
-  padding-bottom: 28px;
+  padding-bottom: 20px;
 }
 .hn-hero-overlay {
   position: absolute;
@@ -149,19 +149,12 @@
   white-space: nowrap;
 }
 
-/* Wave divider */
-.hn-wave {
-  position: absolute;
-  bottom: -1px;
-  left: 0;
-  right: 0;
-  z-index: 2;
-}
-.hn-wave svg { width: 100%; height: 32px; display: block; }
+
 
 /* ── MAIN BODY ──────────────────────────────────────── */
 .hn-main {
   background: var(--hn-navy2);
+  padding-top: 0;
   padding-bottom: 40px;
 }
 

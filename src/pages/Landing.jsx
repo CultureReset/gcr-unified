@@ -389,12 +389,6 @@ export default function Landing() {
           </div>
         </div>
 
-        {/* Wave */}
-        <div className="hn-wave">
-          <svg viewBox="0 0 1440 52" preserveAspectRatio="none">
-            <path d="M0,32 C360,0 720,52 1080,28 C1260,16 1380,44 1440,32 L1440,52 L0,52Z" fill="#071827"/>
-          </svg>
-        </div>
       </section>
 
       {/* ── BODY ──────────────────────────────────────────────── */}
