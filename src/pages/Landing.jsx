@@ -248,42 +248,32 @@ export default function Landing() {
 
   // Weather
   useEffect(() => {
-    // Single call to Open-Meteo — current conditions only
-    const WX_URL = 'https://api.open-meteo.com/v1/forecast' +
-      '?latitude=30.246&longitude=-87.701' +
-      '&current=temperature_2m,apparent_temperature,weathercode,windspeed_10m,wind_gusts_10m' +
-      '&daily=temperature_2m_max,temperature_2m_min' +
-      '&temperature_unit=fahrenheit&wind_speed_unit=mph' +
-      '&forecast_days=1&timezone=America%2FChicago'
-
-    fetch(WX_URL)
+    fetch('https://api.open-meteo.com/v1/forecast?latitude=30.246&longitude=-87.701&current=temperature_2m,apparent_temperature,weather_code,windspeed_10m,relativehumidity_2m,wind_gusts_10m&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max&temperature_unit=fahrenheit&wind_speed_unit=mph&forecast_days=1&timezone=America%2FChicago')
       .then(r => r.json())
       .then(d => {
-        const c    = d?.current
-        const day  = d?.daily
-        if (!c) return
-
-        // Open-Meteo uses 'weathercode' (no underscore) in current block
+        const c = d.current
         const code = c.weathercode ?? 0
-        const temp = Math.round(c.temperature_2m)
-        const feels = Math.round(c.apparent_temperature)
-        const wind = Math.round(c.windspeed_10m || 0)
+        const wind = Math.round(c.windspeed_10m)
         const gusts = Math.round(c.wind_gusts_10m || 0)
-        const hi   = day ? Math.round(day.temperature_2m_max[0]) : null
-        const lo   = day ? Math.round(day.temperature_2m_min[0]) : null
-
-        const icon  = WX_ICON[code]  || '🌤️'
-        const label = WX_LABEL[code] || 'Partly Cloudy'
-
-        const beachStatus =
-          (code >= 95 || gusts > 35) ? { label: '🚩 Beach Advisory', color: '#ff4444' } :
-          (code >= 61 || wind > 25)  ? { label: '🟡 Swim Caution',   color: '#ffbb00' } :
-                                       { label: '🏖️ Beach Open',     color: '#6ef0b8' }
-
-        setWeather({ temp, feels, wind, gusts, hi, lo, code, icon, label, beachStatus })
-      })
-      .catch(() => {})
-
+        // Beach flag logic: red flag if thunderstorm or gusts > 35mph
+        const beachStatus = (code >= 95 || gusts > 35)
+          ? { label: '🚩 Beach Advisory', color: '#ff4444' }
+          : (code >= 61 || wind > 25)
+          ? { label: '🟡 Swim Caution', color: '#ffbb00' }
+          : { label: '🏖️ Beach Open', color: '#6ef0b8' }
+        setWeather({
+          temp:   Math.round(c.temperature_2m),
+          feels:  Math.round(c.apparent_temperature),
+          wind,
+          gusts,
+          humidity: Math.round(c.relativehumidity_2m),
+          code,
+          hi:     Math.round(d.daily?.temperature_2m_max?.[0] || 0),
+          lo:     Math.round(d.daily?.temperature_2m_min?.[0] || 0),
+          rainChance: d.daily?.precipitation_probability_max?.[0] || 0,
+          beachStatus,
+        })
+      }).catch(() => {})
   }, [])
 
   // Home feed (happy hours, live music, events)
@@ -344,8 +334,8 @@ export default function Landing() {
       .catch(() => {})
   }, [])
 
-  const wxIcon  = weather?.icon  || (weather?.code != null ? (WX_ICON[weather.code]  || '🌤️') : '🌤️')
-  const wxLabel = weather?.label || (weather?.code != null ? (WX_LABEL[weather.code] || 'Partly Cloudy') : '...')
+  const wxIcon = weather ? (WX_ICON[weather.code] || '🌤️') : '🌤️'
+  const wxLabel = weather ? (WX_LABEL[weather.code] || 'Partly Cloudy') : '...'
 
   const happyHours    = feed?.happyHours    || []
   const happyHoursAll = feed?.happyHoursAll || []
@@ -361,21 +351,21 @@ export default function Landing() {
     <div className="hn-page">
       <GCRHeader />
 
-      {/* ── WEATHER BAR — directly under header, no gap ── */}
-      <div className="hn-wx-bar">
-        <span>{wxIcon} <strong>{weather ? `${weather.temp}°F` : '...'}</strong></span>
-        <span className="hn-wx-cond">{wxLabel}</span>
-        {weather?.hi > 0 && <span className="hn-wx-hi-lo">↑{weather.hi}° ↓{weather.lo}°</span>}
-        {weather?.wind > 0 && <span className="hn-wx-wind">💨 {weather.wind}mph</span>}
-        <span className="hn-wx-beach" style={weather?.beachStatus?.color ? {color: weather.beachStatus.color} : {}}>
-          {weather?.beachStatus?.label || '🏖️ Beach Open'}
-        </span>
-      </div>
-
       {/* ── HERO ──────────────────────────────────────────────── */}
       <section className="hn-hero" style={{ backgroundImage: `url(${HERO_IMG})` }}>
         <div className="hn-hero-overlay" />
         <div className="hn-hero-content">
+
+          {/* Weather inline */}
+          <div className="hn-wx-bar">
+            <span>{wxIcon} {weather ? `${weather.temp}°F` : '...'}</span>
+            <span className="hn-wx-cond">{wxLabel}</span>
+            {weather?.hi > 0 && <span className="hn-wx-hi-lo">↑{weather.hi}° ↓{weather.lo}°</span>}
+            {weather?.wind > 0 && <span className="hn-wx-wind">💨 {weather.wind}mph</span>}
+            <span className="hn-wx-beach" style={weather?.beachStatus?.color ? {color: weather.beachStatus.color} : {}}>
+              {weather?.beachStatus?.label || '🏖️ Beach Open'}
+            </span>
+          </div>
 
           <h1 className="hn-hero-h1">Everything<br/>on the<br/><span className="hn-teal">Gulf Coast</span></h1>
 
@@ -399,6 +389,12 @@ export default function Landing() {
           </div>
         </div>
 
+        {/* Wave */}
+        <div className="hn-wave">
+          <svg viewBox="0 0 1440 52" preserveAspectRatio="none">
+            <path d="M0,32 C360,0 720,52 1080,28 C1260,16 1380,44 1440,32 L1440,52 L0,52Z" fill="#071827"/>
+          </svg>
+        </div>
       </section>
 
       {/* ── BODY ──────────────────────────────────────────────── */}
