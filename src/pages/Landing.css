@@ -70,7 +70,9 @@
 }
 .hn-wx-temp { color: var(--hn-gold); font-weight: 900; }
 .hn-wx-cond { color: rgba(255,255,255,.75); }
-.hn-wx-beach { color: #6ef0b8; }
+.hn-wx-beach { color: #6ef0b8; font-weight: 800; }
+.hn-wx-hi-lo { color: rgba(255,255,255,.6); font-size: 12px; }
+.hn-wx-wind  { color: rgba(255,255,255,.6); font-size: 12px; }
 
 /* Hero headline */
 .hn-hero-h1 {

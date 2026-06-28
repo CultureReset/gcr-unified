@@ -7,8 +7,26 @@ import './Landing.css'
 const HERO_IMG = 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1400&q=80'
 const SUPABASE_URL = 'https://mkepugvdlktfsossumox.supabase.co/storage/v1/object/public/entity-photos'
 
-const WX_ICON  = { 0:'☀️',1:'🌤️',2:'⛅',3:'☁️',45:'🌫️',48:'🌫️',51:'🌦️',61:'🌧️',63:'🌧️',65:'🌧️',71:'🌨️',80:'🌦️',81:'🌦️',95:'⛈️' }
-const WX_LABEL = { 0:'Clear',1:'Mostly Clear',2:'Partly Cloudy',3:'Overcast',45:'Foggy',61:'Light Rain',63:'Rain',80:'Showers',95:'Thunderstorms' }
+const WX_ICON  = {
+  0:'☀️', 1:'🌤️', 2:'⛅', 3:'☁️',
+  45:'🌫️', 48:'🌫️',
+  51:'🌦️', 53:'🌦️', 55:'🌧️',
+  61:'🌧️', 63:'🌧️', 65:'🌧️',
+  71:'🌨️', 73:'🌨️', 75:'❄️', 77:'🌨️',
+  80:'🌦️', 81:'🌦️', 82:'🌧️',
+  85:'🌨️', 86:'❄️',
+  95:'⛈️', 96:'⛈️', 99:'⛈️',
+}
+const WX_LABEL = {
+  0:'Clear', 1:'Mostly Clear', 2:'Partly Cloudy', 3:'Overcast',
+  45:'Foggy', 48:'Icy Fog',
+  51:'Light Drizzle', 53:'Drizzle', 55:'Heavy Drizzle',
+  61:'Light Rain', 63:'Rain', 65:'Heavy Rain',
+  71:'Light Snow', 73:'Snow', 75:'Heavy Snow', 77:'Snow Grains',
+  80:'Showers', 81:'Showers', 82:'Heavy Showers',
+  85:'Snow Showers', 86:'Heavy Snow Showers',
+  95:'Thunderstorm', 96:'Thunderstorm w/ Hail', 99:'Severe Thunderstorm',
+}
 
 const CATEGORIES = [
   { emoji:'🍽️', label:'Restaurants',   path:'/restaurants' },
@@ -229,11 +247,31 @@ export default function Landing() {
 
   // Weather
   useEffect(() => {
-    fetch('https://api.open-meteo.com/v1/forecast?latitude=30.246&longitude=-87.701&current=temperature_2m,apparent_temperature,weathercode,windspeed_10m,relativehumidity_2m&temperature_unit=fahrenheit&wind_speed_unit=mph&forecast_days=1&timezone=America%2FChicago')
+    fetch('https://api.open-meteo.com/v1/forecast?latitude=30.246&longitude=-87.701&current=temperature_2m,apparent_temperature,weather_code,windspeed_10m,relativehumidity_2m,wind_gusts_10m&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max&temperature_unit=fahrenheit&wind_speed_unit=mph&forecast_days=1&timezone=America%2FChicago')
       .then(r => r.json())
       .then(d => {
         const c = d.current
-        setWeather({ temp: Math.round(c.temperature_2m), feels: Math.round(c.apparent_temperature), wind: Math.round(c.windspeed_10m), code: c.weathercode })
+        const code = c.weather_code ?? c.weathercode ?? 0
+        const wind = Math.round(c.windspeed_10m)
+        const gusts = Math.round(c.wind_gusts_10m || 0)
+        // Beach flag logic: red flag if thunderstorm or gusts > 35mph
+        const beachStatus = (code >= 95 || gusts > 35)
+          ? { label: '🚩 Beach Advisory', color: '#ff4444' }
+          : (code >= 61 || wind > 25)
+          ? { label: '🟡 Swim Caution', color: '#ffbb00' }
+          : { label: '🏖️ Beach Open', color: '#6ef0b8' }
+        setWeather({
+          temp:   Math.round(c.temperature_2m),
+          feels:  Math.round(c.apparent_temperature),
+          wind,
+          gusts,
+          humidity: Math.round(c.relativehumidity_2m),
+          code,
+          hi:     Math.round(d.daily?.temperature_2m_max?.[0] || 0),
+          lo:     Math.round(d.daily?.temperature_2m_min?.[0] || 0),
+          rainChance: d.daily?.precipitation_probability_max?.[0] || 0,
+          beachStatus,
+        })
       }).catch(() => {})
   }, [])
 
@@ -299,10 +337,13 @@ export default function Landing() {
 
           {/* Weather inline */}
           <div className="hn-wx-bar">
-            <span>{wxIcon} Gulf Shores</span>
-            <span className="hn-wx-temp">{weather ? `${weather.temp}°F` : '...'}</span>
+            <span>{wxIcon} {weather ? `${weather.temp}°F` : '...'}</span>
             <span className="hn-wx-cond">{wxLabel}</span>
-            <span className="hn-wx-beach">🏖️ Beach Open</span>
+            {weather?.hi > 0 && <span className="hn-wx-hi-lo">↑{weather.hi}° ↓{weather.lo}°</span>}
+            {weather?.wind > 0 && <span className="hn-wx-wind">💨 {weather.wind}mph</span>}
+            <span className="hn-wx-beach" style={weather?.beachStatus?.color ? {color: weather.beachStatus.color} : {}}>
+              {weather?.beachStatus?.label || '🏖️ Beach Open'}
+            </span>
           </div>
 
           <h1 className="hn-hero-h1">Everything<br/>on the<br/><span className="hn-teal">Gulf Coast</span></h1>
