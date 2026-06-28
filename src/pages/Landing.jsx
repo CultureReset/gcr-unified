@@ -271,7 +271,11 @@ export default function Landing() {
   const wxIcon = weather ? (WX_ICON[weather.code] || '🌤️') : '🌤️'
   const wxLabel = weather ? (WX_LABEL[weather.code] || 'Partly Cloudy') : '...'
 
-  const happyHours = feed?.happyHours || []
+  const happyHours    = feed?.happyHours    || []
+  const happyHoursAll = feed?.happyHoursAll || []
+  // Show active-now cards if any, otherwise show all HH as "today's deals"
+  const hhToShow  = happyHours.length > 0 ? happyHours : happyHoursAll
+  const hhIsNow   = happyHours.length > 0
   const liveMusic  = feed?.liveMusic  || []
   const events     = feed?.events     || []
   // Combine live music + events, dedupe by id
@@ -339,18 +343,18 @@ export default function Landing() {
         {/* ── HAPPY HOURS ─────────────────────────────────────── */}
         <section className="hn-sec">
           <SectionHead
-            eyebrow="Happening Now"
+            eyebrow={hhIsNow ? "Happening Now" : "Today's Deals"}
             title="🍻 Happy Hours"
-            sub={happyHours.length > 0 ? `${happyHours.length} deals active right now` : 'Deals update throughout the day'}
+            sub={hhIsNow ? `${hhToShow.length} deals active right now` : `${hhToShow.length} spots with happy hour deals`}
             path="/happy-hours"
             navigate={navigate}
           />
           <Rail id="hh-rail">
-            {happyHours.length > 0
-              ? happyHours.map(item => (
+            {hhToShow.length > 0
+              ? hhToShow.map(item => (
                   <HHCard key={item.slug} item={item} onClick={() => navigate(`/business/${item.slug}`)} />
                 ))
-              : <EmptyCard message="🍺 Check back — happy hours load daily" />
+              : <EmptyCard message="🍺 Happy hour data loading..." />
             }
           </Rail>
         </section>
