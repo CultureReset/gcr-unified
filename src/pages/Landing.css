@@ -18,6 +18,7 @@
 /* ── PAGE SHELL ─────────────────────────────────────── */
 .hn-page {
   min-height: 100vh;
+  padding-top: 110px;
   background: var(--hn-navy2);
   color: #fff;
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, sans-serif;
