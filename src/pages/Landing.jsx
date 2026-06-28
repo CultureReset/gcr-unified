@@ -248,30 +248,24 @@ export default function Landing() {
 
   // Weather
   useEffect(() => {
-    fetch('https://api.open-meteo.com/v1/forecast?latitude=30.246&longitude=-87.701&current=temperature_2m,apparent_temperature,weather_code,windspeed_10m,relativehumidity_2m,wind_gusts_10m&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max&temperature_unit=fahrenheit&wind_speed_unit=mph&forecast_days=1&timezone=America%2FChicago')
+    fetch('https://api.open-meteo.com/v1/forecast?latitude=30.246&longitude=-87.701&current_weather=true&daily=temperature_2m_max,temperature_2m_min&temperature_unit=fahrenheit&wind_speed_unit=mph&forecast_days=1&timezone=America%2FChicago')
       .then(r => r.json())
       .then(d => {
-        const c = d.current
-        const code = c.weathercode ?? 0
-        const wind = Math.round(c.windspeed_10m)
-        const gusts = Math.round(c.wind_gusts_10m || 0)
-        // Beach flag logic: red flag if thunderstorm or gusts > 35mph
-        const beachStatus = (code >= 95 || gusts > 35)
-          ? { label: '🚩 Beach Advisory', color: '#ff4444' }
-          : (code >= 61 || wind > 25)
-          ? { label: '🟡 Swim Caution', color: '#ffbb00' }
-          : { label: '🏖️ Beach Open', color: '#6ef0b8' }
+        const cw = d?.current_weather
+        if (!cw) return
+        const code = cw.weathercode ?? 0
+        const wind = Math.round(cw.windspeed || 0)
+        const beachStatus =
+          (code >= 95) ? { label: '🚩 Beach Advisory', color: '#ff4444' } :
+          (code >= 61 || wind > 25) ? { label: '🟡 Swim Caution', color: '#ffbb00' } :
+          { label: '🏖️ Beach Open', color: '#6ef0b8' }
         setWeather({
-          temp:   Math.round(c.temperature_2m),
-          feels:  Math.round(c.apparent_temperature),
+          temp:  Math.round(cw.temperature),
           wind,
-          gusts,
-          humidity: Math.round(c.relativehumidity_2m),
           code,
-          hi:     Math.round(d.daily?.temperature_2m_max?.[0] || 0),
-          lo:     Math.round(d.daily?.temperature_2m_min?.[0] || 0),
-          rainChance: d.daily?.precipitation_probability_max?.[0] || 0,
           beachStatus,
+          hi: Math.round(d.daily?.temperature_2m_max?.[0] || 0),
+          lo: Math.round(d.daily?.temperature_2m_min?.[0] || 0),
         })
       }).catch(() => {})
   }, [])

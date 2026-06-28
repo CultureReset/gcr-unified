@@ -27,13 +27,12 @@
 /* ── HERO ───────────────────────────────────────────── */
 .hn-hero {
   position: relative;
-  min-height: 58vh;
   background-size: cover;
   background-position: center;
   display: flex;
   flex-direction: column;
-  justify-content: flex-end;
-  padding-bottom: 60px;
+  justify-content: flex-start;
+  padding: 20px 0 28px;
 }
 .hn-hero-overlay {
   position: absolute;
