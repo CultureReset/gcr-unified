@@ -33,7 +33,7 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
-  padding: 28px 0 28px;
+  padding: 16px 0 12px;
 }
 .hn-hero-overlay {
   position: absolute;
@@ -48,6 +48,9 @@
   max-width: 680px;
   margin: 0 auto;
   width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 .hn-teal { color: var(--hn-teal); }
 
@@ -80,7 +83,7 @@
   line-height: .88;
   letter-spacing: -.07em;
   font-weight: 1000;
-  margin: 0 0 18px;
+  margin: 0;
   text-shadow: 0 4px 20px rgba(0,0,0,.4);
 }
 
@@ -93,7 +96,6 @@
   border-radius: 999px;
   padding: 6px 6px 6px 16px;
   box-shadow: 0 16px 40px rgba(0,0,0,.35);
-  margin-bottom: 14px;
 }
 .hn-search-icon { font-size: 18px; flex-shrink: 0; }
 .hn-search-input {
@@ -155,13 +157,12 @@
 /* ── MAIN BODY ──────────────────────────────────────── */
 .hn-main {
   background: var(--hn-navy2);
-  padding-top: 0;
   padding-bottom: 40px;
 }
 
 /* ── CATEGORIES ─────────────────────────────────────── */
 .hn-cats {
-  padding: 8px 0 4px 18px;
+  padding: 6px 0 2px 18px;
 }
 .hn-mini-card {
   display: flex;
@@ -193,7 +194,7 @@
 
 /* ── SECTION ────────────────────────────────────────── */
 .hn-sec {
-  padding: 16px 0 8px 18px;
+  padding: 10px 0 6px 18px;
 }
 .hn-sec-light {
   background: rgba(255,255,255,.03);
