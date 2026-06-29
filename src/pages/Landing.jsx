@@ -255,6 +255,30 @@ export default function Landing() {
   const [activities, setActivities]   = useState([])
   const [loading, setLoading]         = useState(true)
   const [stays, setStays]             = useState([])
+  const [installPrompt, setInstallPrompt] = useState(null)
+  const [isInstalled, setIsInstalled]     = useState(false)
+  const [showInstallModal, setShowInstallModal] = useState(false)
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream
+
+  useEffect(() => {
+    if (window.matchMedia('(display-mode: standalone)').matches) { setIsInstalled(true); return }
+    const handler = e => { e.preventDefault(); setInstallPrompt(e) }
+    window.addEventListener('beforeinstallprompt', handler)
+    window.addEventListener('appinstalled', () => setIsInstalled(true))
+    return () => window.removeEventListener('beforeinstallprompt', handler)
+  }, [])
+
+  async function handleInstall() {
+    if (isIOS) { setShowInstallModal(true); return }
+    if (installPrompt) {
+      installPrompt.prompt()
+      const { outcome } = await installPrompt.userChoice
+      if (outcome === 'accepted') setIsInstalled(true)
+      setInstallPrompt(null)
+    } else {
+      setShowInstallModal(true)
+    }
+  }
 
   const savedSlugs = new Set((savedPlaces || []).map(p => p.slug))
 
@@ -409,6 +433,15 @@ export default function Landing() {
             <button className="hn-pill-gold" onClick={() => setShowLoyalty(true)}>📲 Get Deals & Alerts</button>
             <button className="hn-pill-ghost" onClick={() => navigate('/events')}>📅 Master Calendar</button>
           </div>
+
+          {/* Install app pill */}
+          {!isInstalled && (
+            <div className="hn-install-row">
+              <button className="hn-install-pill" onClick={handleInstall}>
+                ⬇️ Add to Home Screen — Free
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Wave */}
@@ -587,6 +620,42 @@ export default function Landing() {
             <p style={{ fontSize:'.78rem', color:'#aaa', marginTop:'.85rem' }}>
               Opens your Messages app pre-filled. Just hit send.
             </p>
+          </div>
+        </div>
+      )}
+
+      {/* ── INSTALL MODAL ─────────────────────────────────────────── */}
+      {showInstallModal && (
+        <div className="ld-loyalty-overlay" onClick={() => setShowInstallModal(false)}>
+          <div className="ld-loyalty-modal" onClick={e => e.stopPropagation()}>
+            <button className="ld-loyalty-close" onClick={() => setShowInstallModal(false)}>✕</button>
+            <img src="/gcr-logo.png" alt="Gulf Coast Radar"
+              style={{ width: 72, height: 72, borderRadius: 16, objectFit: 'cover', marginBottom: 12 }}
+              onError={e => { e.target.style.display = 'none' }} />
+            <h2 style={{ fontSize: '1.3rem', fontWeight: 900, marginBottom: 6, color: '#1a1a1a' }}>Add to Home Screen</h2>
+            <p style={{ fontSize: '.88rem', color: '#555', marginBottom: 20, lineHeight: 1.5 }}>
+              Free app — no App Store needed. Works on iPhone &amp; Android.
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, textAlign: 'left', marginBottom: 20 }}>
+              {(isIOS ? [
+                { n: '1', text: <span>Tap the <strong>Share</strong> icon at the bottom of Safari</span> },
+                { n: '2', text: <span>Tap <strong>"Add to Home Screen"</strong></span> },
+                { n: '3', text: <span>Tap <strong>"Add"</strong> — done!</span> },
+              ] : [
+                { n: '1', text: <span>Tap the <strong>⋮ menu</strong> in Chrome (top right)</span> },
+                { n: '2', text: <span>Tap <strong>"Add to Home screen"</strong></span> },
+                { n: '3', text: <span>Tap <strong>"Add"</strong> — done!</span> },
+              ]).map(step => (
+                <div key={step.n} style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+                  <div style={{ flexShrink: 0, width: 28, height: 28, borderRadius: '50%', background: 'linear-gradient(135deg,#0b7a75,#14B8A6)', color: 'white', fontWeight: 800, fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{step.n}</div>
+                  <div style={{ fontSize: 14, lineHeight: 1.5, paddingTop: 4, color: '#1a2b3c' }}>{step.text}</div>
+                </div>
+              ))}
+            </div>
+            <button
+              style={{ width: '100%', background: 'linear-gradient(135deg,#0b7a75,#14B8A6)', color: 'white', border: 'none', borderRadius: 12, padding: 14, fontSize: 15, fontWeight: 800, cursor: 'pointer' }}
+              onClick={() => setShowInstallModal(false)}
+            >Got it</button>
           </div>
         </div>
       )}

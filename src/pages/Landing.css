@@ -529,3 +529,24 @@
   .hn-hero-pills { gap: 8px; }
   .hn-pill-gold, .hn-pill-ghost { font-size: 14px; padding: 12px 16px; }
 }
+
+/* ── Install pill in hero ── */
+.hn-install-row {
+  margin-top: 10px;
+  display: flex;
+  justify-content: center;
+}
+
+.hn-install-pill {
+  background: rgba(255,255,255,0.15);
+  border: 1.5px solid rgba(255,255,255,0.5);
+  color: white;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 9px 20px;
+  border-radius: 99px;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  transition: background 0.15s;
+}
+.hn-install-pill:active { background: rgba(255,255,255,0.25); }
