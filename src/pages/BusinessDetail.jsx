@@ -133,6 +133,9 @@ export default function RestaurantDetail() {
   const events = business.events || []
   const pricing = business.pricing || []
   const whatsIncluded = business.whats_included || []
+  const whatToBring = business.what_to_bring || []
+  const activityDetails = business.activity_details || null
+  const orderLinks = business.order_links || []
   const faqs = business.faqs || []
   const requirements = business.requirements || []
   const schedules = business.schedules || []
@@ -1093,6 +1096,39 @@ export default function RestaurantDetail() {
                   </ul>
                 </div>
               )}
+
+              {/* What to Bring */}
+              {whatToBring.length > 0 && (
+                <div className="what-to-bring">
+                  <h3>🎒 What to Bring</h3>
+                  <ul>
+                    {whatToBring.map((item, i) => (
+                      <li key={item.id || i}>{item.item}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Activity Details — duration, difficulty, trip notes */}
+              {activityDetails && (
+                <div className="activity-details-block">
+                  {activityDetails.duration_hours && (
+                    <div className="act-detail-row">⏱ <strong>Duration:</strong> {activityDetails.duration_hours} hours</div>
+                  )}
+                  {activityDetails.difficulty && (
+                    <div className="act-detail-row">📊 <strong>Difficulty:</strong> {activityDetails.difficulty}</div>
+                  )}
+                  {activityDetails.min_age && (
+                    <div className="act-detail-row">👤 <strong>Min Age:</strong> {activityDetails.min_age}+</div>
+                  )}
+                  {activityDetails.group_size_max && (
+                    <div className="act-detail-row">👥 <strong>Max Group:</strong> {activityDetails.group_size_max} people</div>
+                  )}
+                  {activityDetails.notes && (
+                    <div className="act-detail-row act-notes">{activityDetails.notes}</div>
+                  )}
+                </div>
+              )}
             </section>
           )}
 
@@ -1484,6 +1520,25 @@ export default function RestaurantDetail() {
                 )
               }) : !drinkRotating.length && (
                 <p className="no-data">No drink menu available</p>
+              )}
+              {/* Order Links — DoorDash, UberEats, direct online order */}
+              {orderLinks.length > 0 && (
+                <div className="order-links-section">
+                  <h3>🛵 Order Online</h3>
+                  <div className="order-links-grid">
+                    {orderLinks.map((link, i) => (
+                      <a
+                        key={link.id || i}
+                        href={link.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="order-link-btn"
+                      >
+                        {link.label || link.type || 'Order Now'}
+                      </a>
+                    ))}
+                  </div>
+                </div>
               )}
             </section>
           )}
@@ -1900,6 +1955,17 @@ export default function RestaurantDetail() {
                 🛵 Order
               </a>
             )}
+            {orderLinks.length > 0 && orderLinks.map((link, i) => (
+              <a
+                key={link.id || i}
+                href={link.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="sidebar-btn"
+              >
+                🛵 {link.label || link.type || 'Order Online'}
+              </a>
+            ))}
             {business.website_url && (
               <a href={business.website_url} target="_blank" rel="noopener noreferrer" className="sidebar-btn">
                 🌐 Website
