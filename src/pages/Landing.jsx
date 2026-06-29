@@ -247,12 +247,6 @@ function EmptyCard({ message }) {
 // MASTER CALENDAR MODAL
 // ═══════════════════════════════════════════════════════════════════════
 
-function fmt12(t) {
-  if (!t) return ''
-  const [h, m] = t.split(':').map(Number)
-  return `${h % 12 || 12}:${String(m).padStart(2, '0')} ${h >= 12 ? 'PM' : 'AM'}`
-}
-
 function CalSection({ emoji, title, count, children }) {
   if (!count) return null
   return (
