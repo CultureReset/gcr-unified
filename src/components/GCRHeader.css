@@ -20,15 +20,17 @@
   display: flex;
   align-items: center;
   cursor: pointer;
-  gap: 8px;
+  gap: 10px;
   text-decoration: none;
+  flex-shrink: 0;
 }
 
 .logo-img {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
+  width: 52px;
+  height: 52px;
+  border-radius: 12px;
   object-fit: cover;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.25);
 }
 
 .logo-text {
@@ -41,6 +43,11 @@
 }
 
 .logo-coast { color: #e0f7fa; }
+
+/* Hide text on small screens — logo image is enough */
+@media (max-width: 380px) {
+  .logo-text { display: none; }
+}
 
 .gcr-header-right {
   display: flex;
