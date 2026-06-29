@@ -89,6 +89,14 @@ function getDateFilters() {
   return { todayStr, tomorrowStr, weekendDates }
 }
 
+
+// Convert DB day_of_week string to JS getDay() integer (0=Sun..6=Sat)
+function dowToInt(dow) {
+  const map = { sunday:0, monday:1, tuesday:2, wednesday:3, thursday:4, friday:5, saturday:6 }
+  if (typeof dow === 'number') return dow
+  return map[(dow || '').toLowerCase()] ?? -1
+}
+
 function EventCard({ event, navigate }) {
   const img = event.image_url || event.hero_image_url || FALLBACK_EVENT_IMG
   const typeKey = getEventType(event)
@@ -231,14 +239,14 @@ export default function Events() {
       const weekendDows = weekendDates.map(ds => new Date(ds + 'T12:00:00').getDay())
 
       if (dateFilter === 'today') {
-        dateMatch = d === todayStr || (isRecurring && ev.day_of_week === todayDow)
+        dateMatch = d === todayStr || (isRecurring && dowToInt(ev.day_of_week) === todayDow)
       } else if (dateFilter === 'tomorrow') {
-        dateMatch = d === tomorrowStr || (isRecurring && ev.day_of_week === tomorrowDow)
+        dateMatch = d === tomorrowStr || (isRecurring && dowToInt(ev.day_of_week) === tomorrowDow)
       } else if (dateFilter === 'weekend') {
-        dateMatch = weekendDates.includes(d) || (isRecurring && weekendDows.includes(ev.day_of_week))
+        dateMatch = weekendDates.includes(d) || (isRecurring && weekendDows.includes(dowToInt(ev.day_of_week)))
       } else if (dateFilter === 'custom' && customDate) {
         const customDow = new Date(customDate + 'T12:00:00').getDay()
-        dateMatch = d === customDate || (isRecurring && ev.day_of_week === customDow)
+        dateMatch = d === customDate || (isRecurring && dowToInt(ev.day_of_week) === customDow)
       } else if (dateFilter === 'all') {
         dateMatch = true
       }
