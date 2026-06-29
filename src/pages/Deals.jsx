@@ -521,8 +521,18 @@ export default function Deals() {
     else counts[f.id] = deals.filter(FILTER_MAP[f.id] || (() => false)).length
   })
 
-  const todayDeals  = deals.filter(d => d.is_today_only)
-  const featuredDeals = deals.filter(d => d.is_featured)
+  const todayDeals    = deals.filter(d => d.is_today_only)
+  const tomorrowDeals = deals.filter(d => {
+    if (d.is_today_only) return false
+    if (!d.valid_date) return false
+    const tomorrow = new Date(Date.now() + 86400000).toISOString().slice(0,10)
+    return d.valid_date === tomorrow
+  })
+  const featuredDeals  = deals.filter(d => d.is_featured)
+  const walkOnDeals    = deals.filter(d =>
+    (d.deal_type === 'charter_opening' || d.entity_subtype?.includes('fishing') || d.entity_subtype?.includes('charter')) &&
+    (d.is_today_only || tomorrowDeals.includes(d))
+  )
 
   return (
     <div className="deals-page">
@@ -609,6 +619,21 @@ export default function Deals() {
           </div>
         ) : (
           <>
+            {/* Walk-On Charter Spots — most urgent, always first */}
+            {activeFilter === 'all' && walkOnDeals.length > 0 && (
+              <section className="deals-section deals-section--walkon">
+                <div className="deals-walkon-head">
+                  <h2 className="deals-section-title">🎣 Walk-On Charter Spots</h2>
+                  <span className="deals-walkon-sub">Captains need a few more — fill the boat, split the cost</span>
+                </div>
+                <div className="deals-grid">
+                  {walkOnDeals.map(deal => (
+                    <DealCard key={deal.id} deal={deal} navigate={navigate} />
+                  ))}
+                </div>
+              </section>
+            )}
+
             {/* Featured section */}
             {activeFilter === 'all' && featuredDeals.length > 0 && (
               <section className="deals-section">
@@ -626,7 +651,19 @@ export default function Deals() {
               <section className="deals-section">
                 <h2 className="deals-section-title">⚡ Today Only — Act Fast</h2>
                 <div className="deals-grid">
-                  {todayDeals.map(deal => (
+                  {todayDeals.filter(d => !walkOnDeals.includes(d)).map(deal => (
+                    <DealCard key={deal.id} deal={deal} navigate={navigate} />
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* Tomorrow — book tonight */}
+            {activeFilter === 'all' && tomorrowDeals.length > 0 && (
+              <section className="deals-section">
+                <h2 className="deals-section-title">🌅 Tomorrow — Book Tonight</h2>
+                <div className="deals-grid">
+                  {tomorrowDeals.filter(d => !walkOnDeals.includes(d)).map(deal => (
                     <DealCard key={deal.id} deal={deal} navigate={navigate} />
                   ))}
                 </div>
@@ -640,7 +677,7 @@ export default function Deals() {
               )}
               <div className="deals-grid">
                 {(activeFilter === 'all'
-                  ? filtered.filter(d => !d.is_featured && !d.is_today_only)
+                  ? filtered.filter(d => !d.is_featured && !d.is_today_only && !tomorrowDeals.includes(d))
                   : filtered
                 ).map(deal => (
                   <DealCard key={deal.id} deal={deal} navigate={navigate} />

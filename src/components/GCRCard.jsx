@@ -272,6 +272,17 @@ export default function GCRCard({ entity, category, onSave, savedSlugs }) {
         />
         <div className="gcr-card-badge">{icon} {subtype}</div>
 
+        {/* Live availability badge — today/tomorrow only */}
+        {entity.spots_remaining != null && entity.spots_remaining <= 5 && (
+          <div className={`gcr-avail-badge ${entity.spots_remaining === 0 ? 'avail-full' : entity.spots_remaining <= 2 ? 'avail-critical' : 'avail-low'}`}>
+            {entity.spots_remaining === 0
+              ? '🔴 Full'
+              : entity.spots_remaining === 1
+              ? '🔴 Last spot!'
+              : `🟡 ${entity.spots_remaining} left`}
+          </div>
+        )}
+
         {status && (
           <div className={`gcr-badge-status status-${status.cls}`}>
             {status.label}

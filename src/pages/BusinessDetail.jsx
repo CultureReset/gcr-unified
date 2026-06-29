@@ -28,6 +28,7 @@ export default function RestaurantDetail() {
   const [hasBlog, setHasBlog] = useState(false)
   const [hasPolicies, setHasPolicies] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [availability, setAvailability] = useState(null)
   const subSectionRefs = useRef({})
   const observerRef = useRef(null)
 
@@ -62,11 +63,13 @@ export default function RestaurantDetail() {
           fetch(`${API_BASE}/api/team/${encodeURIComponent(slug)}`).then(r => r.ok ? r.json() : null).catch(() => null),
           fetch(`${API_BASE}/api/blog/${encodeURIComponent(slug)}?page=1&limit=1`).then(r => r.ok ? r.json() : null).catch(() => null),
           fetch(`${API_BASE}/api/faqs/${encodeURIComponent(slug)}?category=cancellation`).then(r => r.ok ? r.json() : null).catch(() => null),
-        ]).then(([reviewStats, teamData, blogData, policiesData]) => {
+          fetch(`${API_BASE}/api/email-parser/availability/${encodeURIComponent(slug)}`).then(r => r.ok ? r.json() : null).catch(() => null),
+        ]).then(([reviewStats, teamData, blogData, policiesData, availData]) => {
           if (reviewStats?.total) setReviewCount(reviewStats.total)
           if ((teamData?.team || []).length > 0) setHasTeam(true)
           if ((blogData?.posts || []).length > 0) setHasBlog(true)
           if ((policiesData?.faqs || []).length > 0) setHasPolicies(true)
+          if (availData?.availability?.length > 0) setAvailability(availData)
         })
       } catch (err) {
         setError(err.message)
@@ -628,6 +631,74 @@ export default function RestaurantDetail() {
                   <p>{business.ai_review_summary}</p>
                 </div>
               )}
+
+              {/* ── LIVE AVAILABILITY WIDGET ── */}
+              {availability && availability.availability?.length > 0 && (() => {
+                const today = new Date().toISOString().slice(0,10)
+                const tomorrow = new Date(Date.now() + 86400000).toISOString().slice(0,10)
+                const slots = availability.availability.filter(s =>
+                  s.availability_date === today || s.availability_date === tomorrow
+                )
+                if (!slots.length) return null
+                return (
+                  <div className="avail-widget">
+                    <div className="avail-widget-head">
+                      <span className="avail-pulse" />
+                      <span className="avail-title">Live Availability</span>
+                      <span className="avail-updated">Updated in real-time</span>
+                    </div>
+                    <div className="avail-slots">
+                      {slots.map((slot, i) => {
+                        const isToday = slot.availability_date === today
+                        const label = isToday ? 'Today' : 'Tomorrow'
+                        const time = slot.time_slot ? slot.time_slot.slice(0,5) : null
+                        const fmt = t => {
+                          if (!t) return ''
+                          const [h, m] = t.split(':').map(Number)
+                          return `${h % 12 || 12}:${String(m).padStart(2,'0')} ${h >= 12 ? 'PM' : 'AM'}`
+                        }
+                        return (
+                          <div key={i} className={`avail-slot avail-slot--${slot.status}`}>
+                            <div className="avail-slot-when">
+                              <span className="avail-slot-day">{label}</span>
+                              {time && <span className="avail-slot-time">{fmt(time)}</span>}
+                            </div>
+                            <div className="avail-slot-status">
+                              {slot.status === 'full' && <span className="avail-tag avail-tag--full">🔴 Full</span>}
+                              {slot.status === 'limited' && (
+                                <span className="avail-tag avail-tag--limited">
+                                  🟡 {slot.remaining_spots} spot{slot.remaining_spots !== 1 ? 's' : ''} left
+                                </span>
+                              )}
+                              {slot.status === 'available' && (
+                                <span className="avail-tag avail-tag--open">
+                                  🟢 {slot.remaining_spots != null ? `${slot.remaining_spots} open` : 'Available'}
+                                </span>
+                              )}
+                              {slot.status === 'unknown' && (
+                                <span className="avail-tag avail-tag--unknown">📊 Tracking</span>
+                              )}
+                            </div>
+                            {slot.total_capacity && slot.remaining_spots != null && (
+                              <div className="avail-bar-wrap">
+                                <div
+                                  className="avail-bar-fill"
+                                  style={{ width: `${Math.min(100, ((slot.total_capacity - slot.remaining_spots) / slot.total_capacity) * 100)}%` }}
+                                />
+                              </div>
+                            )}
+                          </div>
+                        )
+                      })}
+                    </div>
+                    {business.booking_url && (
+                      <a href={business.booking_url} target="_blank" rel="noopener noreferrer" className="avail-book-btn">
+                        📅 Book Now — Before It's Gone
+                      </a>
+                    )}
+                  </div>
+                )
+              })()}
 
               {/* Type-aware features/amenities */}
               {(() => {

@@ -293,3 +293,27 @@
 }
 .rating-sep { color: var(--muted); }
 .price-level { font-size: 12px; letter-spacing: 1px; }
+
+/* ── Live availability badge on listing cards ── */
+.gcr-avail-badge {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: 20px;
+  z-index: 3;
+  backdrop-filter: blur(6px);
+  letter-spacing: 0.2px;
+  animation: avail-badge-pulse 2s infinite;
+}
+
+.gcr-avail-badge.avail-full     { background: rgba(239,68,68,0.85);  color: white; }
+.gcr-avail-badge.avail-critical { background: rgba(239,68,68,0.85);  color: white; }
+.gcr-avail-badge.avail-low      { background: rgba(250,204,21,0.9);  color: #1a1a1a; }
+
+@keyframes avail-badge-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.75; }
+}

@@ -557,3 +557,23 @@
   .deals-how-divider { display: none; }
   .deals-how-strip { flex-direction: column; gap: .35rem; text-align: center; }
 }
+
+/* ── Walk-On Charter Section ── */
+.deals-section--walkon {
+  background: linear-gradient(135deg, rgba(14,94,138,0.2), rgba(14,165,233,0.08));
+  border: 1px solid rgba(14,165,233,0.2);
+  border-radius: 20px;
+  padding: 20px;
+  margin-bottom: 8px;
+}
+
+.deals-walkon-head {
+  margin-bottom: 14px;
+}
+
+.deals-walkon-sub {
+  display: block;
+  font-size: 13px;
+  color: rgba(255,255,255,0.5);
+  margin-top: 4px;
+}
