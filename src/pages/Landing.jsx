@@ -244,12 +244,225 @@ function EmptyCard({ message }) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════
+// MASTER CALENDAR MODAL
+// ═══════════════════════════════════════════════════════════════════════
+
+function fmt12(t) {
+  if (!t) return ''
+  const [h, m] = t.split(':').map(Number)
+  return `${h % 12 || 12}:${String(m).padStart(2, '0')} ${h >= 12 ? 'PM' : 'AM'}`
+}
+
+function CalSection({ emoji, title, count, children }) {
+  if (!count) return null
+  return (
+    <div className="mc-section">
+      <div className="mc-section-head">
+        <span className="mc-section-emoji">{emoji}</span>
+        <span className="mc-section-title">{title}</span>
+        <span className="mc-section-count">{count}</span>
+      </div>
+      <div className="mc-section-body">{children}</div>
+    </div>
+  )
+}
+
+function CalRow({ photo, icon, title, sub, meta, badge, badgeColor, onClick }) {
+  return (
+    <div className="mc-row" onClick={onClick}>
+      <div className="mc-row-img" style={photo ? { backgroundImage: `url(${photo})` } : {}}>
+        {!photo && <span className="mc-row-icon">{icon || '📍'}</span>}
+      </div>
+      <div className="mc-row-body">
+        <div className="mc-row-title">{title}</div>
+        {sub && <div className="mc-row-sub">{sub}</div>}
+        {meta && <div className="mc-row-meta">{meta}</div>}
+      </div>
+      {badge && (
+        <div className="mc-row-badge" style={{ background: badgeColor || '#0b7a75' }}>{badge}</div>
+      )}
+    </div>
+  )
+}
+
+function MasterCalendar({ feed, weather, navigate, onClose }) {
+  const now = new Date()
+  const dateStr = now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })
+  const timeStr = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+
+  const happyHours    = feed?.happyHours    || []
+  const happyHoursAll = feed?.happyHoursAll || []
+  const liveMusic     = feed?.liveMusic     || []
+  const events        = (feed?.events       || []).filter(e => !liveMusic.find(m => m.id === e.id))
+  const specials      = feed?.specials      || []
+
+  // All HH for today (not just active right now) for the calendar view
+  const hhToday = happyHoursAll.length ? happyHoursAll : happyHours
+  const totalItems = happyHours.length + liveMusic.length + events.length + specials.length
+
+  return (
+    <div className="mc-overlay" onClick={onClose}>
+      <div className="mc-sheet" onClick={e => e.stopPropagation()}>
+
+        {/* Handle */}
+        <div className="mc-handle" />
+
+        {/* Header */}
+        <div className="mc-header">
+          <div>
+            <div className="mc-date">{dateStr}</div>
+            <div className="mc-time-row">
+              <span className="mc-time">{timeStr}</span>
+              {weather && (
+                <span className="mc-weather">
+                  {weather.temp}°F · {weather.beachStatus?.label || '🏖️ Beach Open'}
+                </span>
+              )}
+            </div>
+          </div>
+          <button className="mc-close" onClick={onClose}>✕</button>
+        </div>
+
+        {/* Summary bar */}
+        <div className="mc-summary">
+          {happyHours.length > 0 && (
+            <div className="mc-sum-item mc-sum-hh">
+              <span className="mc-sum-num">{happyHours.length}</span>
+              <span>HH Now</span>
+            </div>
+          )}
+          {liveMusic.length > 0 && (
+            <div className="mc-sum-item mc-sum-music">
+              <span className="mc-sum-num">{liveMusic.length}</span>
+              <span>Live Music</span>
+            </div>
+          )}
+          {events.length > 0 && (
+            <div className="mc-sum-item mc-sum-events">
+              <span className="mc-sum-num">{events.length}</span>
+              <span>Events</span>
+            </div>
+          )}
+          {specials.length > 0 && (
+            <div className="mc-sum-item mc-sum-specials">
+              <span className="mc-sum-num">{specials.length}</span>
+              <span>Specials</span>
+            </div>
+          )}
+        </div>
+
+        {/* Content */}
+        <div className="mc-body">
+
+          {totalItems === 0 ? (
+            <div className="mc-empty">
+              <div style={{ fontSize: 48 }}>🌊</div>
+              <div>Nothing posted for today yet</div>
+              <div style={{ fontSize: 13, color: '#94a3b8', marginTop: 6 }}>
+                Businesses update throughout the day
+              </div>
+            </div>
+          ) : (
+            <>
+              {/* Happy Hours Active Now */}
+              <CalSection emoji="🍻" title="Happy Hour — Active Now" count={happyHours.length}>
+                {happyHours.map(b => (
+                  <CalRow
+                    key={b.slug}
+                    photo={b.hero_image_url}
+                    icon="🍻"
+                    title={b.name}
+                    sub={b.hh_description || null}
+                    meta={b.hh_end ? `Until ${fmt12(b.hh_end)}` : null}
+                    badge="LIVE"
+                    badgeColor="#16a34a"
+                    onClick={() => { onClose(); navigate(`/business/${b.slug}`) }}
+                  />
+                ))}
+              </CalSection>
+
+              {/* Live Music */}
+              <CalSection emoji="🎸" title="Live Music Tonight" count={liveMusic.length}>
+                {liveMusic.map(ev => (
+                  <CalRow
+                    key={ev.id}
+                    photo={ev.image_url || ev.entity?.hero_image_url}
+                    icon="🎸"
+                    title={ev.artist_name || ev.event_name}
+                    sub={ev.entity?.name || null}
+                    meta={[
+                      ev.start_time ? fmt12(ev.start_time) : null,
+                      ev.cover_charge > 0 ? `$${ev.cover_charge} cover` : ev.cover_charge === 0 ? 'Free' : null,
+                    ].filter(Boolean).join(' · ')}
+                    badge={ev.start_time ? fmt12(ev.start_time) : 'Tonight'}
+                    badgeColor="#7c3aed"
+                    onClick={() => { onClose(); navigate(`/business/${ev.entity_slug}`) }}
+                  />
+                ))}
+              </CalSection>
+
+              {/* Events */}
+              <CalSection emoji="🎉" title="Events Today" count={events.length}>
+                {events.map(ev => (
+                  <CalRow
+                    key={ev.id}
+                    photo={ev.image_url || ev.entity?.hero_image_url}
+                    icon="🎉"
+                    title={ev.event_name}
+                    sub={ev.entity?.name || null}
+                    meta={[
+                      ev.start_time ? fmt12(ev.start_time) : null,
+                      ev.cover_charge > 0 ? `$${ev.cover_charge}` : ev.cover_charge === 0 ? 'Free' : null,
+                    ].filter(Boolean).join(' · ')}
+                    badge={ev.start_time ? fmt12(ev.start_time) : null}
+                    badgeColor="#0b7a75"
+                    onClick={() => { onClose(); navigate(`/business/${ev.entity_slug}`) }}
+                  />
+                ))}
+              </CalSection>
+
+              {/* Daily Specials */}
+              <CalSection emoji="⭐" title="Deals & Daily Specials" count={specials.length}>
+                {specials.map(sp => (
+                  <CalRow
+                    key={sp.id}
+                    photo={sp.image_url || sp.entity?.hero_image_url}
+                    icon="⭐"
+                    title={sp.title || sp.special_name}
+                    sub={sp.entity?.name || null}
+                    meta={sp.discount_text || sp.description?.slice(0, 60) || null}
+                    badge="Special"
+                    badgeColor="#d97706"
+                    onClick={() => { onClose(); navigate(`/business/${sp.entity_slug}`) }}
+                  />
+                ))}
+              </CalSection>
+            </>
+          )}
+
+          {/* Footer CTA */}
+          <div className="mc-footer">
+            <button className="mc-full-btn" onClick={() => { onClose(); navigate('/events') }}>
+              📅 Full Events Calendar →
+            </button>
+            <button className="mc-deals-btn" onClick={() => { onClose(); navigate('/deals') }}>
+              🔥 All Deals →
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ═══════════════════════════════════════════════════════════════════════
 export default function Landing() {
   const navigate = useNavigate()
   const { savedPlaces, addSavedPlace, removeSavedPlace, userId } = useApp()
   const [searchVal, setSearchVal]     = useState('')
   const [weather, setWeather]         = useState(null)
   const [showLoyalty, setShowLoyalty] = useState(false)
+  const [showCalendar, setShowCalendar] = useState(false)
   const [feed, setFeed]               = useState(null)
   const [restaurants, setRestaurants] = useState([])
   const [activities, setActivities]   = useState([])
@@ -431,7 +644,7 @@ export default function Landing() {
           {/* Two action pills */}
           <div className="hn-hero-pills">
             <button className="hn-pill-gold" onClick={() => setShowLoyalty(true)}>📲 Get Deals & Alerts</button>
-            <button className="hn-pill-ghost" onClick={() => navigate('/events')}>📅 Master Calendar</button>
+            <button className="hn-pill-ghost" onClick={() => setShowCalendar(true)}>📅 Master Calendar</button>
           </div>
 
           {/* Install app pill */}
@@ -603,6 +816,16 @@ export default function Landing() {
         </section>
 
       </main>
+
+      {/* ── MASTER CALENDAR MODAL ─────────────────────────── */}
+      {showCalendar && (
+        <MasterCalendar
+          feed={feed}
+          weather={weather}
+          navigate={navigate}
+          onClose={() => setShowCalendar(false)}
+        />
+      )}
 
       {/* ── SMS MODAL ─────────────────────────────────────────── */}
       {showLoyalty && (
