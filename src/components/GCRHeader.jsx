@@ -53,6 +53,37 @@ export default function GCRHeader() {
   const { userId } = useApp()
   const headerRef = useRef(null)
   const [showLoyalty, setShowLoyalty] = useState(false)
+  const [installPrompt, setInstallPrompt] = useState(null)
+  const [isInstalled, setIsInstalled] = useState(false)
+  const [showInstallModal, setShowInstallModal] = useState(false)
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream
+
+  useEffect(() => {
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+      setIsInstalled(true)
+      return
+    }
+    const handler = e => { e.preventDefault(); setInstallPrompt(e) }
+    window.addEventListener('beforeinstallprompt', handler)
+    window.addEventListener('appinstalled', () => setIsInstalled(true))
+    return () => window.removeEventListener('beforeinstallprompt', handler)
+  }, [])
+
+  async function handleInstallClick() {
+    if (isIOS) {
+      setShowInstallModal(true)
+      return
+    }
+    if (installPrompt) {
+      installPrompt.prompt()
+      const { outcome } = await installPrompt.userChoice
+      if (outcome === 'accepted') setIsInstalled(true)
+      setInstallPrompt(null)
+    } else {
+      // Fallback — show manual instructions
+      setShowInstallModal(true)
+    }
+  }
 
   const currentPath = location.pathname.slice(1)
   const activeCat = CATEGORIES.find(c => c.id === currentPath)
@@ -64,7 +95,6 @@ export default function GCRHeader() {
       const h = el.offsetHeight
       document.documentElement.style.setProperty('--gcr-header-h', h + 'px')
     }
-    // Fire immediately, then after fonts/images load
     update()
     setTimeout(update, 100)
     setTimeout(update, 500)
@@ -75,15 +105,20 @@ export default function GCRHeader() {
 
   return (
     <header className="gcr-header" ref={headerRef}>
-      {/* Row 1: Logo + Install */}
+      {/* Row 1: Logo + actions */}
       <div className="gcr-header-top">
         <div className="gcr-logo" onClick={() => navigate('/')}>
           <img src="/gcr-logo.png" alt="Gulf Coast Radar" className="logo-img" onError={e => e.target.style.display='none'} />
           <span className="logo-text">GULF<span className="logo-coast">COAST</span>RADAR</span>
         </div>
         <div className="gcr-header-right">
+          {!isInstalled && (
+            <button className="header-install-btn" onClick={handleInstallClick} title="Add to Home Screen">
+              📲 Install
+            </button>
+          )}
           <button className="trip-swipe-btn" onClick={() => navigate('/swipe/restaurants')}>
-            👆 Trip Swipe →
+            👆 Swipe
           </button>
           {userId ? (
             <button className="header-auth-btn" onClick={() => navigate('/profile')}>👤</button>
@@ -108,6 +143,60 @@ export default function GCRHeader() {
       </div>
 
       {showLoyalty && <LoyaltyModal onClose={() => setShowLoyalty(false)} />}
+
+      {/* Install instructions modal */}
+      {showInstallModal && (
+        <div className="install-overlay" onClick={() => setShowInstallModal(false)}>
+          <div className="install-modal" onClick={e => e.stopPropagation()}>
+            <button className="install-modal-close" onClick={() => setShowInstallModal(false)}>✕</button>
+            <img src="/gcr-logo.png" alt="Gulf Coast Radar" className="install-modal-logo"
+              onError={e => e.target.style.display='none'} />
+            <h2 className="install-modal-title">Add to Home Screen</h2>
+            <p className="install-modal-sub">
+              Get the full app — fast launch, works offline, no App Store needed
+            </p>
+            {isIOS ? (
+              <div className="install-steps">
+                <div className="install-step">
+                  <span className="install-step-n">1</span>
+                  <span>Tap the <strong>Share</strong> icon
+                    <svg style={{display:'inline',marginLeft:6,verticalAlign:'middle'}} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0b7a75" strokeWidth="2.5">
+                      <path d="M12 2v13M8 6l4-4 4 4M4 13v7a2 2 0 002 2h12a2 2 0 002-2v-7"/>
+                    </svg>
+                    &nbsp;at the bottom of Safari
+                  </span>
+                </div>
+                <div className="install-step">
+                  <span className="install-step-n">2</span>
+                  <span>Scroll down and tap <strong>"Add to Home Screen"</strong></span>
+                </div>
+                <div className="install-step">
+                  <span className="install-step-n">3</span>
+                  <span>Tap <strong>"Add"</strong> — done!</span>
+                </div>
+              </div>
+            ) : (
+              <div className="install-steps">
+                <div className="install-step">
+                  <span className="install-step-n">1</span>
+                  <span>Tap the <strong>⋮ menu</strong> in Chrome (top right)</span>
+                </div>
+                <div className="install-step">
+                  <span className="install-step-n">2</span>
+                  <span>Tap <strong>"Add to Home screen"</strong></span>
+                </div>
+                <div className="install-step">
+                  <span className="install-step-n">3</span>
+                  <span>Tap <strong>"Add"</strong> — done!</span>
+                </div>
+              </div>
+            )}
+            <button className="install-modal-done" onClick={() => setShowInstallModal(false)}>
+              Got it
+            </button>
+          </div>
+        </div>
+      )}
     </header>
   )
 }
