@@ -140,7 +140,7 @@ function Step({ n, text }) {
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         fontWeight: 800, fontSize: 13,
       }}>{n}</div>
-      <div style={{ fontSize: 14, lineHeight: 1.5, paddingTop: 4 }}>{text }}</div>
+      <div style={{ fontSize: 14, lineHeight: 1.5, paddingTop: 4 }}>{text}</div>
     </div>
   )
 }
