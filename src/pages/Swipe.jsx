@@ -431,7 +431,9 @@ export default function Swipe() {
                     ? <PromoCard card={business} isTop={index === cards.length - 1} onDetail={() => navigate(business.linked_slug ? `/business/${business.linked_slug}` : '#')} />
                     : business._isSponsored
                       ? <SponsoredCard business={business} isTop={index === cards.length - 1} onDetail={() => navigate(`/business/${business._sponsorSlug}`)} userLocation={userLocation} swipingDir={index === cards.length - 1 ? swipingDir : null} />
-                      : <BusinessCard business={business} isTop={index === cards.length - 1} onDetail={() => navigate(`/business/${business.slug}`)} userLocation={userLocation} swipingDir={index === cards.length - 1 ? swipingDir : null} />
+                      : business._isDeal
+                        ? <DealSwipeCard deal={business._dealData} isTop={index === cards.length - 1} onDetail={() => business.entity_slug ? navigate(`/business/${business.entity_slug}`) : navigate('/deals')} />
+                        : <BusinessCard business={business} isTop={index === cards.length - 1} onDetail={() => navigate(`/business/${business.slug}`)} userLocation={userLocation} swipingDir={index === cards.length - 1 ? swipingDir : null} />
                   }
                 </TinderCard>
               ))
@@ -854,6 +856,109 @@ function SponsoredCard({ business, isTop, onDetail, userLocation, swipingDir }) 
           </div>
         )}
       </div>
+    </div>
+  )
+}
+
+function DealSwipeCard({ deal, isTop, onDetail }) {
+  if (!deal) return null
+
+  const DEAL_COLORS = {
+    charter_opening: { bg: 'linear-gradient(135deg,#0e5f8a,#0ea5e9)', badge: '🎣 Charter Spot' },
+    last_minute:     { bg: 'linear-gradient(135deg,#b45309,#f59e0b)', badge: '⚡ Last Minute' },
+    rental_gap:      { bg: 'linear-gradient(135deg,#065f46,#10b981)', badge: '🏠 Rental Opening' },
+    session_opening: { bg: 'linear-gradient(135deg,#4c1d95,#8b5cf6)', badge: '📸 Photo Session' },
+    happy_hour:      { bg: 'linear-gradient(135deg,#92400e,#d97706)', badge: '🍻 Happy Hour' },
+    daily_special:   { bg: 'linear-gradient(135deg,#065f46,#34d399)', badge: '🌟 Daily Special' },
+  }
+  const style = DEAL_COLORS[deal.deal_type] || DEAL_COLORS.last_minute
+
+  const spotsRemaining = deal.spots_remaining
+  const spotsTotal = deal.spots_total
+  const urgency = spotsRemaining !== null && spotsRemaining <= 2
+
+  return (
+    <div className={`business-card deal-swipe-card ${isTop ? 'top' : ''}`}>
+      {/* Full-bleed background */}
+      <div className="card-image-wrap" style={{ background: style.bg, minHeight: 280 }}>
+        {deal.image_url && (
+          <img src={deal.image_url} alt={deal.entity_name} className="card-image"
+            style={{ opacity: 0.35 }}
+            onError={e => { try { e.target.style.display = 'none' } catch {} }} />
+        )}
+        <div className="card-image-overlay" />
+
+        {/* Deal type badge top-left */}
+        <div className="card-featured-badge" style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }}>
+          {style.badge}
+        </div>
+
+        {/* Urgency pulse top-right */}
+        {urgency && (
+          <div className="deal-swipe-urgent">🔴 URGENT</div>
+        )}
+
+        {/* Main content overlaid on image bottom */}
+        <div className="card-overlay-info deal-swipe-overlay">
+          <div className="deal-swipe-entity">{deal.entity_name}</div>
+          <h3 className="card-name deal-swipe-headline">{deal.headline}</h3>
+
+          {/* Spots bar */}
+          {spotsRemaining !== null && spotsTotal && (
+            <div className="deal-swipe-spots">
+              <div className="deal-swipe-spots-text">
+                {spotsRemaining === 0
+                  ? '🔴 Fully booked'
+                  : spotsRemaining === 1
+                  ? '🔴 Last spot!'
+                  : spotsRemaining <= 3
+                  ? `🟡 Only ${spotsRemaining} spot${spotsRemaining !== 1 ? 's' : ''} left`
+                  : `🟢 ${spotsRemaining} of ${spotsTotal} open`}
+              </div>
+              <div className="deal-swipe-bar">
+                <div
+                  className="deal-swipe-bar-fill"
+                  style={{ width: `${Math.min(100, ((spotsTotal - spotsRemaining) / spotsTotal) * 100)}%` }}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Price */}
+          {(deal.deal_price || deal.price_label) && (
+            <div className="deal-swipe-price">
+              {deal.price_label || `$${deal.deal_price}${deal.price_unit ? `/${deal.price_unit}` : ''}`}
+            </div>
+          )}
+
+          <div className="deal-swipe-hint">← Swipe right to save · Tap for details →</div>
+        </div>
+      </div>
+
+      {/* CTA body */}
+      {isTop && (
+        <div className="card-body"
+          onTouchStart={e => e.stopPropagation()} onTouchMove={e => e.stopPropagation()}
+          onTouchEnd={e => e.stopPropagation()} onPointerDown={e => e.stopPropagation()}
+          onPointerUp={e => e.stopPropagation()}
+        >
+          <div className="card-ctas" style={!deal.claim_url ? { gridTemplateColumns: '1fr' } : undefined}>
+            {deal.claim_url && (
+              <a className="cta-book pressable" href={deal.claim_url} target="_blank" rel="noopener noreferrer"
+                onClick={e => e.stopPropagation()}>
+                {deal.deal_type === 'charter_opening' ? '🎣 Grab This Spot' :
+                 deal.deal_type === 'rental_gap' ? '🏠 Book Now' :
+                 '📅 Claim Deal'}
+              </a>
+            )}
+            <button className="cta-detail pressable"
+              onPointerUp={e => { e.stopPropagation(); onDetail() }}
+              onClick={e => { e.stopPropagation(); onDetail() }}>
+              More Info →
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

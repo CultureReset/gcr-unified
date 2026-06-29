@@ -169,7 +169,7 @@ export function AppProvider({ children }) {
     if (!slug) return
 
     // Sponsored cards have fake slugs — don't add to seenSlugs so they can reappear
-    if (!business?._isSponsored) {
+    if (!business?._isSponsored && !business?._isDeal) {
       setSeenSlugs(prev => {
         if (prev.includes(slug)) return prev
         const updated = [...prev, slug]

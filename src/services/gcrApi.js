@@ -211,6 +211,44 @@ export async function fetchBusinesses({ limit = 50 } = {}) {
       mergedCards = [...mergedCards, ...promos]
     }
 
+    // Inject last-minute deals (today/tomorrow only, swipe_card=true)
+    // Deals appear at the very top of the deck so they're seen first
+    try {
+      const dealR = await fetch(`${API}/api/deals/swipe`, { signal: AbortSignal.timeout(3000) }).catch(() => null)
+      if (dealR?.ok) {
+        const dealData = await dealR.json()
+        const today = new Date().toISOString().slice(0, 10)
+        const tomorrow = new Date(Date.now() + 86400000).toISOString().slice(0, 10)
+        const deals = (Array.isArray(dealData) ? dealData : [])
+          .filter(d => d.is_today_only || d.valid_date === today || d.valid_date === tomorrow)
+          .slice(0, 5) // max 5 deal cards in the deck at once
+          .map(d => ({
+            id: 'deal-' + d.id,
+            slug: 'deal-' + d.id,
+            _isDeal: true,
+            _dealData: d,
+            name: d.entity_name || 'Last Minute Deal',
+            subtitle: d.headline || '',
+            description: d.description || '',
+            hero_image_url: d.image_url || null,
+            photos: d.image_url ? [d.image_url] : [],
+            tags: [],
+            city: '',
+            category: 'all',
+            rating: null,
+            verified: false,
+            booking_url: d.claim_url || null,
+            phone: d.claim_phone || null,
+            entity_slug: d.entity_slug || null,
+            spots_remaining: d.spots_remaining,
+            spots_total: d.spots_total,
+            deal_type: d.deal_type,
+          }))
+        // Deal cards go on top of everything — they're urgent
+        mergedCards = [...mergedCards, ...deals]
+      }
+    } catch (e) {}
+
     // Inject sponsored cards every N positions throughout the deck
     if (sponsoredR?.ok) {
       const sd = await sponsoredR.json()

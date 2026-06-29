@@ -806,3 +806,86 @@
   opacity: 0.5;
   letter-spacing: 1px;
 }
+
+/* ── Deal Swipe Card ── */
+.deal-swipe-card .card-image-wrap {
+  min-height: 300px;
+}
+
+.deal-swipe-overlay {
+  padding-bottom: 16px;
+}
+
+.deal-swipe-entity {
+  font-size: 12px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.6);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 6px;
+}
+
+.deal-swipe-headline {
+  font-size: 20px;
+  font-weight: 900;
+  line-height: 1.2;
+  margin-bottom: 12px;
+}
+
+.deal-swipe-urgent {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: rgba(239,68,68,0.9);
+  color: white;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: 20px;
+  letter-spacing: 0.5px;
+  z-index: 3;
+  animation: deal-urgent-pulse 1.2s infinite;
+}
+
+@keyframes deal-urgent-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.65; }
+}
+
+.deal-swipe-spots {
+  margin-bottom: 10px;
+}
+
+.deal-swipe-spots-text {
+  font-size: 13px;
+  font-weight: 700;
+  color: white;
+  margin-bottom: 6px;
+}
+
+.deal-swipe-bar {
+  height: 5px;
+  background: rgba(255,255,255,0.15);
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.deal-swipe-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #22c55e 0%, #fbbf24 60%, #ef4444 100%);
+  border-radius: 99px;
+  transition: width 0.4s ease;
+}
+
+.deal-swipe-price {
+  font-size: 18px;
+  font-weight: 900;
+  color: #fbbf24;
+  margin-bottom: 8px;
+}
+
+.deal-swipe-hint {
+  font-size: 11px;
+  color: rgba(255,255,255,0.35);
+  margin-top: 4px;
+}
