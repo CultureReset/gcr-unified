@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useApp } from '../context/AppContext'
 import GCRHeader from '../components/GCRHeader'
 import { API_BASE } from '../config'
 import './Landing.css'
@@ -33,7 +34,7 @@ const CATEGORIES = [
   { emoji:'🍻', label:'Happy Hours',   path:'/happy-hours' },
   { emoji:'🎸', label:'Live Music',    path:'/events' },
   { emoji:'🎣', label:'Charters',      path:'/things-to-do' },
-  { emoji:'🌊', label:'Water Fun',     path:'/things-to-do' },
+  { emoji:'🌊', label:'Water Fun',     path:'/swipe/activities' },
   { emoji:'☕', label:'Coffee',        path:'/coffee' },
   { emoji:'🛍️', label:'Shopping',     path:'/shopping' },
   { emoji:'🏖️', label:'Stays',        path:'/stays' },
@@ -88,7 +89,7 @@ function SectionHead({ eyebrow, title, sub, path, navigate }) {
 }
 
 // ─── Business card (tall, full-bleed photo) ───────────────────────────
-function BizCard({ item, badge, badgeColor, sub, onClick }) {
+function BizCard({ item, badge, badgeColor, sub, onClick, onSave, isSaved }) {
   const photo = imgUrl(item.hero_image_url, item.slug) || imgUrl(item.image_url, item.entity_slug)
   return (
     <article className="hn-card" onClick={onClick} role="button" tabIndex={0}
@@ -109,7 +110,10 @@ function BizCard({ item, badge, badgeColor, sub, onClick }) {
           </div>
           <div className="hn-card-actions">
             <button className="hn-card-btn-primary">View Profile</button>
-            <button className="hn-card-btn-save" aria-label="Save">♡</button>
+            <button className="hn-card-btn-save" aria-label="Save"
+              onClick={e => { e.stopPropagation(); onSave?.(item) }}>
+              {isSaved ? '❤️' : '♡'}
+            </button>
           </div>
         </div>
       </div>
@@ -128,7 +132,7 @@ function MiniCard({ emoji, label, onClick }) {
 }
 
 // ─── Happy Hour card (special layout) ────────────────────────────────
-function HHCard({ item, onClick }) {
+function HHCard({ item, onClick, onSave, isSaved }) {
   const photo = imgUrl(item.hero_image_url, item.slug)
   return (
     <article className="hn-card hn-hh-card" onClick={onClick} role="button" tabIndex={0}
@@ -149,7 +153,10 @@ function HHCard({ item, onClick }) {
           </div>
           <div className="hn-card-actions">
             <button className="hn-card-btn-primary">View Details</button>
-            <button className="hn-card-btn-save" aria-label="Save">♡</button>
+            <button className="hn-card-btn-save" aria-label="Save"
+              onClick={e => { e.stopPropagation(); onSave?.(item) }}>
+              {isSaved ? '❤️' : '♡'}
+            </button>
           </div>
         </div>
       </div>
@@ -158,7 +165,7 @@ function HHCard({ item, onClick }) {
 }
 
 // ─── Live music card ──────────────────────────────────────────────────
-function MusicCard({ item, onClick }) {
+function MusicCard({ item, onClick, onSave, isSaved }) {
   const photo = imgUrl(item.image_url, null) || imgUrl(item.entity?.hero_image_url, item.entity_slug)
   return (
     <article className="hn-card" onClick={onClick} role="button" tabIndex={0}
@@ -181,7 +188,10 @@ function MusicCard({ item, onClick }) {
           </div>
           <div className="hn-card-actions">
             <button className="hn-card-btn-primary">See Show</button>
-            <button className="hn-card-btn-save" aria-label="Save">♡</button>
+            <button className="hn-card-btn-save" aria-label="Save"
+              onClick={e => { e.stopPropagation(); onSave?.(item.entity || item) }}>
+              {isSaved ? '❤️' : '♡'}
+            </button>
           </div>
         </div>
       </div>
@@ -190,7 +200,7 @@ function MusicCard({ item, onClick }) {
 }
 
 // ─── Activity card ────────────────────────────────────────────────────
-function ActivityCard({ item, onClick }) {
+function ActivityCard({ item, onClick, onSave, isSaved }) {
   const photo = imgUrl(item.hero_image_url, item.slug)
   const subtype = (item.entity_subtype || '').replace(/_/g,' ').replace(/\b\w/g, c => c.toUpperCase())
   return (
@@ -213,7 +223,10 @@ function ActivityCard({ item, onClick }) {
           </div>
           <div className="hn-card-actions">
             <button className="hn-card-btn-primary">Book Now</button>
-            <button className="hn-card-btn-save" aria-label="Save">♡</button>
+            <button className="hn-card-btn-save" aria-label="Save"
+              onClick={e => { e.stopPropagation(); onSave?.(item) }}>
+              {isSaved ? '❤️' : '♡'}
+            </button>
           </div>
         </div>
       </div>
@@ -233,6 +246,7 @@ function EmptyCard({ message }) {
 // ═══════════════════════════════════════════════════════════════════════
 export default function Landing() {
   const navigate = useNavigate()
+  const { savedPlaces, addSavedPlace, removeSavedPlace, userId } = useApp()
   const [searchVal, setSearchVal]     = useState('')
   const [weather, setWeather]         = useState(null)
   const [showLoyalty, setShowLoyalty] = useState(false)
@@ -241,6 +255,20 @@ export default function Landing() {
   const [activities, setActivities]   = useState([])
   const [loading, setLoading]         = useState(true)
   const [stays, setStays]             = useState([])
+
+  const savedSlugs = new Set((savedPlaces || []).map(p => p.slug))
+
+  const handleSave = (item) => {
+    if (!userId) { navigate('/auth'); return }
+    const slug = item.slug || item.entity_slug
+    if (!slug) return
+    if (savedSlugs.has(slug)) {
+      const existing = savedPlaces.find(p => p.slug === slug)
+      if (existing) removeSavedPlace(existing.id)
+    } else {
+      addSavedPlace(item)
+    }
+  }
 
   const doSearch = useCallback(() => {
     if (searchVal.trim()) navigate(`/search?q=${encodeURIComponent(searchVal.trim())}`)
@@ -415,7 +443,11 @@ export default function Landing() {
           <Rail id="hh-rail">
             {hhToShow.length > 0
               ? hhToShow.map(item => (
-                  <HHCard key={item.slug} item={item} onClick={() => navigate(`/business/${item.slug}`)} />
+                  <HHCard key={item.slug} item={item}
+                    onClick={() => navigate(`/business/${item.slug}`)}
+                    onSave={handleSave}
+                    isSaved={savedSlugs.has(item.slug)}
+                  />
                 ))
               : <EmptyCard message="🍺 Happy hour data loading..." />
             }
@@ -434,7 +466,11 @@ export default function Landing() {
           <Rail id="music-rail">
             {allMusic.length > 0
               ? allMusic.map(item => (
-                  <MusicCard key={item.id} item={item} onClick={() => navigate(`/business/${item.entity_slug}`)} />
+                  <MusicCard key={item.id} item={item}
+                    onClick={() => navigate(`/business/${item.entity_slug}`)}
+                    onSave={handleSave}
+                    isSaved={savedSlugs.has(item.entity_slug || item.slug)}
+                  />
                 ))
               : <EmptyCard message="🎵 Live music events load daily" />
             }
@@ -453,7 +489,11 @@ export default function Landing() {
           <Rail id="activity-rail">
             {activities.length > 0
               ? activities.filter(a => imgUrl(a.hero_image_url, a.slug)).slice(0, 10).map(item => (
-                  <ActivityCard key={item.slug} item={item} onClick={() => navigate(`/business/${item.slug}`)} />
+                  <ActivityCard key={item.slug} item={item}
+                    onClick={() => navigate(`/business/${item.slug}`)}
+                    onSave={handleSave}
+                    isSaved={savedSlugs.has(item.slug)}
+                  />
                 ))
               : [1,2,3].map(i => <div key={i} className="hn-card hn-skeleton" />)
             }
@@ -479,6 +519,8 @@ export default function Landing() {
                     badgeColor="orange"
                     sub={item.entity_subtype?.replace(/_/g,' ') || item.city}
                     onClick={() => navigate(`/business/${item.slug}`)}
+                    onSave={handleSave}
+                    isSaved={savedSlugs.has(item.slug)}
                   />
                 ))
               : [1,2,3].map(i => <div key={i} className="hn-card hn-skeleton" />)
@@ -505,6 +547,8 @@ export default function Landing() {
                     badgeColor="blue"
                     sub={item.city}
                     onClick={() => navigate(`/business/${item.slug}`)}
+                    onSave={handleSave}
+                    isSaved={savedSlugs.has(item.slug)}
                   />
                 ))
               : [1,2,3].map(i => <div key={i} className="hn-card hn-skeleton" />)

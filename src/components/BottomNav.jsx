@@ -14,9 +14,9 @@ export default function BottomNav() {
 
   const navItems = userId
     ? [
-        { icon: '🏠', label: 'Home',    path: '/' },
+        { icon: '🏠', label: 'Home',    path: '/home' },
         { icon: '🔍', label: 'Search',  path: '/search' },
-        { icon: '🎉', label: 'Events',  path: '/events' },
+        { icon: '👆', label: 'Swipe',   path: '/swipe/all' },
         { icon: '❤️', label: 'Saves',   path: '/saves' },
         { icon: '👤', label: 'Profile', path: '/profile' },
       ]

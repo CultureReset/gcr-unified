@@ -100,11 +100,23 @@ export default function Home() {
         </button>
       </div>
 
+      {/* Setup prompt — shown when profile incomplete */}
+      {!tourist?.setupComplete && (
+        <div className="setup-banner" onClick={() => navigate('/setup')}>
+          <div className="setup-banner-icon">✨</div>
+          <div className="setup-banner-text">
+            <div className="setup-banner-title">Complete your trip profile</div>
+            <div className="setup-banner-sub">Get personalized picks for your dates & vibe</div>
+          </div>
+          <span className="setup-banner-arrow">→</span>
+        </div>
+      )}
+
       {/* Quick stats */}
       <div className="home-stats">
         <div className="stat"><div className="stat-num">{savedPlaces.length}</div><div className="stat-label">Saved</div></div>
         <div className="stat-divider" />
-        <div className="stat"><div className="stat-num">{tourist?.trip_days || '—'}</div><div className="stat-label">Days</div></div>
+        <div className="stat"><div className="stat-num">{tourist?.trip_days || (tourist?.arrival && tourist?.departure ? Math.ceil((new Date(tourist.departure) - new Date(tourist.arrival)) / 86400000) : '—')}</div><div className="stat-label">Days</div></div>
         <div className="stat-divider" />
         <div className="stat"><div className="stat-num">{itinerary ? itinerary.days.length : '—'}</div><div className="stat-label">Planned</div></div>
       </div>

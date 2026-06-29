@@ -444,3 +444,23 @@
   border-radius: 99px;
   backdrop-filter: blur(4px);
 }
+
+/* ── Setup profile banner ── */
+.setup-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: linear-gradient(135deg, rgba(14,165,233,0.12), rgba(20,184,166,0.08));
+  border: 1px solid rgba(14,165,233,0.3);
+  border-radius: 16px;
+  padding: 14px 16px;
+  margin-bottom: 20px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.setup-banner:active { background: rgba(14,165,233,0.18); }
+.setup-banner-icon { font-size: 24px; flex-shrink: 0; }
+.setup-banner-text { flex: 1; min-width: 0; }
+.setup-banner-title { font-size: 14px; font-weight: 700; color: white; }
+.setup-banner-sub { font-size: 12px; color: var(--text2); margin-top: 2px; }
+.setup-banner-arrow { font-size: 18px; color: var(--accent); font-weight: 700; flex-shrink: 0; }

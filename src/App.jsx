@@ -112,6 +112,7 @@ function AppRoutes() {
         <Route path="/artists" element={<ArtistListings />} />
         <Route path="/artist/:slug" element={<ArtistProfile />} />
         <Route path="/staying" element={<RentalListings />} />
+        <Route path="/stays" element={<Navigate to="/staying" replace />} />
         <Route path="/rental/:slug" element={<RentalDetail />} />
         <Route path="/book-rental/:slug" element={<BookRental />} />
         <Route path="/confirmation/:type/:id" element={<Confirmation />} />
