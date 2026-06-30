@@ -1013,16 +1013,18 @@
 }
 
 .menu-item-img {
-  width: 72px;
-  height: 72px;
+  width: 84px;
+  height: 84px;
   object-fit: cover;
-  border-radius: 8px;
+  border-radius: 10px;
   flex-shrink: 0;
+  order: 2; /* image on the right, text on the left */
 }
 
 .item-body {
   flex: 1;
   min-width: 0;
+  order: 1;
 }
 
 .item-days {

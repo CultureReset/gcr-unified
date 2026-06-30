@@ -221,11 +221,12 @@ export default function RestaurantDetail() {
     const priceStr = price != null
       ? (typeof price === 'string' ? price : (price % 1 === 0 ? `$${price}` : `$${parseFloat(price).toFixed(2)}`))
       : null
-    const images = item.images || []
+    // image_url is returned flat from the API — item.images[] was the old shape, never matched
+    const imgSrc = item.image_url || item.image_path || (item.images && item.images[0]?.url) || null
     return (
       <div key={item.id || i} className="menu-item">
-        {images[0]?.url && (
-          <img src={images[0].url} alt={images[0].label || name} className="menu-item-img" />
+        {imgSrc && (
+          <img src={imgSrc} alt={name} className="menu-item-img" loading="lazy" />
         )}
         <div className="item-body">
           <div className="item-header">
@@ -1530,14 +1531,16 @@ export default function RestaurantDetail() {
                 return (
                   <div
                     key={secId}
-                    className="menu-section menu-section-anchor"
+                    className="menu-period-group menu-section-anchor"
                     data-secid={secId}
                     ref={el => { subSectionRefs.current[secId] = el }}
                   >
-                    <div className="section-header-row">
-                      <h3>{section.section_name || section.name}</h3>
+                    <div className="meal-period-header">
+                      <span className="meal-period-label">
+                        {section.section_name || section.name}
+                      </span>
                       {(timeRange || days) && (
-                        <span className="section-meta">
+                        <span className="section-meta" style={{ fontSize: 13, fontWeight: 500, color: 'var(--text2)', marginLeft: 10 }}>
                           {timeRange && `${formatTime(timeRange.split('-')[0])}–${formatTime(timeRange.split('-')[1])}`}
                           {days && ` · ${days}`}
                         </span>
