@@ -122,6 +122,8 @@ export default function Swipe() {
   // Fetch SMS config and set up opt-in trigger
   useEffect(() => {
     if (smsDone) return
+    const token = localStorage.getItem('gcr_access_token')
+    const isGuest = !token
     let timer = null
     fetch(`${API_BASE}/api/admin/sms-config`)
       .then(r => r.json())
@@ -131,13 +133,18 @@ export default function Swipe() {
         if (cfg.popup_trigger === 'time') {
           timer = setTimeout(() => setSmsPrompt(true), val * 60 * 1000)
         } else {
-          // swipe-based: stored in swipeCountRef, checked in onSwipe
-          swipeCountRef.current = -val // trigger when reaches 0
+          // Guests: show after they finish the 15-card free deck, not mid-deck
+          // Logged-in: use configured value
+          swipeCountRef.current = isGuest ? -DECK_SIZE : -val
         }
       })
       .catch(() => {
-        // default: show after 5 min
-        timer = setTimeout(() => setSmsPrompt(true), 5 * 60 * 1000)
+        // default: guests see prompt after finishing the deck, others after 5 min
+        if (isGuest) {
+          swipeCountRef.current = -DECK_SIZE
+        } else {
+          timer = setTimeout(() => setSmsPrompt(true), 5 * 60 * 1000)
+        }
       })
     return () => { if (timer) clearTimeout(timer) }
   }, [smsDone])
@@ -145,10 +152,14 @@ export default function Swipe() {
   useEffect(() => {
     if (allBusinesses.length === 0) return
     setDeckReady(false)
+    const token = localStorage.getItem('gcr_access_token')
+    const isGuest = !token
+    // Guests always get a fresh deck — don't filter by seenSlugs so the first
+    // 15 cards always show regardless of prior localStorage state
     const visible = (category === 'all'
       ? allBusinesses.filter(b => !b._isPromo)
       : allBusinesses.filter(b => b.category === category))
-      .filter(b => !seenSlugs.includes(b.slug))
+      .filter(b => isGuest ? true : !seenSlugs.includes(b.slug))
     setPool(visible)
     // Use personalized order if we have preference data, else shuffle
     const sorted = Object.keys(prefMap).length
@@ -483,9 +494,9 @@ export default function Swipe() {
           <div style={{width:'100%',background:'#0f172a',borderRadius:'20px 20px 0 0',padding:'28px 24px 40px',boxShadow:'0 -8px 40px rgba(0,0,0,.5)'}}>
             <div style={{width:40,height:4,background:'#0ea5e9',borderRadius:999,margin:'0 auto 20px',opacity:0.5}}></div>
             <div style={{fontSize:24,textAlign:'center',marginBottom:8}}>📲</div>
-            <h3 style={{textAlign:'center',color:'#fff',fontSize:18,fontWeight:900,margin:'0 0 6px'}}>Get deals while you're here</h3>
+            <h3 style={{textAlign:'center',color:'#fff',fontSize:18,fontWeight:900,margin:'0 0 6px'}}>Save your picks + get local deals</h3>
             <p style={{textAlign:'center',color:'rgba(255,255,255,.6)',fontSize:14,margin:'0 0 20px',lineHeight:1.5}}>
-              Drop your number and we'll text you same-day specials nearby.
+              Drop your number to save your likes and get same-day specials texted to you while you're here.
             </p>
             <input
               type="tel"
