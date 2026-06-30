@@ -14,6 +14,7 @@ import Reset from './pages/Reset'
 import Invite from './pages/Invite'
 import Setup from './pages/Setup'
 import Home from './pages/Home'
+import LiveFeed from './pages/LiveFeed'
 import Swipe from './pages/Swipe'
 import BusinessDetail from './pages/BusinessDetail'
 import MyList from './pages/MyList'
@@ -141,7 +142,7 @@ function AppRoutes() {
         <Route path="/things-to-do" element={<CategoryPage />} />
         <Route path="/ar-hunts" element={<ArHunts />} />
         <Route path="/public-spots" element={<CategoryPage />} />
-        <Route path="/feed" element={<CategoryPage />} />
+        <Route path="/feed" element={<LiveFeed />} />
         <Route path="/shopping" element={<CategoryPage />} />
         <Route path="/nightlife" element={<CategoryPage />} />
         <Route path="/wellness" element={<CategoryPage />} />
