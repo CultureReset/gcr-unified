@@ -362,10 +362,12 @@ export default function RestaurantDetail() {
   const subSections = activeTab === 'menu'
     ? [
         ...(foodRotating.length ? [{ id: 'menu-rotating', label: "Today's Features" }] : []),
-        ...flatMenuSections.map(s => ({
-          id: `menu-sec-${s.id || s.section_name || s.name}`,
-          label: s.section_name || s.name
-        }))
+        ...flatMenuSections.map(s => {
+          const raw = s.section_name || s.name || ''
+          const prefixes = ['Breakfast ', 'Brunch ', 'Lunch ', 'Dinner ', 'Late Night ', 'All Day ']
+          const label = prefixes.reduce((n, p) => n.startsWith(p) ? n.slice(p.length) : n, raw)
+          return { id: `menu-sec-${s.id || s.section_name || s.name}`, label }
+        })
       ]
     : activeTab === 'drinks'
     ? [
@@ -1460,6 +1462,11 @@ export default function RestaurantDetail() {
                       const secId = `menu-sec-${section.id || section.section_name || section.name}`
                       const timeRange = section.time_range
                       const days = section.available_days
+                      // Strip the meal-period prefix from the section name when it's already
+                      // shown as the group header — "Lunch Desserts" → "Desserts" under 🥗 Lunch
+                      const rawName = section.section_name || section.name || ''
+                      const periodPrefixes = ['Breakfast ', 'Brunch ', 'Lunch ', 'Dinner ', 'Late Night ', 'All Day ']
+                      const displayName = periodPrefixes.reduce((n, p) => n.startsWith(p) ? n.slice(p.length) : n, rawName)
                       return (
                         <div
                           key={secId}
@@ -1468,7 +1475,7 @@ export default function RestaurantDetail() {
                           ref={el => { subSectionRefs.current[secId] = el }}
                         >
                           <div className="section-header-row">
-                            <h3>{section.section_name || section.name}</h3>
+                            <h3>{displayName}</h3>
                             {(timeRange || days) && (
                               <span className="section-meta">
                                 {timeRange && `${formatTime(timeRange.split('-')[0])}–${formatTime(timeRange.split('-')[1])}`}
