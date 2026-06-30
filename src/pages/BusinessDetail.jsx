@@ -121,7 +121,25 @@ export default function RestaurantDetail() {
 
   const photos = business.photos || []
   const hours = (business.hours || []).sort((a, b) => (a.day_of_week ?? 0) - (b.day_of_week ?? 0))
-  const GOOGLE_TYPE_NOISE = new Set(['establishment','point_of_interest','food','restaurant','bar','cafe','store','premise','locality','political','sublocality','neighborhood'])
+
+  // Format raw tag_name values (e.g. "craft-beer", "southern-comfort-food", "happy_hour")
+  // into clean, human-readable chips (e.g. "Craft Beer", "Southern Comfort Food", "Happy Hour")
+  const formatTag = (raw = '') => raw.replace(/[-_]/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+
+  const GOOGLE_TYPE_NOISE = new Set([
+    // Generic Google Places types that mean nothing to a tourist
+    'establishment','point_of_interest','food','restaurant','bar','cafe','store',
+    'premise','locality','political','sublocality','neighborhood',
+    // Raw entity_subtype values that leaked into entity_tags — these belong
+    // on the backend for filtering, not displayed as human-readable chips
+    'seafood_restaurant','american_restaurant','family_restaurant','casual_dining',
+    'catering_service','catering','food_delivery','meal_takeaway','meal_delivery',
+    'fast_food_restaurant','pizza_restaurant','burger_restaurant','sandwich_shop',
+    'bar_grill','bar_and_grill','hybrid_venue','diner','service','unknown',
+    'point_of_interest','general_contractor','business_center','corporate_office',
+    'association_or_organization','local_government_office','government',
+    'insurance_agency','real_estate_agency','finance','financial',
+  ])
   const seen = new Set()
   const tags = (business.tags || []).filter(t => {
     const name = (t.tag_name || '').toLowerCase().replace(/[\s-]+/g, '_')
@@ -338,11 +356,16 @@ export default function RestaurantDetail() {
     ...(photos.length ? [{ id: 'gallery', label: `Photos (${photos.length})`, icon: '📸' }] : []),
   ]
 
-  // Sub-section chips — meal period groups for menu, section names for drinks/happy-hour
+  // Sub-section chips — individual section names for menu/drinks/happy-hour
+  // Uses individual section names (not just meal period groups) so the pill nav
+  // is granular enough to actually jump to each section on the page.
   const subSections = activeTab === 'menu'
     ? [
         ...(foodRotating.length ? [{ id: 'menu-rotating', label: "Today's Features" }] : []),
-        ...menuGroups.map(g => ({ id: `menu-period-${g.period}`, label: g.period }))
+        ...flatMenuSections.map(s => ({
+          id: `menu-sec-${s.id || s.section_name || s.name}`,
+          label: s.section_name || s.name
+        }))
       ]
     : activeTab === 'drinks'
     ? [
@@ -502,7 +525,7 @@ export default function RestaurantDetail() {
         {tags.length > 0 && (
           <div className="badge-row">
             {tags.map(tag => (
-              <span key={tag.tag_name} className="badge">{tag.tag_name}</span>
+              <span key={tag.tag_name} className="badge">{formatTag(tag.tag_name)}</span>
             ))}
           </div>
         )}
@@ -875,7 +898,7 @@ export default function RestaurantDetail() {
                   <h3>Categories</h3>
                   <div className="tag-row">
                     {tags.map(tag => (
-                      <span key={tag.tag_name} className="tag">{tag.tag_name}</span>
+                      <span key={tag.tag_name} className="tag">{formatTag(tag.tag_name)}</span>
                     ))}
                   </div>
                 </div>

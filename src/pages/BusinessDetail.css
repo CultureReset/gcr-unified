@@ -509,36 +509,39 @@
 .subsection-chips-row {
   display: flex;
   overflow-x: auto;
-  gap: 6px;
-  padding: 7px 14px 9px;
+  gap: 8px;
+  padding: 10px 14px 12px;
   scrollbar-width: none;
   border-top: 1px solid #e8f0f8;
-  background: #f7fbff;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0,0,0,.06);
 }
 .subsection-chips-row::-webkit-scrollbar { display: none; }
 
 .subsection-chip {
   flex-shrink: 0;
   white-space: nowrap;
-  padding: 5px 13px;
+  padding: 7px 16px;
   border-radius: 999px;
-  background: #fff;
+  background: #f0f7f7;
   border: 1.5px solid #b2dfdb;
   color: #0b5e5a;
-  font-size: 12px;
-  font-weight: 600;
+  font-size: 13px;
+  font-weight: 700;
   cursor: pointer;
   transition: all .15s;
+  letter-spacing: 0.01em;
 }
-.subsection-chip:hover { background: #e8f7f5; }
+.subsection-chip:hover { background: #d4f0ed; border-color: #0b7a75; }
 .subsection-chip.active {
   background: #0b7a75;
   border-color: #0b7a75;
   color: #fff;
+  box-shadow: 0 2px 8px rgba(11,122,117,.25);
 }
 
 .menu-section-anchor {
-  scroll-margin-top: calc(var(--gcr-header-h, 128px) + 110px);
+  scroll-margin-top: calc(var(--gcr-header-h, 128px) + 130px);
 }
 
 .tabs-scroll {
