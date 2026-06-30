@@ -132,8 +132,11 @@ function MiniCard({ emoji, label, onClick }) {
 }
 
 // ─── Happy Hour card (special layout) ────────────────────────────────
-function HHCard({ item, onClick, onSave, isSaved }) {
+function HHCard({ item, onClick, onSave, isSaved, nowTime }) {
   const photo = imgUrl(item.hero_image_url, item.slug)
+  const start = item.hh_start?.slice(0, 5)
+  const end   = item.hh_end?.slice(0, 5)
+  const isLiveNow = nowTime && start && end && nowTime >= start && nowTime <= end
   return (
     <article className="hn-card hn-hh-card" onClick={onClick} role="button" tabIndex={0}
       onKeyDown={e => e.key === 'Enter' && onClick()}>
@@ -142,14 +145,17 @@ function HHCard({ item, onClick, onSave, isSaved }) {
       <div className="hn-card-body">
         <div className="hn-card-top">
           <span className="hn-emoji-icon">🍻</span>
-          <span className="hn-badge hn-badge-yellow">Happy Hour</span>
+          <span className={`hn-badge ${isLiveNow ? 'hn-badge-green' : 'hn-badge-yellow'}`}>
+            {isLiveNow ? '🟢 Live Now' : 'Happy Hour'}
+          </span>
         </div>
         <div className="hn-card-bottom">
           <h3 className="hn-card-name">{item.name}</h3>
           <p className="hn-card-sub">{item.hh_description?.slice(0,80)}{item.hh_description?.length > 80 ? '…' : ''}</p>
           <div className="hn-card-meta">
             {item.city && <span>📍 {item.city}</span>}
-            <span>🕐 Until {fmt12(item.hh_end)}</span>
+            <span>🕐 {fmt12(item.hh_start)}–{fmt12(item.hh_end)}</span>
+            {item.hh_days && <span>📅 {item.hh_days}</span>}
           </div>
           <div className="hn-card-actions">
             <button className="hn-card-btn-primary">View Details</button>
@@ -592,9 +598,9 @@ export default function Landing() {
 
   const happyHours    = feed?.happyHours    || []
   const happyHoursAll = feed?.happyHoursAll || []
-  // Show active-now cards if any, otherwise show all HH as "today's deals"
-  const hhToShow  = happyHours.length > 0 ? happyHours : happyHoursAll
-  const hhIsNow   = happyHours.length > 0
+  // Always show the full list of spots with happy hour deals — not just ones active this exact minute
+  const hhToShow  = happyHoursAll.length > 0 ? happyHoursAll : happyHours
+  const hhIsNow   = false
   const liveMusic  = feed?.liveMusic  || []
   const events     = feed?.events     || []
   // Combine live music + events, dedupe by id
@@ -674,9 +680,9 @@ export default function Landing() {
         {/* ── HAPPY HOURS ─────────────────────────────────────── */}
         <section className="hn-sec">
           <SectionHead
-            eyebrow={hhIsNow ? "Happening Now" : "Today's Deals"}
+            eyebrow="Today's Deals"
             title="🍻 Happy Hours"
-            sub={hhIsNow ? `${hhToShow.length} deals active right now` : `${hhToShow.length} spots with happy hour deals`}
+            sub={`${hhToShow.length} spots with happy hour deals — green badge means live right now`}
             path="/happy-hours"
             navigate={navigate}
           />
@@ -687,6 +693,7 @@ export default function Landing() {
                     onClick={() => navigate(`/business/${item.slug}`)}
                     onSave={handleSave}
                     isSaved={savedSlugs.has(item.slug)}
+                    nowTime={feed?.meta?.serverTime}
                   />
                 ))
               : <EmptyCard message="🍺 Happy hour data loading..." />
