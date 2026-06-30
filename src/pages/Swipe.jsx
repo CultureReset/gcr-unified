@@ -7,6 +7,25 @@ import { fetchBusinesses, calcDistance, formatDistance, fetchPreferences, person
 import { API_BASE } from '../config'
 import './Swipe.css'
 
+// Fetch social post cards (IG Reels, FB videos) to inject into the swipe deck
+async function fetchSocialCards() {
+  try {
+    const res = await fetch(`${API_BASE}/api/gcr/social-posts/feed?limit=20`)
+    if (!res.ok) return []
+    const d = await res.json()
+    return (d.posts || []).map(p => ({
+      ...p,
+      _isSocial: true,
+      slug: `social-${p.id}`,
+      id: `social-${p.id}`,
+      name: p.caption || p.entity_slug,
+      category: 'all', // inject into every category view
+    }))
+  } catch {
+    return []
+  }
+}
+
 const CAT_TABS = [
   { id: 'all',        label: 'All',        emoji: '🌟' },
   { id: 'food',       label: 'Food',       emoji: '🍽️' },
@@ -103,11 +122,18 @@ export default function Swipe() {
   useEffect(() => {
     let cancelled = false
     setLoading(true)
-    Promise.all([fetchBusinesses(), fetchPreferences()])
-      .then(([all, prefs]) => {
+    Promise.all([fetchBusinesses(), fetchPreferences(), fetchSocialCards()])
+      .then(([all, prefs, social]) => {
         if (cancelled) return
         setPrefMap(prefs)
-        setAllBusinesses(all)
+        // Inject social cards every 5th position in the pool
+        const withSocial = [...all]
+        social.forEach((card, i) => {
+          const insertAt = (i + 1) * 5
+          if (insertAt <= withSocial.length) withSocial.splice(insertAt, 0, card)
+          else withSocial.push(card)
+        })
+        setAllBusinesses(withSocial)
         setLoading(false)
       })
       .catch(e => { if (!cancelled) { setError(e.message); setLoading(false) } })
@@ -440,7 +466,9 @@ export default function Swipe() {
                 >
                   {business._isPromo
                     ? <PromoCard card={business} isTop={index === cards.length - 1} onDetail={() => navigate(business.linked_slug ? `/business/${business.linked_slug}` : '#')} />
-                    : business._isSponsored
+                    : business._isSocial
+                      ? <SocialCard post={business} isTop={index === cards.length - 1} onDetail={() => navigate(`/business/${business.entity_slug}`)} swipingDir={index === cards.length - 1 ? swipingDir : null} />
+                      : business._isSponsored
                       ? <SponsoredCard business={business} isTop={index === cards.length - 1} onDetail={() => navigate(`/business/${business._sponsorSlug}`)} userLocation={userLocation} swipingDir={index === cards.length - 1 ? swipingDir : null} />
                       : business._isDeal
                         ? <DealSwipeCard deal={business._dealData} isTop={index === cards.length - 1} onDetail={() => business.entity_slug ? navigate(`/business/${business.entity_slug}`) : navigate('/deals')} />
@@ -593,6 +621,68 @@ export default function Swipe() {
             })
           )}
         </div>
+      )}
+    </div>
+  )
+}
+
+// ── Social Card — Instagram Reel / Facebook video injected into the swipe deck ──
+function SocialCard({ post, isTop, onDetail, swipingDir }) {
+  const videoRef = useRef(null)
+  const isVideo = post.media_type === 'reel' || post.media_type === 'video'
+  const platformIcon = { instagram: '📸', facebook: '👥', tiktok: '🎵' }[post.platform] || '📱'
+  const platformLabel = { instagram: 'Instagram', facebook: 'Facebook', tiktok: 'TikTok' }[post.platform] || post.platform
+
+  // Autoplay video when this card is on top
+  useEffect(() => {
+    if (!videoRef.current) return
+    if (isTop) { videoRef.current.play().catch(() => {}) }
+    else { videoRef.current.pause() }
+  }, [isTop])
+
+  const tintStyle = swipingDir === 'right'
+    ? { boxShadow: '0 0 0 4px #4ade80', border: '2px solid #4ade80' }
+    : swipingDir === 'left'
+    ? { boxShadow: '0 0 0 4px #ef4444', border: '2px solid #ef4444' }
+    : {}
+
+  return (
+    <div className="swipe-card social-card" style={tintStyle}>
+      {/* Platform badge */}
+      <div className="social-card-badge">
+        <span>{platformIcon}</span>
+        <span>{platformLabel}</span>
+      </div>
+
+      {/* Video or image */}
+      {isVideo && post.video_url ? (
+        <video
+          ref={videoRef}
+          src={post.video_url}
+          poster={post.thumbnail_url}
+          muted
+          loop
+          playsInline
+          className="social-card-media"
+        />
+      ) : post.thumbnail_url ? (
+        <img src={post.thumbnail_url} alt={post.caption || 'Post'} className="social-card-media" />
+      ) : (
+        <div className="social-card-placeholder">
+          <span style={{ fontSize: 48 }}>{platformIcon}</span>
+        </div>
+      )}
+
+      {/* Bottom info bar */}
+      <div className="social-card-info">
+        {post.entity_name && <div className="social-card-biz">{post.entity_name}</div>}
+        {post.caption && <div className="social-card-caption">{post.caption.slice(0, 80)}{post.caption.length > 80 ? '…' : ''}</div>}
+        <button className="social-card-view" onClick={onDetail}>View Profile →</button>
+      </div>
+
+      {/* Play indicator for videos */}
+      {isVideo && !post.video_url && (
+        <div className="social-card-play-badge">▶ Reel</div>
       )}
     </div>
   )
