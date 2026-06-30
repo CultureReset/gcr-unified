@@ -167,6 +167,10 @@ export default function ArHunts() {
               const captured = capturedIds.has(hunt.id)
               const inRange = dist != null && dist <= CAPTURE_RADIUS_MILES
               const meta = DIFFICULTY_META[hunt.difficulty] || DIFFICULTY_META.medium
+              const unavailableReason = hunt.soldOut ? 'All rewards claimed'
+                : hunt.notStarted ? 'Coming soon'
+                : hunt.ended ? 'Hunt ended'
+                : null
 
               return (
                 <div key={hunt.id} className={`ar-hunt-card ${captured ? 'is-captured' : ''}`}>
@@ -187,6 +191,8 @@ export default function ArHunts() {
                     </div>
                     {captured ? (
                       <div className="ar-hunt-captured-badge">✓ Captured</div>
+                    ) : unavailableReason ? (
+                      <div className="ar-hunt-unavailable-badge">{unavailableReason}</div>
                     ) : (
                       <button
                         className={`ar-btn-capture ${inRange ? 'is-ready' : ''}`}
