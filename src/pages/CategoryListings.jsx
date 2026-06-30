@@ -33,7 +33,7 @@ const TYPE_MAP = {
 export default function CategoryListings() {
   const { category } = useParams()
   const navigate = useNavigate()
-  const { userLocation, requestLocation, savedPlaces, addSavedPlace, removeSavedPlace } = useApp()
+  const { userLocation, requestLocation, savedPlaces, addSavedPlace, removeSavedPlace, userId } = useApp()
   const [entities, setEntities] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -55,6 +55,7 @@ export default function CategoryListings() {
       try {
         let ents = []
         const locParams = userLocation ? `&lat=${userLocation.lat}&lng=${userLocation.lng}` : ''
+        const userParams = userId ? `&user_id=${encodeURIComponent(userId)}` : ''
         if (category === 'happy-hours') {
           const res = await fetch(`${API_BASE}/api/gcr/happy-hours`)
           if (!res.ok) throw new Error('Failed to load')
@@ -64,7 +65,7 @@ export default function CategoryListings() {
           let all = []
           let offset = 0
           while (true) {
-            const res = await fetch(`${API_BASE}/api/gcr/entities?limit=1000&offset=${offset}${locParams}`)
+            const res = await fetch(`${API_BASE}/api/gcr/entities?limit=1000&offset=${offset}${locParams}${userParams}`)
             if (!res.ok) break
             const data = await res.json()
             const batch = data.entities || []
@@ -95,7 +96,7 @@ export default function CategoryListings() {
       }
     }
     loadEntities()
-  }, [category, userLocation])
+  }, [category, userLocation, userId])
 
   const handleSave = async (entity) => {
     const slug = entity.slug || entity.id
