@@ -38,6 +38,7 @@ const CATEGORIES = [
   { emoji:'☕', label:'Coffee',        path:'/coffee' },
   { emoji:'🛍️', label:'Shopping',     path:'/shopping' },
   { emoji:'🏖️', label:'Stays',        path:'/stays' },
+  { emoji:'🎯', label:'AR Hunt',       path:'/ar-hunts' },
 ]
 
 function imgUrl(url, slug) {
