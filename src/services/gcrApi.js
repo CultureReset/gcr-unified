@@ -421,42 +421,88 @@ export async function fetchBusinessBySlug(slug) {
   const r = await fetch(`${GCR_API}/entity/${encodeURIComponent(slug)}`)
   if (!r.ok) throw new Error(`Failed to load ${slug}`)
   const d = await r.json()
-  const entity = d.entity || {}
-  const photos = d.photos || []
-  const card = toCard(entity, photos)
 
-  // entity_tags table has the real tags — entity.tags column is often empty
+  // API returns a flat object — not wrapped in d.entity
+  // All entity fields (name, slug, description, etc.) are at the top level of d
+  const photos = d.photos || []
+  const card = toCard(d, photos)
+
+  // Normalize tags — entity_tags come back as objects with tag_name
   const enrichedTags = (d.tags || []).map(t => {
-    try { const p = JSON.parse(t.tag); return p?.tag || t.tag } catch { return t.tag }
+    if (typeof t === 'string') return t
+    return t.tag_name || t.tag || t.label || t.name || null
   }).filter(Boolean)
 
   return {
     ...card,
-    tags:            enrichedTags.length ? enrichedTags : card.tags,
-    sections:        d.sections        || [],
-    hours:           d.hours           || [],
-    features:        d.features        || [],
-    perfect_for:     d.perfect_for     || [],
-    about_bullets:   d.about_bullets   || [],
-    specials:        d.specials        || [],
-    events:          d.events          || [],
-    menu:            d.menu            || { sections: [], sub_sections: [], items: [] },
-    drinks:          d.drinks          || { sections: [], items: [] },
-    happy_hour:      d.happy_hour      || { sections: [], items: [] },
-    happy_hour_items:(d.happy_hour && d.happy_hour.items) || [],
-    booking_slots:   d.booking_slots   || [],
-    // activities / experiences
-    activities:      d.activities      || [],
-    pricing:         d.pricing         || [],
-    whats_included:  d.whats_included  || [],
-    requirements:    d.requirements    || [],
-    addons:          d.addons          || [],
-    fleet:           d.fleet           || [],
-    policies:        d.policies        || [],
-    meeting_points:  d.meeting_points  || [],
-    qna:             d.qna             || [],
-    // shopping
-    shopping:        d.shopping        || { sections: [], sub_sections: [], items: [] },
+    // Spread all raw entity fields so any column on the entity table
+    // is available to the UI without needing explicit mapping
+    ...d,
+    // Override specific fields with normalized versions
+    tags:                enrichedTags.length ? enrichedTags : card.tags,
+    photos:              card.photos,
+    hero_image_url:      card.hero_image_url,
+    booking_url:         card.booking_url,
+    // fix key mismatch: DB good_for_kids → UI good_for_children
+    good_for_children:   d.good_for_children ?? d.good_for_kids ?? null,
+    // Tables — use exact key names the API returns
+    sections:            d.sections            || [],
+    hours:               d.hours               || [],
+    secondary_hours:     d.secondary_hours     || [],
+    about_bullets:       d.about_bullets       || [],
+    perfect_for:         d.perfect_for         || [],
+    social_posts:        d.social_posts        || [],
+    faqs:                d.faqs                || [],
+    team:                d.team                || [],
+    policies:            d.policies            || [],
+    announcements:       d.announcements       || [],
+    blog_posts:          d.blog_posts          || [],
+    events:              d.events              || [],
+    reviews:             d.reviews             || [],
+    specials:            d.specials            || [],
+    // Food
+    menu_sections:       d.menu_sections       || [],
+    drink_sections:      d.drink_sections      || [],
+    happy_hour_sections: d.happy_hour_sections || [],
+    hh_sections:         d.happy_hour_sections || [], // alias for UI inconsistency
+    sides:               d.sides               || [],
+    daily_features:      d.daily_features      || [],
+    order_links:         d.order_links         || [],
+    // Activity
+    pricing:             d.pricing             || [],
+    whats_included:      d.whats_included      || [],
+    requirements:        d.requirements        || [],
+    schedules:           d.schedules           || [],
+    meeting_points:      d.meeting_points      || [],
+    activity_options:    d.activity_options    || [],
+    fish_species:        d.fish_species        || [],
+    what_to_bring:       d.what_to_bring       || [],
+    activity_details:    d.activity_details    || null,
+    // Stay
+    property_details:    d.property_details    || null,
+    room_types:          d.room_types          || [],
+    amenities:           d.amenities           || [],
+    property_fees:       d.property_fees       || [],
+    stay_links:          d.stay_links          || [],
+    availability:        d.availability        || [],
+    bookable_resources:  d.bookable_resources  || [],
+    // Service
+    service_categories:  d.service_categories  || [],
+    service_menu:        d.service_menu        || [],
+    service_packages:    d.service_packages    || [],
+    class_schedule:      d.class_schedule      || [],
+    // Shopping
+    product_categories:  d.product_categories  || [],
+    products:            d.products            || [],
+    // Park
+    facilities:          d.facilities          || [],
+    spot_rules:          d.spot_rules          || [],
+    access_info:         d.access_info         || null,
+    // Loyalty
+    loyalty_program:     d.loyalty_program     || null,
+    // Modules
+    modules:             d.modules             || [],
+    module_keys:         d.module_keys         || [],
   }
 }
 
