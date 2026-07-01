@@ -1,0 +1,362 @@
+/* ── ArtistLive — drunk-proof, large everything ────────────────────────────── */
+
+.al-loading {
+  min-height: 100vh;
+  background: #050810;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255,255,255,.4);
+  font-size: 18px;
+  gap: 20px;
+}
+
+.al-spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid rgba(255,255,255,.1);
+  border-top-color: #22c55e;
+  border-radius: 50%;
+  animation: al-spin .8s linear infinite;
+}
+
+@keyframes al-spin { to { transform: rotate(360deg); } }
+
+/* ── Page shell ─────────────────────────────────────── */
+.al-page {
+  min-height: 100vh;
+  background: #050810;
+  display: flex;
+  flex-direction: column;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+/* ── Hero ───────────────────────────────────────────── */
+.al-hero {
+  position: relative;
+  min-height: 45vh;
+  background: #0f172a center/cover no-repeat;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+.al-hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, rgba(5,8,16,.2) 0%, rgba(5,8,16,.95) 100%);
+}
+
+.al-hero-content {
+  position: relative;
+  z-index: 1;
+  padding: 24px 24px 20px;
+}
+
+.al-live-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(34,197,94,.15);
+  border: 1px solid rgba(34,197,94,.35);
+  color: #86efac;
+  font-size: 14px;
+  font-weight: 900;
+  letter-spacing: .1em;
+  padding: 8px 16px;
+  border-radius: 999px;
+  margin-bottom: 14px;
+}
+
+.al-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #22c55e;
+  box-shadow: 0 0 12px #22c55e;
+  animation: al-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes al-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .4; }
+}
+
+/* Artist name — as large as possible */
+.al-artist-name {
+  font-size: clamp(42px, 12vw, 64px);
+  font-weight: 900;
+  line-height: .92;
+  letter-spacing: -.04em;
+  color: #fff;
+  margin-bottom: 8px;
+}
+
+.al-venue {
+  font-size: 20px;
+  color: rgba(255,255,255,.6);
+  font-weight: 600;
+}
+
+/* ── Home action buttons ─────────────────────────────── */
+.al-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px 16px;
+  flex: 1;
+}
+
+.al-action-btn {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  min-height: 80px;  /* big enough for a drunk thumb */
+  border-radius: 20px;
+  border: none;
+  padding: 0 24px;
+  cursor: pointer;
+  text-align: left;
+  transition: transform .1s, opacity .1s;
+}
+
+.al-action-btn:active {
+  transform: scale(.97);
+  opacity: .9;
+}
+
+.al-action-request  { background: linear-gradient(135deg, #14532d, #166534); border: 1px solid rgba(34,197,94,.3); }
+.al-action-shoutout { background: linear-gradient(135deg, #2e1065, #3b0764); border: 1px solid rgba(139,92,246,.3); }
+.al-action-tip      { background: linear-gradient(135deg, #451a03, #78350f); border: 1px solid rgba(245,158,11,.3); }
+
+.al-action-icon {
+  font-size: 32px;
+  flex-shrink: 0;
+}
+
+.al-action-label {
+  font-size: 24px;
+  font-weight: 900;
+  color: #fff;
+  letter-spacing: -.02em;
+  flex: 1;
+}
+
+.al-action-arrow {
+  font-size: 32px;
+  color: rgba(255,255,255,.4);
+  flex-shrink: 0;
+}
+
+.al-footer {
+  text-align: center;
+  padding: 20px;
+  font-size: 13px;
+  color: rgba(255,255,255,.25);
+}
+
+/* ── Pay screen ─────────────────────────────────────── */
+.al-pay-page {
+  padding: 0 0 40px;
+}
+
+.al-back {
+  display: block;
+  background: none;
+  border: none;
+  color: rgba(255,255,255,.5);
+  font-size: 20px;
+  font-weight: 700;
+  padding: 20px 20px 8px;
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+}
+
+.al-pay-artist {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 20px 4px;
+  font-size: 20px;
+  font-weight: 700;
+  color: rgba(255,255,255,.7);
+}
+
+.al-pay-emoji { font-size: 28px; }
+
+.al-pay-title {
+  font-size: clamp(36px, 10vw, 52px);
+  font-weight: 900;
+  letter-spacing: -.04em;
+  line-height: .95;
+  padding: 0 20px 24px;
+}
+
+/* ── Fields ─────────────────────────────────────────── */
+.al-field-wrap {
+  padding: 0 16px 20px;
+}
+
+.al-field-label {
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: .12em;
+  color: rgba(255,255,255,.4);
+  margin-bottom: 10px;
+}
+
+.al-input {
+  width: 100%;
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 16px;
+  padding: 20px;
+  font-size: 22px;  /* large so drunk people can read what they typed */
+  font-weight: 600;
+  color: #fff;
+  outline: none;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+.al-input:focus {
+  border-color: rgba(255,255,255,.3);
+  background: rgba(255,255,255,.09);
+}
+
+.al-textarea {
+  min-height: 100px;
+  resize: none;
+  font-size: 20px;
+  line-height: 1.4;
+  margin-top: 10px;
+}
+
+/* Song list pills */
+.al-song-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.al-song-pill {
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.14);
+  border-radius: 999px;
+  padding: 10px 16px;
+  font-size: 16px;
+  font-weight: 700;
+  color: #fff;
+  cursor: pointer;
+}
+
+.al-song-active {
+  background: rgba(34,197,94,.2);
+  border-color: rgba(34,197,94,.5);
+  color: #86efac;
+}
+
+/* Shoutout example pills */
+.al-shoutout-examples {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.al-example-pill {
+  background: rgba(139,92,246,.12);
+  border: 1px solid rgba(139,92,246,.25);
+  border-radius: 999px;
+  padding: 10px 16px;
+  font-size: 16px;
+  font-weight: 700;
+  color: #c4b5fd;
+  cursor: pointer;
+}
+
+/* ── Amount buttons — massive ───────────────────────── */
+.al-amounts {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+.al-amount-btn {
+  min-height: 72px;  /* huge tap target */
+  border-radius: 18px;
+  background: rgba(255,255,255,.06);
+  border: 2px solid rgba(255,255,255,.1);
+  color: #fff;
+  font-size: 26px;
+  font-weight: 900;
+  cursor: pointer;
+  transition: transform .1s;
+}
+
+.al-amount-btn:active { transform: scale(.94); }
+
+.al-amount-active {
+  background: rgba(255,255,255,.15);
+  border-color: rgba(255,255,255,.5);
+}
+
+/* ── Pay buttons — the whole point ─────────────────── */
+.al-pay-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 8px 16px 0;
+}
+
+.al-pay-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  min-height: 80px;  /* drunk thumb target */
+  border-radius: 20px;
+  border: none;
+  padding: 0 28px;
+  cursor: pointer;
+  transition: transform .1s, opacity .1s;
+}
+
+.al-pay-btn:active {
+  transform: scale(.97);
+  opacity: .9;
+}
+
+.al-cashapp {
+  background: #00d632;
+  color: #001a06;
+}
+
+.al-venmo {
+  background: #008cff;
+  color: #fff;
+}
+
+.al-pay-app-name {
+  font-size: 26px;
+  font-weight: 900;
+  letter-spacing: -.02em;
+}
+
+.al-pay-amount {
+  font-size: 32px;
+  font-weight: 900;
+}
+
+.al-pay-note {
+  text-align: center;
+  padding: 16px 20px 0;
+  font-size: 14px;
+  color: rgba(255,255,255,.35);
+  line-height: 1.5;
+}

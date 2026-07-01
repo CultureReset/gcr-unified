@@ -15,6 +15,7 @@ import Invite from './pages/Invite'
 import Setup from './pages/Setup'
 import Home from './pages/Home'
 import LiveFeed from './pages/LiveFeed'
+import ArtistLive from './pages/ArtistLive'
 import Swipe from './pages/Swipe'
 import BusinessDetail from './pages/BusinessDetail'
 import MyList from './pages/MyList'
@@ -67,7 +68,7 @@ function AppRoutes() {
     function onUnauth() {
       logout()
       const publicPaths = ['/', '/auth', '/reset', '/join', '/privacy', '/terms']
-      const publicPrefixes = ['/business/', '/category/', '/restaurants', '/coffee', '/happy-hours', '/things-to-do', '/services', '/public-spots', '/feed', '/shopping', '/staying', '/events', '/swipe/', '/search', '/nightlife', '/wellness']
+      const publicPrefixes = ['/business/', '/category/', '/restaurants', '/coffee', '/happy-hours', '/things-to-do', '/services', '/public-spots', '/feed', '/shopping', '/staying', '/events', '/swipe/', '/search', '/nightlife', '/wellness', '/artist/']
       const isPublic = publicPaths.includes(location.pathname) || publicPrefixes.some(p => location.pathname.startsWith(p))
       if (!isPublic) {
         navigate('/auth', { replace: true, state: { from: location.pathname + location.search } })
@@ -124,6 +125,7 @@ function AppRoutes() {
         <Route path="/setup/*" element={<RequireAuth><Setup /></RequireAuth>} />
         <Route path="/home" element={<RequireAuth><Home /></RequireAuth>} />
         <Route path="/swipe/:category" element={<Swipe />} />
+        <Route path="/artist/:slug/live" element={<ArtistLive />} />
         <Route path="/business/:slug" element={<BusinessDetail />} />
         <Route path="/list" element={<RequireAuth><MyList /></RequireAuth>} />
         <Route path="/building" element={<RequireAuth><Building /></RequireAuth>} />
