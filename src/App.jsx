@@ -60,9 +60,11 @@ function AppRoutes() {
   const navigate = useNavigate()
   const { logout } = useApp()
   const hideNav = ['/', '/auth'].some(p => location.pathname === p) ||
-    location.pathname.startsWith('/setup')
+    location.pathname.startsWith('/setup') ||
+    location.pathname.startsWith('/artist/')
   const hideHeader = ['/', '/auth'].some(p => location.pathname === p) ||
-    location.pathname.startsWith('/setup')
+    location.pathname.startsWith('/setup') ||
+    location.pathname.startsWith('/artist/')
 
   useEffect(() => {
     function onUnauth() {
