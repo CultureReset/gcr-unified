@@ -357,18 +357,12 @@ export default function RestaurantDetail() {
     ...(photos.length ? [{ id: 'gallery', label: `Photos (${photos.length})`, icon: '📸' }] : []),
   ]
 
-  // Sub-section chips — individual section names for menu/drinks/happy-hour
-  // Uses individual section names (not just meal period groups) so the pill nav
-  // is granular enough to actually jump to each section on the page.
+  // Sub-section chips — meal periods only for menu (Lunch / Dinner etc),
+  // individual sections for drinks/happy-hour since they don't have period grouping
   const subSections = activeTab === 'menu'
     ? [
         ...(foodRotating.length ? [{ id: 'menu-rotating', label: "Today's Features" }] : []),
-        ...flatMenuSections.map(s => {
-          const raw = s.section_name || s.name || ''
-          const prefixes = ['Breakfast ', 'Brunch ', 'Lunch ', 'Dinner ', 'Late Night ', 'All Day ']
-          const label = prefixes.reduce((n, p) => n.startsWith(p) ? n.slice(p.length) : n, raw)
-          return { id: `menu-sec-${s.id || s.section_name || s.name}`, label }
-        })
+        ...Object.keys(menuGroups).map(period => ({ id: `menu-period-${period}`, label: period }))
       ]
     : activeTab === 'drinks'
     ? [
