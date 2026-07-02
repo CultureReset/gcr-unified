@@ -33,6 +33,11 @@ const TAG_EMOJI = {
   private_dining_room:'🚪', wi_fi:'📶', high_chairs:'👶',
 }
 
+// Fallback list — only used when entity_type isn't 'activity' but the subtype
+// still implies activity-style card treatment (duration/capacity/price,
+// Book/Directions/Call). entity_type is the primary, reliable signal since
+// it's enum-constrained in the DB; this Set is a secondary catch-all so we're
+// not solely dependent on exact subtype string matches.
 const ACTIVITY_SUBTYPES = new Set([
   'parasailing','boat-rentals','boat_rental','boat_rentals','charter-fishing','fishing_charter',
   'dolphin-cruises-tours','dolphin_cruise','dolphin_cruises_tours','jet-ski-rentals-tours',
@@ -150,9 +155,13 @@ export default function GCRCard({ entity, category, onSave, savedSlugs }) {
   const hhEnd = entity.hh_end || ''
   const hhDesc = entity.hh_description || ''
 
-  const isActivity = ACTIVITY_SUBTYPES.has(rawSubtype) || ACTIVITY_SUBTYPES.has(subtypeKey)
-  const isSaved = savedSlugs?.has(slug)
+  // entity_type is enum-constrained in the DB and always reliable — use it as
+  // the primary signal. The subtype Set is only a fallback for the rare case
+  // where entity_type isn't 'activity' but the business still needs the
+  // activity-style card (duration/capacity/price, Book/Directions/Call).
   const entityTypeMain = (entity.entity_type || '').toLowerCase()
+  const isActivity = entityTypeMain === 'activity' || ACTIVITY_SUBTYPES.has(rawSubtype) || ACTIVITY_SUBTYPES.has(subtypeKey)
+  const isSaved = savedSlugs?.has(slug)
   const isFoodPage = FOOD_CATEGORIES.has(category)
   const isFood = entityTypeMain === 'food' || isFoodPage ||
     ['restaurant','bar','cafe','coffee','bakery','food','nightlife','pizza','seafood','grill','bistro','diner','bbq'].some(w => rawSubtype.includes(w))
