@@ -233,7 +233,7 @@ export default function Swipe() {
   }, [seenSlugs])
 
   if (loading || !deckReady) return (
-    <div className="swipe-page page safe-top safe-bottom">
+    <div className="swipe-page page safe-top">
       <div className="swipe-header">
         <button className="back-btn-sm close-btn" onClick={() => window.history.back()}>
           <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} width={20} height={20}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
@@ -385,41 +385,45 @@ export default function Swipe() {
   ].filter(Boolean).join(' · ') || 'Gulf Coast'
 
   return (
-    <div className="swipe-page page safe-top safe-bottom" ref={pageRef}>
-      {/* Header */}
-      <div className="swipe-header">
-        <button className="back-btn-sm close-btn" onClick={closeTrip} aria-label="Close">
-          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} width={20} height={20}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
-        <div className="swipe-title">
-          <span>{catInfo.emoji}</span>
-          <span>Swipe Your Trip</span>
-        </div>
-        <div className="swipe-view-toggle">
-          <button className={view === 'swipe' ? 'active' : ''} onClick={() => setView('swipe')}>
-            <SwipeIcon />
+    <div className="swipe-page page safe-top" ref={pageRef}>
+      {/* Header — wrapped with the location prompt so the prompt can float
+          just below it (position:absolute) instead of pushing the deck down.
+          It shows for any first-time visitor with no location yet (not an
+          edge case), so it was permanently eating ~40px of card space. */}
+      <div className="swipe-header-wrap">
+        <div className="swipe-header">
+          <button className="back-btn-sm close-btn" onClick={closeTrip} aria-label="Close">
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} width={20} height={20}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
           </button>
-          <button className={view === 'list' ? 'active' : ''} onClick={() => setView('list')}>
-            <ListIcon />
-          </button>
+          <div className="swipe-title">
+            <span>{catInfo.emoji}</span>
+            <span>Swipe Your Trip</span>
+          </div>
+          <div className="swipe-view-toggle">
+            <button className={view === 'swipe' ? 'active' : ''} onClick={() => setView('swipe')}>
+              <SwipeIcon />
+            </button>
+            <button className={view === 'list' ? 'active' : ''} onClick={() => setView('list')}>
+              <ListIcon />
+            </button>
+          </div>
         </div>
-      </div>
 
-      {/* Location prompt */}
-      {locPrompt && (
-        <div className="loc-prompt">
-          <span>📍 Share location for distances</span>
-          <button className="loc-yes" onClick={async () => {
-            setLocPrompt(false)
-            const gps = await requestLocation()
-            if (!gps && tourist?.hotel_name) await geocodeStay(tourist.hotel_name)
-            else if (!gps && tourist?.destination) await geocodeStay(tourist.destination)
-          }}>Allow</button>
-          <button className="loc-no" onClick={() => setLocPrompt(false)}>✕</button>
-        </div>
-      )}
+        {locPrompt && (
+          <div className="loc-prompt">
+            <span>📍 Share location for distances</span>
+            <button className="loc-yes" onClick={async () => {
+              setLocPrompt(false)
+              const gps = await requestLocation()
+              if (!gps && tourist?.hotel_name) await geocodeStay(tourist.hotel_name)
+              else if (!gps && tourist?.destination) await geocodeStay(tourist.destination)
+            }}>Allow</button>
+            <button className="loc-no" onClick={() => setLocPrompt(false)}>✕</button>
+          </div>
+        )}
+      </div>
 
       {/* Category tabs */}
       <div className="cat-tabs">
@@ -1000,7 +1004,7 @@ function DealSwipeCard({ deal, isTop, onDetail }) {
   return (
     <div className={`business-card deal-swipe-card ${isTop ? 'top' : ''}`}>
       {/* Full-bleed background */}
-      <div className="card-image-wrap" style={{ background: style.bg, minHeight: 280 }}>
+      <div className="card-image-wrap" style={{ background: style.bg, minHeight: 150 }}>
         {deal.image_url && (
           <img src={deal.image_url} alt={deal.entity_name} className="card-image"
             style={{ opacity: 0.35 }}

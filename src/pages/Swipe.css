@@ -6,6 +6,10 @@
   overflow: hidden;
 }
 
+.swipe-header-wrap {
+  position: relative;
+}
+
 .swipe-header {
   display: flex;
   align-items: center;
@@ -289,7 +293,7 @@
      to cover .swipe-actions below it. min-height is just a floor so a tall
      .card-body doesn't crush the image on a short viewport. */
   flex: 1;
-  min-height: 200px;
+  min-height: 110px;
   background: linear-gradient(135deg, #1a1a2e 0%, #12121f 100%);
 }
 
@@ -631,16 +635,27 @@
 
 /* ── Location prompt banner ── */
 .loc-prompt {
+  /* Floats just below .swipe-header (top:100% of .swipe-header-wrap) instead
+     of sitting in normal flow — it shows for any first-time visitor with no
+     location yet, so leaving it in-flow permanently cost every one of them
+     ~40px of card space. */
+  position: absolute;
+  top: 100%;
+  left: 12px;
+  right: 12px;
+  z-index: 15;
   display: flex;
   align-items: center;
   gap: 8px;
-  background: rgba(14,165,233,0.12);
-  border: 1px solid rgba(14,165,233,0.3);
+  background: rgba(15, 23, 42, 0.88);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(14,165,233,0.4);
   border-radius: 10px;
   padding: 8px 12px;
-  margin: 6px 12px 0;
+  margin-top: 6px;
   font-size: 13px;
   color: #7dd3fc;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.25);
 }
 .loc-prompt span { flex: 1; }
 .loc-yes {
@@ -858,7 +873,12 @@
 
 /* ── Deal Swipe Card ── */
 .deal-swipe-card .card-image-wrap {
-  min-height: 300px;
+  /* deal-swipe-overlay's content (headline, spots bar, price, hint) is
+     absolutely positioned inside this box, so it needs enough room to lay
+     out without its own internal overlap — but 300px (plus the 280px
+     inline style below, which wins since inline beats a class selector)
+     left almost nothing for .card-body's CTA row on short viewports. */
+  min-height: 150px;
 }
 
 .deal-swipe-overlay {
