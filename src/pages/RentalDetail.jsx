@@ -156,6 +156,17 @@ export default function RentalDetail() {
   return (
     <div className="rental-detail">
 
+      {/* The global GCRHeader is hidden on this route (App.jsx hideHeader),
+          and the only other back-navigation control on this page was a
+          plain button at the very bottom, after the full gallery and every
+          tab's content — effectively unreachable without scrolling through
+          everything first. This sticky bar is the actual escape hatch. */}
+      <div className="rental-sticky-nav">
+        <button className="rental-sticky-back" onClick={() => navigate(-1)} aria-label="Back">
+          ← Back
+        </button>
+      </div>
+
       {/* Photo Gallery */}
       {photos.length > 0 && (
         <div className="rental-gallery">
