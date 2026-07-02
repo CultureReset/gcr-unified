@@ -64,6 +64,70 @@
 .save-btn-detail:hover { transform: scale(1.15); }
 .save-btn-detail.saved { border-color: #ef4444; background: #fff1f1; }
 
+/* Breadcrumb — shown when this business belongs to a parent property */
+.detail-breadcrumb {
+  padding: 8px 16px;
+  background: var(--chip);
+  border-bottom: 1px solid var(--border);
+}
+
+.detail-breadcrumb a {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.detail-breadcrumb a:hover {
+  text-decoration: underline;
+}
+
+/* Locations — child businesses/units inside a parent property */
+.locations-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 10px;
+}
+
+.location-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #f8fafc;
+  text-decoration: none;
+  color: inherit;
+  transition: all 0.15s;
+}
+
+.location-card:hover {
+  border-color: var(--accent);
+  background: var(--chip);
+}
+
+.location-card-icon {
+  font-size: 22px;
+  flex-shrink: 0;
+}
+
+.location-card-body {
+  min-width: 0;
+}
+
+.location-card-name {
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--ink);
+}
+
+.location-card-subtype {
+  font-size: 12px;
+  color: var(--muted);
+  text-transform: capitalize;
+}
+
 /* Carousel */
 .carousel-wrap {
   position: relative;
