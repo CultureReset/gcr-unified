@@ -6,6 +6,7 @@ import Toast from '../components/Toast'
 import { SkeletonGrid } from '../components/SkeletonLoader'
 import { calculateDistance } from '../services/locationService'
 import { API_BASE } from '../config'
+import ArCameraOverlay from '../components/ArCameraOverlay'
 import './ArHunts.css'
 
 const CAPTURE_RADIUS_MILES = 0.02 // ~100ft / 32m — must be physically at the spot to capture
@@ -31,6 +32,7 @@ export default function ArHunts() {
     catch { return new Set() }
   })
   const [rewardModal, setRewardModal] = useState(null) // { brandName, rewardCode } | null
+  const [arViewHuntId, setArViewHuntId] = useState(null)
 
   const watchIdRef = useRef(null)
 
@@ -194,13 +196,18 @@ export default function ArHunts() {
                     ) : unavailableReason ? (
                       <div className="ar-hunt-unavailable-badge">{unavailableReason}</div>
                     ) : (
-                      <button
-                        className={`ar-btn-capture ${inRange ? 'is-ready' : ''}`}
-                        disabled={!inRange || capturingId === hunt.id}
-                        onClick={() => handleCapture(hunt)}
-                      >
-                        {capturingId === hunt.id ? 'Capturing…' : inRange ? '🎯 Capture Now!' : 'Get Closer'}
-                      </button>
+                      <div className="ar-hunt-actions">
+                        <button className="ar-btn-ar-view" onClick={() => setArViewHuntId(hunt.id)}>
+                          🎥 AR View
+                        </button>
+                        <button
+                          className={`ar-btn-capture ${inRange ? 'is-ready' : ''}`}
+                          disabled={!inRange || capturingId === hunt.id}
+                          onClick={() => handleCapture(hunt)}
+                        >
+                          {capturingId === hunt.id ? 'Capturing…' : inRange ? '🎯 Capture Now!' : 'Get Closer'}
+                        </button>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -209,6 +216,22 @@ export default function ArHunts() {
           </div>
         )}
       </div>
+
+      {arViewHuntId && (() => {
+        const hunt = hunts.find((h) => h.id === arViewHuntId)
+        if (!hunt) return null
+        return (
+          <ArCameraOverlay
+            hunt={hunt}
+            userLocation={userLocation}
+            captureRadiusMiles={CAPTURE_RADIUS_MILES}
+            captured={capturedIds.has(hunt.id)}
+            capturing={capturingId === hunt.id}
+            onCapture={() => handleCapture(hunt)}
+            onClose={() => setArViewHuntId(null)}
+          />
+        )
+      })()}
 
       {rewardModal && (
         <div className="ar-reward-overlay" onClick={() => setRewardModal(null)}>
