@@ -1,4 +1,5 @@
 import { API_BASE } from '../config'
+import { loadTaxonomyCache } from '../categoryMap'
 
 export function calcDistance(lat1, lng1, lat2, lng2) {
   if (lat1 == null || lng1 == null || lat2 == null || lng2 == null) return null
@@ -18,6 +19,11 @@ export function formatDistance(miles) {
 }
 
 const GCR_API = `${API_BASE}/api/gcr`
+
+// Fire-and-forget, once per page load — populates categoryMap.js's taxonomy
+// cache so subtypeToCategory() prefers the canonical DB table over its
+// hardcoded fallback map as soon as it's available.
+loadTaxonomyCache(API_BASE)
 
 function mapCategory(entityType, tags = [], entitySubtype = '') {
   const check = s => (s || '').toLowerCase()
@@ -472,7 +478,7 @@ export async function fetchBusinessBySlug(slug) {
     pricing:             d.pricing             || [],
     whats_included:      d.whats_included      || [],
     requirements:        d.requirements        || [],
-    schedules:           d.schedules           || [],
+    schedules:            d.schedules           || [],
     meeting_points:      d.meeting_points      || [],
     activity_options:    d.activity_options    || [],
     fish_species:        d.fish_species        || [],
