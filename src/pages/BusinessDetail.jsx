@@ -29,6 +29,8 @@ export default function RestaurantDetail() {
   const [hasPolicies, setHasPolicies] = useState(false)
   const [saved, setSaved] = useState(false)
   const [availability, setAvailability] = useState(null)
+  const [childLocations, setChildLocations] = useState([])
+  const [parentInfo, setParentInfo] = useState(null)
   const subSectionRefs = useRef({})
   const sectionRefs = useRef({})
   const observerRef = useRef(null)
@@ -65,12 +67,18 @@ export default function RestaurantDetail() {
           fetch(`${API_BASE}/api/blog/${encodeURIComponent(slug)}?page=1&limit=1`).then(r => r.ok ? r.json() : null).catch(() => null),
           fetch(`${API_BASE}/api/faqs/${encodeURIComponent(slug)}?category=cancellation`).then(r => r.ok ? r.json() : null).catch(() => null),
           fetch(`${API_BASE}/api/email-parser/availability/${encodeURIComponent(slug)}`).then(r => r.ok ? r.json() : null).catch(() => null),
-        ]).then(([reviewStats, teamData, blogData, policiesData, availData]) => {
+          fetch(`${API_BASE}/api/gcr/entities/${encodeURIComponent(slug)}/children`).then(r => r.ok ? r.json() : null).catch(() => null),
+          data.parent_entity_slug
+            ? fetch(`${API_BASE}/api/gcr/entity/${encodeURIComponent(data.parent_entity_slug)}`).then(r => r.ok ? r.json() : null).catch(() => null)
+            : Promise.resolve(null),
+        ]).then(([reviewStats, teamData, blogData, policiesData, availData, childrenData, parentData]) => {
           if (reviewStats?.total) setReviewCount(reviewStats.total)
           if ((teamData?.team || []).length > 0) setHasTeam(true)
           if ((blogData?.posts || []).length > 0) setHasBlog(true)
           if ((policiesData?.faqs || []).length > 0) setHasPolicies(true)
           if (availData?.availability?.length > 0) setAvailability(availData)
+          if ((childrenData?.children || []).length > 0) setChildLocations(childrenData.children)
+          if (parentData?.slug) setParentInfo(parentData)
         })
       } catch (err) {
         setError(err.message)
@@ -321,6 +329,8 @@ export default function RestaurantDetail() {
   const hasAmenities = amenities.length > 0
 
   const sections = [
+    // Parent/child hierarchy — e.g. shops inside a shopping center, units inside a condo building
+    ...(childLocations.length ? [{ id: 'locations', label: `Locations (${childLocations.length})`, icon: '📍' }] : []),
     // Data-driven — show if data exists regardless of type
     ...(hasOfferings                     ? [{ id: 'offerings',   label: 'Offerings',    icon: '🎟️' }] : []),
     ...(pricing.length                   ? [{ id: 'pricing',     label: 'Pricing',      icon: '💰' }] : []),
@@ -407,6 +417,15 @@ export default function RestaurantDetail() {
           <button className="share-btn" onClick={handleShareBusiness} title="Share this business">📤 Share</button>
         </div>
       </div>
+
+      {/* Breadcrumb — only shown when this business belongs to a parent property */}
+      {parentInfo && (
+        <div className="detail-breadcrumb">
+          <a href={`/business/${parentInfo.slug}`} onClick={e => { e.preventDefault(); navigate(`/business/${parentInfo.slug}`) }}>
+            {parentInfo.icon || '📍'} Part of {parentInfo.name}
+          </a>
+        </div>
+      )}
 
       {/* Photo Carousel */}
       <div className="carousel-wrap">
@@ -646,6 +665,29 @@ export default function RestaurantDetail() {
       {/* Content Layout */}
       <div className="content-layout">
         <main className="content-main">
+          {/* Locations — child businesses/units belonging to this parent property */}
+          {childLocations.length > 0 && (
+            <section className="content-section" ref={el => { sectionRefs.current["locations"] = el }} id="section-locations">
+              <h2>Locations at {business.name}</h2>
+              <div className="locations-grid">
+                {childLocations.map(child => (
+                  <a
+                    key={child.slug}
+                    href={`/business/${child.slug}`}
+                    className="location-card"
+                    onClick={e => { e.preventDefault(); navigate(`/business/${child.slug}`) }}
+                  >
+                    <div className="location-card-icon">{child.icon || '📍'}</div>
+                    <div className="location-card-body">
+                      <div className="location-card-name">{child.name}</div>
+                      {child.entity_subtype && <div className="location-card-subtype">{child.entity_subtype.replace(/_/g, ' ')}</div>}
+                    </div>
+                  </a>
+                ))}
+              </div>
+            </section>
+          )}
+
           {/* Overview */}
                       <section className="content-section" ref={el => { sectionRefs.current["overview"] = el }} id="section-overview">
               <h2>About</h2>
