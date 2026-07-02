@@ -9,7 +9,13 @@ import { API_BASE } from '../config'
 import ArCameraOverlay from '../components/ArCameraOverlay'
 import './ArHunts.css'
 
-const CAPTURE_RADIUS_MILES = 0.02 // ~100ft / 32m — must be physically at the spot to capture
+const METERS_PER_MILE = 1609.344
+// Fallback only — the real value is per-hunt (hunt.captureRadiusMeters, admin-settable),
+// this just covers hunts loaded before that field existed or from a stale cache.
+const DEFAULT_CAPTURE_RADIUS_MILES = 35 / METERS_PER_MILE
+function captureRadiusMilesFor(hunt) {
+  return hunt.captureRadiusMeters != null ? hunt.captureRadiusMeters / METERS_PER_MILE : DEFAULT_CAPTURE_RADIUS_MILES
+}
 const DIFFICULTY_META = {
   easy:   { label: 'Easy',   color: '#22c55e' },
   medium: { label: 'Medium', color: '#f59e0b' },
@@ -100,7 +106,7 @@ export default function ArHunts() {
   const handleCapture = async (hunt) => {
     if (!userLocation) return
     const dist = distanceToHunt(hunt)
-    if (dist == null || dist > CAPTURE_RADIUS_MILES) {
+    if (dist == null || dist > captureRadiusMilesFor(hunt)) {
       setToast({ message: "You're not close enough yet — keep walking toward the hint!", type: 'error' })
       return
     }
@@ -167,7 +173,7 @@ export default function ArHunts() {
             {sortedHunts.map((hunt) => {
               const dist = distanceToHunt(hunt)
               const captured = capturedIds.has(hunt.id)
-              const inRange = dist != null && dist <= CAPTURE_RADIUS_MILES
+              const inRange = dist != null && dist <= captureRadiusMilesFor(hunt)
               const meta = DIFFICULTY_META[hunt.difficulty] || DIFFICULTY_META.medium
               const unavailableReason = hunt.soldOut ? 'All rewards claimed'
                 : hunt.notStarted ? 'Coming soon'
@@ -224,7 +230,7 @@ export default function ArHunts() {
           <ArCameraOverlay
             hunt={hunt}
             userLocation={userLocation}
-            captureRadiusMiles={CAPTURE_RADIUS_MILES}
+            captureRadiusMiles={captureRadiusMilesFor(hunt)}
             captured={capturedIds.has(hunt.id)}
             capturing={capturingId === hunt.id}
             onCapture={() => handleCapture(hunt)}
