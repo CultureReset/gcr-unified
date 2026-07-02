@@ -43,6 +43,7 @@ export default function RestaurantDetail() {
         const data = await res.json()
         if (!data || !data.slug) throw new Error('Business not found')
         setBusiness(data)
+        setHasPolicies((data.policies || []).length > 0)
         const et = (data.entity_type || '').toLowerCase()
         const isFood = ['restaurant','coffee','dessert','bakery','bar'].includes(et)
         const rotating = data.rotating_sections || data.rotatingSections || []
@@ -65,17 +66,15 @@ export default function RestaurantDetail() {
           fetch(`${API_BASE}/api/reviews/${encodeURIComponent(slug)}/stats`).then(r => r.ok ? r.json() : null).catch(() => null),
           fetch(`${API_BASE}/api/team/${encodeURIComponent(slug)}`).then(r => r.ok ? r.json() : null).catch(() => null),
           fetch(`${API_BASE}/api/blog/${encodeURIComponent(slug)}?page=1&limit=1`).then(r => r.ok ? r.json() : null).catch(() => null),
-          fetch(`${API_BASE}/api/faqs/${encodeURIComponent(slug)}?category=cancellation`).then(r => r.ok ? r.json() : null).catch(() => null),
           fetch(`${API_BASE}/api/email-parser/availability/${encodeURIComponent(slug)}`).then(r => r.ok ? r.json() : null).catch(() => null),
           fetch(`${API_BASE}/api/gcr/entities/${encodeURIComponent(slug)}/children`).then(r => r.ok ? r.json() : null).catch(() => null),
           data.parent_entity_slug
             ? fetch(`${API_BASE}/api/gcr/entity/${encodeURIComponent(data.parent_entity_slug)}`).then(r => r.ok ? r.json() : null).catch(() => null)
             : Promise.resolve(null),
-        ]).then(([reviewStats, teamData, blogData, policiesData, availData, childrenData, parentData]) => {
+        ]).then(([reviewStats, teamData, blogData, availData, childrenData, parentData]) => {
           if (reviewStats?.total) setReviewCount(reviewStats.total)
           if ((teamData?.team || []).length > 0) setHasTeam(true)
           if ((blogData?.posts || []).length > 0) setHasBlog(true)
-          if ((policiesData?.faqs || []).length > 0) setHasPolicies(true)
           if (availData?.availability?.length > 0) setAvailability(availData)
           if ((childrenData?.children || []).length > 0) setChildLocations(childrenData.children)
           if (parentData?.slug) setParentInfo(parentData)
@@ -1482,7 +1481,7 @@ export default function RestaurantDetail() {
           <div ref={el => { sectionRefs.current["blog"] = el }} id="section-blog"><BlogSection slug={slug} /></div>
 
           {/* Policies */}
-          <div ref={el => { sectionRefs.current["policies"] = el }} id="section-policies"><PoliciesSection slug={slug} /></div>
+          <div ref={el => { sectionRefs.current["policies"] = el }} id="section-policies"><PoliciesSection policies={business.policies} /></div>
 
           {/* Menu */}
                       <section className="content-section" ref={el => { sectionRefs.current["menu"] = el }} id="section-menu">
