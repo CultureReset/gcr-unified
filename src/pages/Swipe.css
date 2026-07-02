@@ -68,7 +68,7 @@
   display: flex;
   gap: 6px;
   overflow-x: auto;
-  padding: 2px 16px 8px;
+  padding: 2px 16px 5px;
   scrollbar-width: none;
 }
 .cat-tabs::-webkit-scrollbar { display: none; }
@@ -235,8 +235,11 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0 16px;
-  margin-bottom: 8px;
+  /* No horizontal padding here — its only child (.swipe-card-wrapper) is
+     absolutely positioned, so padding on this element wouldn't inset it;
+     the card's horizontal margin is set directly via .swipe-card-wrapper's
+     own `inset` instead. */
+  margin-bottom: 4px;
 }
 
 .swipe-card-wrapper {
@@ -245,11 +248,19 @@
      gesture — it never touches top/left/height, so it's safe to fully
      constrain this box to .cards-container's real (flex-computed) height
      instead of letting it size to its own content and overflow. That
-     overflow used to reach past .swipe-actions and cover the button row. */
-  inset: 0;
+     overflow used to reach past .swipe-actions and cover the button row.
+     NOTE: inset ignores .cards-container's own `padding` — an absolutely
+     positioned child's containing block is the parent's padding box, so
+     padding never insets it. The 10px horizontal margin has to be set here
+     directly (was full-bleed edge-to-edge without it).
+     width is intentionally NOT 100% here — with explicit left+right insets,
+     percentage width resolves against the full containing block and
+     overflows past the right inset; leaving it auto is what makes the box
+     correctly fill just the gap between the two insets. max-width still
+     caps it (and re-engages margin:auto to center) on very wide viewports. */
+  inset: 0 10px;
   margin: 0 auto;
-  width: 100%;
-  max-width: 380px;
+  max-width: 410px;
 }
 
 .business-card {
