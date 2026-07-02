@@ -135,12 +135,34 @@ export const SUBTYPE_TO_CATEGORY = {
 
 const LODGING_TYPES = new Set(['hotel', 'condo', 'motel', 'lodging', 'resort', 'cabin', 'cottage', 'inn', 'lodge'])
 
+// Populated once at app startup by loadTaxonomyCache() — the canonical
+// subtype_taxonomy DB table, mirrored here so subtypeToCategory() can stay
+// synchronous (it's called inline inside .filter() predicates in
+// CategoryPage.jsx/CategoryListings.jsx). Falls back to the hardcoded
+// SUBTYPE_TO_CATEGORY map below until the fetch resolves, or if it fails.
+let taxonomyCache = null
+
+export async function loadTaxonomyCache(apiBase) {
+  try {
+    const r = await fetch(`${apiBase}/api/gcr/taxonomy`)
+    if (!r.ok) return
+    taxonomyCache = await r.json()
+  } catch {
+    // Network error or API down — subtypeToCategory() keeps using the
+    // hardcoded fallback map, so this is safe to ignore.
+  }
+}
+
 export function subtypeToCategory(entity) {
   const sub = (entity.entity_subtype || '').toLowerCase()
   const type = (entity.entity_type || '').toLowerCase()
   const subUnder = sub.replace(/-/g, '_')
   // If entity_type is a lodging type, always put in staying regardless of subtype
   if (LODGING_TYPES.has(type)) return 'staying'
+  if (taxonomyCache?.bySubtype) {
+    const fromTaxonomy = taxonomyCache.bySubtype[subUnder] || taxonomyCache.bySubtype[sub]
+    if (fromTaxonomy) return fromTaxonomy
+  }
   return SUBTYPE_TO_CATEGORY[sub] || SUBTYPE_TO_CATEGORY[subUnder] || SUBTYPE_TO_CATEGORY[type] || null
 }
 
