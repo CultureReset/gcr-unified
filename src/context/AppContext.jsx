@@ -158,9 +158,42 @@ export function AppProvider({ children }) {
     }
   }
 
+  // Upload any saves/super-likes made while browsing as a guest so signing up
+  // doesn't wipe them. Guest actions only ever touch localStorage (there's no
+  // userId yet to persist against) — without this, the first hydrateFromApi()
+  // after login would overwrite that local state with the new account's
+  // (empty) server list and the guest's session would just be gone.
+  // `preLoginSaves` must be captured BEFORE hydrateFromApi() runs, since that
+  // call immediately overwrites localStorage['gcr_saved'] with the server's
+  // list — by the time this function runs there's no other way to recover
+  // what the guest had.
+  async function migrateGuestSaves(preLoginSaves) {
+    if (!preLoginSaves.length) return
+    const serverSlugs = new Set(loadLS('gcr_saved', []).map(s => s.slug))
+    const missing = preLoginSaves.filter(b => b.slug && !serverSlugs.has(b.slug))
+    if (!missing.length) return
+    for (const b of missing) {
+      await apiSend('POST', '/api/tourist/saves', {
+        entity_slug: b.slug,
+        entity_id: b.id && /^[0-9a-f-]{36}$/i.test(String(b.id)) ? b.id : null,
+        business_name: b.name,
+        hero_image_url: b.hero_image_url,
+        subtitle: b.subtitle,
+        category: b.category,
+        rating: b.rating ?? null,
+        price_range: b.price_range,
+        is_super_like: !!b.is_super_like,
+      })
+    }
+    await hydrateFromApi()
+  }
+
   async function setSessionFromLogin(loginData) {
     setUserId(loginData.user?.id || null)
-    return await hydrateFromApi()
+    const preLoginSaves = loadLS('gcr_saved', [])
+    const hydrated = await hydrateFromApi()
+    await migrateGuestSaves(preLoginSaves)
+    return hydrated
   }
 
   // Record a swipe: marks slug as seen + queues direction event for analytics
@@ -447,7 +480,7 @@ export function AppProvider({ children }) {
       userLocation, requestLocation, geocodeStay,
       locationSharingEnabled, enableLocationSharing, disableLocationSharing,
       userId, logout,
-      setSessionFromLogin,
+      setSessionFromLogin, refreshSaves: hydrateFromApi,
     }}>
       {children}
     </AppContext.Provider>

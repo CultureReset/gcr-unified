@@ -26,15 +26,22 @@ async function fetchSocialCards() {
   }
 }
 
+// Every tab here must correspond to a value mapCategory() in gcrApi.js can
+// actually produce (stay/food/nightlife/shopping/activities) — a tab whose id
+// never matches any card's category always renders an empty deck. "Drinks"
+// had no distinct category (bars/cocktail spots already come through under
+// Nightlife) so it's dropped rather than left as a dead end. "Events" isn't a
+// swipeable entity at all — events live in a separate feed — so that tab
+// links out to the real Events page instead of filtering the (always-empty)
+// swipe deck.
 const CAT_TABS = [
   { id: 'all',        label: 'All',        emoji: '🌟' },
   { id: 'food',       label: 'Food',       emoji: '🍽️' },
-  { id: 'drinks',     label: 'Drinks',     emoji: '🍷' },
   { id: 'nightlife',  label: 'Nightlife',  emoji: '🎵' },
   { id: 'activities', label: 'Activities', emoji: '🏄' },
   { id: 'shopping',   label: 'Shopping',   emoji: '🛍️' },
   { id: 'stay',       label: 'Stay',       emoji: '🏨' },
-  { id: 'events',     label: 'Events',     emoji: '🎪' },
+  { id: 'events',     label: 'Events',     emoji: '🎪', to: '/events' },
 ]
 
 const DECK_SIZE = 15
@@ -94,6 +101,15 @@ export default function Swipe() {
   const pageRef = useRef(null)
 
   const catInfo = CATEGORIES.find(c => c.id === category) || CATEGORIES[5]
+
+  // /swipe/events and /swipe/drinks aren't real swipeable categories (see
+  // CAT_TABS comment) — catch direct/bookmarked links to them too, not just
+  // the tab bar. Drinks has no dedicated page, so send it to the closest
+  // real category (bars/cocktails already surface under Nightlife).
+  useEffect(() => {
+    if (category === 'events') navigate('/events', { replace: true })
+    else if (category === 'drinks') navigate('/swipe/nightlife', { replace: true })
+  }, [category, navigate])
 
   const businesses = (category === 'all'
     ? allBusinesses.filter(b => !b._isPromo) // Exclude promos from 'All' view
@@ -408,7 +424,7 @@ export default function Swipe() {
           <button
             key={tab.id}
             className={`cat-tab ${category === tab.id ? 'active' : ''}`}
-            onClick={() => navigate(`/swipe/${tab.id}`)}
+            onClick={() => navigate(tab.to || `/swipe/${tab.id}`)}
           >
             <span>{tab.emoji}</span>
             <span>{tab.label}</span>

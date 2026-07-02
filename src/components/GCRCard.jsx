@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { subtypeToCategory } from '../categoryMap'
 import './GCRCard.css'
 
 // ── Map API tag_category → display section ────────────────────────────────────
@@ -32,15 +33,6 @@ const TAG_EMOJI = {
   boat_slips:'⛵', boat_access:'⚓', catering_available:'🍽️',
   private_dining_room:'🚪', wi_fi:'📶', high_chairs:'👶',
 }
-
-const ACTIVITY_SUBTYPES = new Set([
-  'parasailing','boat-rentals','boat_rental','boat_rentals','charter-fishing','fishing_charter',
-  'dolphin-cruises-tours','dolphin_cruise','dolphin_cruises_tours','jet-ski-rentals-tours',
-  'jet_ski','jet_ski_rentals_tours','canoe-kayak-paddleboard-rentals','canoe_kayak_paddleboard',
-  'banana-boat-rides','banana_boat','helicopter-airplane-tours','sunset-cruises-tours',
-  'boat-tours','boat_tours','watersports','snorkeling','paddleboard','kayak_rental','fishing-charters',
-  'things-to-do','things_to_do','activity',
-])
 
 const FOOD_CATEGORIES = new Set(['restaurants','coffee-sweets','coffee','nightlife','happy-hours'])
 
@@ -150,7 +142,10 @@ export default function GCRCard({ entity, category, onSave, savedSlugs }) {
   const hhEnd = entity.hh_end || ''
   const hhDesc = entity.hh_description || ''
 
-  const isActivity = ACTIVITY_SUBTYPES.has(rawSubtype) || ACTIVITY_SUBTYPES.has(subtypeKey)
+  // Single source of truth for "is this a things-to-do entity" — categoryMap.js
+  // already classifies every subtype we route to /things-to-do; a separately
+  // maintained list here drifts out of sync as new subtypes get added there.
+  const isActivity = subtypeToCategory(entity) === 'things-to-do'
   const isSaved = savedSlugs?.has(slug)
   const entityTypeMain = (entity.entity_type || '').toLowerCase()
   const isFoodPage = FOOD_CATEGORIES.has(category)

@@ -4,14 +4,15 @@ import { useApp } from '../context/AppContext'
 import PageHeader from '../components/PageHeader'
 import Toast from '../components/Toast'
 import { SkeletonGrid } from '../components/SkeletonLoader'
-import { unsaveItem } from '../services/gcrApi'
-import { API_BASE } from '../config'
 import './Saves.css'
 
+// Reads/writes through AppContext's savedPlaces instead of its own independent
+// fetch — this used to be a second, disconnected copy of "my saved places"
+// (MyList.jsx and Swipe.jsx both go through AppContext), so removing or
+// adding a save on one screen wouldn't show up on the other.
 export default function Saves() {
   const navigate = useNavigate()
-  const { userId } = useApp()
-  const [saves, setSaves] = useState([])
+  const { userId, savedPlaces, removeSavedPlace, refreshSaves } = useApp()
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [toast, setToast] = useState(null)
@@ -22,43 +23,18 @@ export default function Saves() {
       return
     }
 
-    async function loadSaves() {
-      try {
-        setLoading(true)
-        setError(null)
-        const token = localStorage.getItem('gcr_access_token')
-        if (!token) {
-          navigate('/auth')
-          return
-        }
+    setLoading(true)
+    setError(null)
+    refreshSaves()
+      .catch(() => setError('Connection error. Please try again.'))
+      .finally(() => setLoading(false))
+  }, [userId, navigate, refreshSaves])
 
-        const res = await fetch(`${API_BASE}/api/tourist/saves`, {
-          headers: { Authorization: `Bearer ${token}` }
-        })
+  const saves = savedPlaces
 
-        if (res.ok) {
-          const data = await res.json()
-          setSaves(data.saves || [])
-        } else {
-          setError('Failed to load saved items')
-          setSaves([])
-        }
-      } catch (err) {
-        console.error('Error loading saves:', err)
-        setError('Connection error. Please try again.')
-        setSaves([])
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    loadSaves()
-  }, [userId, navigate])
-
-  const handleRemove = async (slug) => {
+  const handleRemove = async (id) => {
     try {
-      await unsaveItem(slug)
-      setSaves(prev => prev.filter(s => s.slug !== slug && s.entity_slug !== slug))
+      await removeSavedPlace(id)
       setToast({ message: 'Removed from saved', type: 'success' })
     } catch (err) {
       setToast({ message: 'Failed to remove save', type: 'error' })
@@ -99,24 +75,24 @@ export default function Saves() {
         ) : (
           <div className="saves-grid">
             {saves.map(item => (
-              <div key={item.slug || item.entity_slug} className="save-card">
+              <div key={item.id || item.slug} className="save-card">
                 {item.hero_image_url && (
-                  <img src={item.hero_image_url} alt={item.name || item.business_name} className="save-image" />
+                  <img src={item.hero_image_url} alt={item.name} className="save-image" />
                 )}
                 <div className="save-content">
-                  <h3 className="save-name">{item.name || item.business_name}</h3>
+                  <h3 className="save-name">{item.name}</h3>
                   {item.subtitle && <p className="save-subtitle">{item.subtitle}</p>}
                   {item.category && <p className="save-category">{item.category}</p>}
                   <div className="save-actions">
                     <button
                       className="save-btn primary"
-                      onClick={() => navigate(`/business/${item.slug || item.entity_slug}`)}
+                      onClick={() => navigate(`/business/${item.slug}`)}
                     >
                       View Details
                     </button>
                     <button
                       className="save-btn danger"
-                      onClick={() => handleRemove(item.slug || item.entity_slug)}
+                      onClick={() => handleRemove(item.id)}
                     >
                       Remove
                     </button>
