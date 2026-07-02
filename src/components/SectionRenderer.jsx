@@ -15,6 +15,20 @@ function priceText(item) {
   return item.price_label || null
 }
 
+function TierList({ tiers }) {
+  if (!tiers?.length) return null
+  return (
+    <div className="sr-tiers">
+      {tiers.map(t => (
+        <div key={t.id} className="sr-tier-row">
+          <span className="sr-tier-label">{t.unit_label || t.audience || 'Price'}</span>
+          <span className="sr-tier-price">{t.is_free ? 'Free' : `$${t.price}`}</span>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 function GridLayout({ items }) {
   return (
     <div className="sr-grid">
@@ -26,10 +40,11 @@ function GridLayout({ items }) {
             <div className="sr-card-head">
               <span className="sr-card-icon">{item.icon || '\u2022'}</span>
               <span className="sr-card-name">{item.item_name}</span>
-              {priceText(item) && <span className="sr-card-price">{priceText(item)}</span>}
+              {!item.tiers?.length && priceText(item) && <span className="sr-card-price">{priceText(item)}</span>}
             </div>
             {item.duration && <div className="sr-card-duration">\u23F1 {item.duration}</div>}
             {item.description && <p className="sr-card-desc">{item.description}</p>}
+            <TierList tiers={item.tiers} />
             {(m.includes || []).length > 0 && (
               <div className="sr-chip-row">{m.includes.map((x, i) => <span key={i} className="sr-chip">\u2713 {x}</span>)}</div>
             )}

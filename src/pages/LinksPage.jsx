@@ -89,7 +89,7 @@ export default function LinksPage() {
 
   const links = [
     { id: 'about', icon: 'ℹ️', title: 'About Us', desc: 'Our story & what we offer' },
-    hasOffers && moduleOn('offers') && { id: 'offers', icon: '💲', title: 'Pricing & Packages', desc: 'See what\u2019s available and what it costs' },
+    hasOffers && moduleOn('offerings') && { id: 'offers', icon: '💲', title: 'Pricing & Packages', desc: 'See what\u2019s available and what it costs' },
     (business.booking_url || business.reservation_url) && moduleOn('booking') && { id: 'book', icon: '📅', title: 'Book Now', desc: 'Check availability & reserve', external: business.booking_url || business.reservation_url },
     photos.length > 0 && moduleOn('gallery') && { id: 'photos', icon: '📸', title: 'Photo Gallery', desc: 'See it for yourself' },
     reviews.length > 0 && moduleOn('reviews') && { id: 'reviews', icon: '⭐', title: 'Reviews', desc: 'What customers say' },

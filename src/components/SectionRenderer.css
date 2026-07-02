@@ -12,6 +12,10 @@
 .sr-card-price { font-weight: 800; color: var(--primary, #0b7a75); font-size: 13px; }
 .sr-card-duration { font-size: 12px; color: var(--text2, #64748b); margin-top: 4px; }
 .sr-card-desc { font-size: 12px; color: var(--text2, #64748b); margin: 6px 0 0; }
+.sr-tiers { margin-top: 8px; display: grid; gap: 4px; }
+.sr-tier-row { display: flex; justify-content: space-between; font-size: 12px; }
+.sr-tier-label { color: var(--text2, #64748b); text-transform: capitalize; }
+.sr-tier-price { font-weight: 800; color: var(--primary, #0b7a75); }
 
 /* List */
 .sr-list { display: grid; gap: 4px; }
