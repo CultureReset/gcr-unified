@@ -4,6 +4,7 @@ import { useApp } from './context/AppContext'
 import ErrorBoundary from './ErrorBoundary'
 import { DEFAULT_MODE } from './config'
 import Landing from './pages/Landing'
+import LinksPage from './pages/LinksPage'
 import CategoryListings from './pages/CategoryListings'
 import NotFound from './pages/NotFound'
 import CategoryPage from './pages/CategoryPage'
@@ -64,13 +65,15 @@ function AppRoutes() {
     location.pathname.startsWith('/artist/') ||
     location.pathname.startsWith('/business/') ||
     location.pathname.startsWith('/rental/') ||
-    location.pathname.startsWith('/service/')
+    location.pathname.startsWith('/service/') ||
+    location.pathname.startsWith('/links/')
   const hideHeader = ['/', '/auth'].some(p => location.pathname === p) ||
     location.pathname.startsWith('/setup') ||
     location.pathname.startsWith('/artist/') ||
     location.pathname.startsWith('/business/') ||
     location.pathname.startsWith('/rental/') ||
-    location.pathname.startsWith('/service/')
+    location.pathname.startsWith('/service/') ||
+    location.pathname.startsWith('/links/')
 
   useEffect(() => {
     function onUnauth() {
@@ -135,6 +138,7 @@ function AppRoutes() {
         <Route path="/swipe/:category" element={<Swipe />} />
         <Route path="/artist/:slug/live" element={<ArtistLive />} />
         <Route path="/business/:slug" element={<BusinessDetail />} />
+        <Route path="/links/:slug" element={<LinksPage />} />
         <Route path="/list" element={<RequireAuth><MyList /></RequireAuth>} />
         <Route path="/building" element={<RequireAuth><Building /></RequireAuth>} />
         <Route path="/itinerary" element={<RequireAuth><Itinerary /></RequireAuth>} />
