@@ -112,7 +112,10 @@ export default function Swipe() {
   }, [category, navigate])
 
   const businesses = (category === 'all'
-    ? allBusinesses.filter(b => !b._isPromo) // Exclude promos from 'All' view
+    // Promos are admin-scoped to a category (gcrApi.js defaults unset ones to 'all') —
+    // only exclude ones deliberately targeted at a specific tab, same rule deals/social
+    // cards already follow (they're always category:'all' and always show here).
+    ? allBusinesses.filter(b => !b._isPromo || b.category === 'all')
     : allBusinesses.filter(b => b.category === category))
     .filter(b => !seenSlugs.includes(b.slug))
     .filter(b => b.hero_image_url) // Only show businesses with images
@@ -199,7 +202,7 @@ export default function Swipe() {
     // Guests always get a fresh deck — don't filter by seenSlugs so the first
     // 15 cards always show regardless of prior localStorage state
     const visible = (category === 'all'
-      ? allBusinesses.filter(b => !b._isPromo)
+      ? allBusinesses.filter(b => !b._isPromo || b.category === 'all')
       : allBusinesses.filter(b => b.category === category))
       .filter(b => isGuest ? true : !seenSlugs.includes(b.slug))
     setPool(visible)
@@ -217,7 +220,7 @@ export default function Swipe() {
     if (allBusinesses.length === 0) return
     if (seenSlugs.length > 0) return
     const visible = (category === 'all'
-      ? allBusinesses.filter(b => !b._isPromo)
+      ? allBusinesses.filter(b => !b._isPromo || b.category === 'all')
       : allBusinesses.filter(b => b.category === category))
     setPool(visible)
     const sorted = Object.keys(prefMap).length
