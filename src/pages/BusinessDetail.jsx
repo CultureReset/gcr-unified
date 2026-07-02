@@ -33,6 +33,7 @@ export default function RestaurantDetail() {
   const subSectionRefs = useRef({})
   const sectionRefs = useRef({})
   const observerRef = useRef(null)
+  const detailHeaderRef = useRef(null)
 
   useEffect(() => {
     async function loadBusiness() {
@@ -90,12 +91,29 @@ export default function RestaurantDetail() {
     return () => clearInterval(timer)
   }, [business?.photos?.length])
 
+  // The global GCRHeader is hidden on this route (see App.jsx hideHeader list) — there's
+  // nothing above .detail-header here, so it sticks at top:0 and .sticky-tabs stacks
+  // directly beneath it using this measured height (not the global --gcr-header-h var,
+  // which is stale/unset on this page and previously caused a blank gap + overlap).
+  useEffect(() => {
+    const el = detailHeaderRef.current
+    if (!el) return
+    const update = () => {
+      document.documentElement.style.setProperty('--detail-header-h', el.offsetHeight + 'px')
+    }
+    update()
+    setTimeout(update, 100)
+    const ro = new ResizeObserver(update)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
+
   // IntersectionObserver: highlight active sub-section chip as user scrolls
   useEffect(() => {
     observerRef.current?.disconnect()
     const els = Object.entries(subSectionRefs.current)
     if (!els.length) return
-    const headerH = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--gcr-header-h') || '148')
+    const headerH = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--detail-header-h') || '48')
     observerRef.current = new IntersectionObserver(
       entries => {
         const visible = entries.filter(e => e.isIntersecting)
@@ -110,7 +128,7 @@ export default function RestaurantDetail() {
   const scrollToSubSection = useCallback((id) => {
     const el = subSectionRefs.current[id]
     if (!el) return
-    const headerH = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--gcr-header-h') || '148')
+    const headerH = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--detail-header-h') || '48')
     const tabsH = 100
     const top = el.getBoundingClientRect().top + window.scrollY - headerH - tabsH
     window.scrollTo({ top, behavior: 'smooth' })
@@ -402,7 +420,7 @@ export default function RestaurantDetail() {
   return (
     <div className="detail-page">
       {/* Header */}
-      <div className="detail-header">
+      <div className="detail-header" ref={detailHeaderRef}>
         <button className="back-btn" onClick={() => navigate(-1)}>← Back</button>
         <div style={{display:'flex',gap:8}}>
           <button className={`save-btn-detail ${saved ? 'saved' : ''}`} onClick={() => setSaved(s => !s)} title={saved ? 'Saved' : 'Save'}>

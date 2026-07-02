@@ -24,7 +24,9 @@
   background: var(--card);
   border-bottom: 1px solid var(--border);
   position: sticky;
-  top: var(--gcr-header-h, 128px);
+  /* No global GCRHeader on this route (App.jsx hides it for /business/*),
+     so this is the top-most sticky element — it belongs at top:0. */
+  top: 0;
   z-index: 100;
 }
 
@@ -495,10 +497,11 @@
   margin-bottom: 8px;
 }
 
-/* Sticky Tabs */
+/* Sticky Tabs — stacks directly beneath .detail-header (measured via
+   --detail-header-h in BusinessDetail.jsx), not the global header var. */
 .sticky-tabs {
   position: sticky;
-  top: var(--gcr-header-h, 128px);
+  top: var(--detail-header-h, 48px);
   z-index: 99;
   background: rgba(255,255,255,.97);
   backdrop-filter: blur(8px);
