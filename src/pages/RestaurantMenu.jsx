@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
+import { API_BASE } from '../config';
 import './RestaurantMenu.css';
 import SongRequestForm from '../components/SongRequestForm';
 
@@ -12,11 +13,12 @@ export default function RestaurantMenu() {
   const [loading, setLoading] = useState(true);
   const [showRequestForm, setShowRequestForm] = useState(false);
   const [requestType, setRequestType] = useState('song');
+  const [requestTargetId, setRequestTargetId] = useState(null);
 
   useEffect(() => {
     const fetchMenu = async () => {
       try {
-        const res = await fetch(`/api/public/menu?slug=${slug}`);
+        const res = await fetch(`${API_BASE}/api/public/menu?slug=${slug}`);
         if (!res.ok) throw new Error('Menu not found');
         const data = await res.json();
         setMenu(data);
@@ -42,8 +44,9 @@ export default function RestaurantMenu() {
     setShowPhonePrompt(false);
   };
 
-  const handleRequestClick = (type) => {
+  const handleRequestClick = (type, targetId = null) => {
     setRequestType(type);
+    setRequestTargetId(targetId);
     setShowRequestForm(true);
     if (!userPhone) {
       setShowPhonePrompt(true);
@@ -181,7 +184,7 @@ export default function RestaurantMenu() {
                     <p className="progress-text">
                       ${coop.current_amount.toFixed(2)} / ${coop.target_amount.toFixed(2)} ({coop.num_contributors} supporters)
                     </p>
-                    <button className="btn-small" onClick={() => handleRequestClick('coop')}>
+                    <button className="btn-small" onClick={() => handleRequestClick('coop', coop.id)}>
                       Add $5
                     </button>
                   </div>
@@ -206,7 +209,7 @@ export default function RestaurantMenu() {
                     <p className="progress-text">
                       ${goal.current_amount.toFixed(2)} / ${goal.target_amount.toFixed(2)} ({goal.num_contributors} supporters)
                     </p>
-                    <button className="btn-small" onClick={() => handleRequestClick('goal')}>
+                    <button className="btn-small" onClick={() => handleRequestClick('goal', goal.id)}>
                       Donate
                     </button>
                   </div>
@@ -262,6 +265,7 @@ export default function RestaurantMenu() {
         <SongRequestForm
           artist={menu.live_artist}
           requestType={requestType}
+          targetId={requestTargetId}
           userPhone={userPhone}
           slug={slug}
           onClose={() => setShowRequestForm(false)}

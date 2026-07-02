@@ -21,6 +21,10 @@ const SERVICE_TABS = [
   { id: 'realestate',  label: 'Real Estate',     emoji: '🏠', subtypes: ['real_estate_agency','real-estate','real-estate-agent'] },
 ]
 
+// Single source of truth for which subtypes count as a "service" — derived from
+// SERVICE_TABS so the fetch filter can never drift out of sync with the tab bar again.
+const ALL_SERVICE_SUBTYPES = new Set(SERVICE_TABS.flatMap(t => t.subtypes || []))
+
 const BOOKING_PLATFORMS = {
   spa: { label: 'Book on Vagaro', color: '#7c3aed' },
   massage: { label: 'Book on Vagaro', color: '#7c3aed' },
@@ -108,9 +112,7 @@ export default function ServiceListings() {
           const et = (e.entity_type || '').toLowerCase()
           const es = (e.entity_subtype || '').toLowerCase()
           if (et === 'service') return true
-          if (['spa','massage','hair_salon','nail_salon','beauty_salon','barber_shop',
-               'fitness_center','yoga_studio','photographer','car_rental',
-               'real_estate_agency','wellness_center'].includes(es)) return true
+          if (ALL_SERVICE_SUBTYPES.has(es)) return true
           return false
         })
         // Dedup by name

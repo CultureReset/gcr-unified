@@ -474,7 +474,7 @@ export default function RestaurantDetail() {
             <div className="hero-meta">
               {business.rating && (
                 <span className="hero-rating">
-                  ★ {business.rating.toFixed(1)} {business.review_count && `(${business.review_count})`}
+                  ★ {Number(business.rating).toFixed(1)} {business.review_count && `(${business.review_count})`}
                 </span>
               )}
               {business.city && <span>📍 {business.city}, {business.state}</span>}

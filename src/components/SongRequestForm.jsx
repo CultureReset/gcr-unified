@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import Toast from './Toast';
+import { API_BASE } from '../config';
 import './SongRequestForm.css';
 
-export default function SongRequestForm({ artist, requestType, userPhone, slug, onClose }) {
+export default function SongRequestForm({ artist, requestType, targetId, userPhone, slug, onClose }) {
   const [formData, setFormData] = useState({
     fan_name: '',
     song_title: '',
@@ -44,19 +45,18 @@ export default function SongRequestForm({ artist, requestType, userPhone, slug, 
       };
 
       if (requestType === 'song' || requestType === 'shoutout') {
-        endpoint = `/api/artists/${artist.slug}/request`;
+        endpoint = `${API_BASE}/api/artists/${artist.slug}/request`;
         payload.song_title = formData.song_title;
         payload.note = formData.note;
         payload.request_type = requestType;
       } else if (requestType === 'coop') {
-        // Find the coop from artist data (simplified for now)
-        endpoint = `/api/cooperatives/${artist.slug}/cooperatives/[id]/contribute`;
+        endpoint = `${API_BASE}/api/cooperatives/${artist.slug}/cooperatives/${targetId}/contribute`;
         payload.amount = formData.amount;
       } else if (requestType === 'goal') {
-        endpoint = `/api/goals/${artist.slug}/goals/[id]/contribute`;
+        endpoint = `${API_BASE}/api/goals/${artist.slug}/goals/${targetId}/contribute`;
         payload.amount = formData.amount;
       } else if (requestType === 'tip') {
-        endpoint = `/api/artists/${artist.slug}/request`;
+        endpoint = `${API_BASE}/api/artists/${artist.slug}/request`;
         payload.song_title = `Tip for ${artist.artist_name}`;
         payload.request_type = 'tip';
       }
@@ -180,9 +180,11 @@ export default function SongRequestForm({ artist, requestType, userPhone, slug, 
 function PaymentInstructions({ reqCode, artist, amount, requestType, onClose }) {
   const venmoUrl = artist.venmo ? `https://venmo.com/${artist.venmo}?txn=pay&amount=${amount}` : null;
   const cashappUrl = artist.cashtag ? `https://cash.app/$${artist.cashtag}/${amount}` : null;
+  const [toast, setToast] = useState(null);
 
   return (
     <div className="modal-overlay">
+      <Toast message={toast?.message} type={toast?.type} onClose={() => setToast(null)} />
       <div className="modal-content payment-instructions">
         <button className="close-btn" onClick={onClose}>
           ✕

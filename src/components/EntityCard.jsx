@@ -52,7 +52,7 @@ export default function EntityCard({ entity, category }) {
         {category === 'activities' && (
           <>
             {entity.price_range && <p className="price-badge">💰 From {entity.price_range}</p>}
-            {entity.duration && <p className="meta-text">⏱ Duration</p>}
+            {entity.duration && <p className="meta-text">⏱ {entity.duration}</p>}
             {entity.group_size && <p className="meta-text">👥 Up to {entity.group_size}</p>}
             {entity.booking_url && <p className="confirm-badge">✅ Instant Confirmation</p>}
           </>
