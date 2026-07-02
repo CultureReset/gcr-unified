@@ -317,6 +317,8 @@ export default function RestaurantDetail() {
   const socialPosts = business.social_posts || []
   const hasSocialPosts = socialPosts.length > 0
   const bookableResources = business.bookable_resources || []
+  const aboutBullets = business.about_bullets || []
+  const perfectFor = business.perfect_for || []
 
   // Has-data flags for new tabs
   const hasRooms = roomTypes.length > 0
@@ -333,7 +335,7 @@ export default function RestaurantDetail() {
     ...(childLocations.length ? [{ id: 'locations', label: `Locations (${childLocations.length})`, icon: '📍' }] : []),
     // Data-driven — show if data exists regardless of type
     ...(hasOfferings                     ? [{ id: 'offerings',   label: 'Offerings',    icon: '🎟️' }] : []),
-    ...(pricing.length                   ? [{ id: 'pricing',     label: 'Pricing',      icon: '💰' }] : []),
+    ...((pricing.length || hasActivityOptions) ? [{ id: 'pricing', label: 'Pricing',      icon: '💰' }] : []),
     ...(schedules.length                 ? [{ id: 'schedule',    label: 'Schedule',     icon: '🗓️' }] : []),
     // Food tabs
     ...((isFood || hasMenu)   ? (hasMenu    ? [{ id: 'menu',       label: 'Menu',        icon: '🍽️' }] : []) : []),
@@ -702,6 +704,25 @@ export default function RestaurantDetail() {
                 <div className="ai-review-summary">
                   <h3>What Visitors Say</h3>
                   <p>{business.ai_review_summary}</p>
+                </div>
+              )}
+
+              {aboutBullets.length > 0 && (
+                <ul className="about-bullets">
+                  {aboutBullets.map((b, i) => (
+                    <li key={b.id || i}>{b.icon && <span>{b.icon} </span>}{b.text}</li>
+                  ))}
+                </ul>
+              )}
+
+              {perfectFor.length > 0 && (
+                <div className="perfect-for-section">
+                  <h3>Perfect For</h3>
+                  <div className="perfect-for-grid">
+                    {perfectFor.map((p, i) => (
+                      <span key={p.id || i} className="perfect-for-chip">{p.label}</span>
+                    ))}
+                  </div>
                 </div>
               )}
 
@@ -1126,6 +1147,26 @@ export default function RestaurantDetail() {
                       </div>
                     )
                   })}
+                </div>
+              )}
+              {hasActivityOptions && (
+                <div className="activity-options-list">
+                  <h3>🎟️ Trip Options</h3>
+                  {activityOptions.map((opt, i) => (
+                    <div key={opt.id || i} className="activity-option-row">
+                      <div className="activity-option-name">
+                        {opt.name}
+                        {opt.is_private && <span className="activity-option-tag">Private</span>}
+                      </div>
+                      <div className="activity-option-meta">
+                        {opt.duration_text && <span>⏱ {opt.duration_text}</span>}
+                        {!opt.duration_text && opt.duration_minutes && <span>⏱ {opt.duration_minutes} min</span>}
+                        {opt.capacity && <span>👥 Up to {opt.capacity}</span>}
+                        {opt.vessel_vehicle && <span>🚤 {opt.vessel_vehicle}</span>}
+                      </div>
+                      {opt.description && <p className="activity-option-desc">{opt.description}</p>}
+                    </div>
+                  ))}
                 </div>
               )}
               {whatsIncluded.length > 0 && (

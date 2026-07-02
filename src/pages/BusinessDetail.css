@@ -1321,6 +1321,23 @@
 .requirements-list ul { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 6px; }
 .requirements-list li { font-size: 14px; color: #78350f; }
 
+.activity-options-list { background: #f8fafc; border: 1px solid var(--border); border-radius: 12px; padding: 16px 20px; margin-bottom: 16px; }
+.activity-options-list h3 { font-size: 14px; font-weight: 800; color: #1a2b3c; margin: 0 0 10px; }
+.activity-option-row { padding: 10px 0; border-top: 1px solid var(--border); }
+.activity-option-row:first-of-type { border-top: none; padding-top: 0; }
+.activity-option-name { font-size: 14px; font-weight: 700; color: #1a2b3c; display: flex; align-items: center; gap: 8px; }
+.activity-option-tag { font-size: 11px; font-weight: 700; color: #0b7a75; background: #ecfdf5; border: 1px solid #99f6e4; border-radius: 10px; padding: 2px 8px; }
+.activity-option-meta { display: flex; gap: 12px; flex-wrap: wrap; font-size: 12.5px; color: var(--muted); margin-top: 4px; }
+.activity-option-desc { font-size: 13px; color: #475569; margin: 6px 0 0; }
+
+.about-bullets { list-style: none; padding: 0; margin: 12px 0; display: flex; flex-direction: column; gap: 8px; }
+.about-bullets li { font-size: 14px; color: #1a2b3c; display: flex; align-items: flex-start; gap: 6px; }
+
+.perfect-for-section { margin: 16px 0; }
+.perfect-for-section h3 { font-size: 14px; font-weight: 800; color: #1a2b3c; margin: 0 0 8px; }
+.perfect-for-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+.perfect-for-chip { font-size: 12.5px; font-weight: 600; color: #0b7a75; background: #f0fdfa; border: 1px solid #99f6e4; border-radius: 14px; padding: 5px 12px; }
+
 /* FAQs */
 .faqs-list { display: flex; flex-direction: column; gap: 12px; }
 .faq-row { background: #f8fafc; border: 1px solid var(--border); border-radius: 12px; padding: 16px 18px; }
