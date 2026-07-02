@@ -95,6 +95,9 @@ export default function RestaurantDetail() {
   // nothing above .detail-header here, so it sticks at top:0 and .sticky-tabs stacks
   // directly beneath it using this measured height (not the global --gcr-header-h var,
   // which is stale/unset on this page and previously caused a blank gap + overlap).
+  // Depends on `business` (not []) because .detail-header doesn't exist in the DOM yet
+  // during the initial mount — this component early-returns a loading placeholder until
+  // `business` resolves, so the ref is still null on a mount-only effect.
   useEffect(() => {
     const el = detailHeaderRef.current
     if (!el) return
@@ -106,7 +109,7 @@ export default function RestaurantDetail() {
     const ro = new ResizeObserver(update)
     ro.observe(el)
     return () => ro.disconnect()
-  }, [])
+  }, [business])
 
   // IntersectionObserver: highlight active sub-section chip as user scrolls
   useEffect(() => {

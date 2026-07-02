@@ -32,8 +32,6 @@ html, body {
   font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
   min-height: 100vh;
   min-height: 100dvh;
-  /* NOTE: do NOT set overflow-x:hidden here — it breaks position:sticky on child elements.
-     Horizontal overflow is controlled on #root instead. */
 }
 
 #root {
@@ -42,7 +40,15 @@ html, body {
   display: flex;
   justify-content: center;
   background: #fff;
-  overflow-x: hidden; /* moved from body to here so sticky still works */
+  /* clip, not hidden: overflow-x:hidden forces the browser to also treat
+     overflow-y as auto (per the CSS overflow spec, a non-visible value on
+     one axis converts a visible value on the other to auto), which quietly
+     turns #root into a scroll container that never actually scrolls —
+     breaking position:sticky for every descendant in the app, since sticky
+     elements then anchor to #root's (frozen) scrollport instead of the
+     viewport. overflow-x:clip blocks the same horizontal bleed without
+     that side effect. */
+  overflow-x: clip;
 }
 
 .app-shell {
