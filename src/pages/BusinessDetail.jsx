@@ -7,6 +7,7 @@ import GallerySection from '../components/GallerySection'
 import BlogSection from '../components/BlogSection'
 import PoliciesSection from '../components/PoliciesSection'
 import BookingCalendar from '../components/BookingCalendar'
+import HubTemplate from '../components/HubTemplate'
 import './BusinessDetail.css'
 import '../components/MiniSiteComponents.css'
 
@@ -120,8 +121,11 @@ export default function RestaurantDetail() {
   if (error) return <div className="detail-page"><div className="error">Error: {error}</div></div>
   if (!business) return <div className="detail-page"><div className="error">Business not found</div></div>
 
+  if (business.is_hub) return <HubTemplate business={business} slug={slug} />
+
   const photos = business.photos || []
   const hours = (business.hours || []).sort((a, b) => (a.day_of_week ?? 0) - (b.day_of_week ?? 0))
+
 
   // Format raw tag_name values (e.g. "craft-beer", "southern-comfort-food", "happy_hour")
   // into clean, human-readable chips (e.g. "Craft Beer", "Southern Comfort Food", "Happy Hour")
@@ -911,6 +915,7 @@ export default function RestaurantDetail() {
             </section>
 
           {/* Experience */}
+          {hasActivityExtras && (
                       <section className="content-section" ref={el => { sectionRefs.current["experience"] = el }} id="section-experience">
               {business.what_makes_it_different && (
                 <div className="exp-block">
@@ -952,8 +957,10 @@ export default function RestaurantDetail() {
                 </div>
               )}
             </section>
+          )}
 
           {/* Happy Hour */}
+          {hasHH && (
                       <section className="content-section" ref={el => { sectionRefs.current["happy-hour"] = el }} id="section-happy-hour">
               <h2>🍺 Happy Hour</h2>
               {business.hh_days && (
@@ -986,8 +993,10 @@ export default function RestaurantDetail() {
                 </div>
               ))}
             </section>
+          )}
 
           {/* Pricing */}
+          {hasOfferings && (
                       <section className="content-section" ref={el => { sectionRefs.current["offerings"] = el }} id="section-offerings">
               {flexSections.map((sec) => (
                 <div key={sec.id} className="offering-section">
@@ -1041,12 +1050,12 @@ export default function RestaurantDetail() {
                 </div>
               ))}
             </section>
+          )}
 
+          {(pricing.length > 0 || whatsIncluded.length > 0 || requirements.length > 0 || whatToBring.length > 0 || activityDetails) && (
                       <section className="content-section" ref={el => { sectionRefs.current["pricing"] = el }} id="section-pricing">
               <h2>💰 Pricing</h2>
-              {pricing.length === 0 ? (
-                <p className="no-data">No pricing info available</p>
-              ) : (
+              {pricing.length > 0 && (
                 <div className="pricing-list">
                   {pricing.map((item, i) => {
                     // Support both real DB schema (item_name, price) and extended schema (tier_name, price_from/to)
@@ -1150,13 +1159,12 @@ export default function RestaurantDetail() {
                 </div>
               )}
             </section>
+          )}
 
           {/* FAQs */}
+          {faqs.length > 0 && (
                       <section className="content-section" ref={el => { sectionRefs.current["faqs"] = el }} id="section-faqs">
               <h2>❓ Frequently Asked Questions</h2>
-              {faqs.length === 0 ? (
-                <p className="no-data">No FAQs available</p>
-              ) : (
                 <div className="faqs-list">
                   {faqs.map((faq, i) => (
                     <div key={faq.id || i} className="faq-row">
@@ -1165,15 +1173,13 @@ export default function RestaurantDetail() {
                     </div>
                   ))}
                 </div>
-              )}
             </section>
+          )}
 
           {/* Events */}
+          {events.length > 0 && (
                       <section className="content-section" ref={el => { sectionRefs.current["events"] = el }} id="section-events">
               <h2>🎉 Events</h2>
-              {events.length === 0 ? (
-                <p className="no-data">No upcoming events</p>
-              ) : (
                 <>
                   {/* Unique artist images — deduplicated by image_url */}
                   {(() => {
@@ -1256,8 +1262,8 @@ export default function RestaurantDetail() {
                     )
                   })()}
                 </>
-              )}
             </section>
+          )}
 
           {/* Schedule (activity departure times / tour schedules) */}
           {schedules.length > 0 && (
@@ -1300,6 +1306,7 @@ export default function RestaurantDetail() {
           )}
 
           {/* Hours */}
+          {hours.length > 0 && (
             <section className="content-section" ref={el => { sectionRefs.current["hours"] = el }} id="section-hours">
               <h2>Hours</h2>
               <ul className="hours-list">
@@ -1351,6 +1358,7 @@ export default function RestaurantDetail() {
                 ))
               })()}
             </section>
+          )}
 
           {/* Location */}
                       <section className="content-section" ref={el => { sectionRefs.current["location"] = el }} id="section-location">
@@ -1367,6 +1375,7 @@ export default function RestaurantDetail() {
             </section>
 
           {/* Gallery */}
+          {photos.length > 0 && (
                       <section className="content-section" ref={el => { sectionRefs.current["gallery"] = el }} id="section-gallery">
               <h2>Photos ({photos.length})</h2>
               <div className="gallery-grid-preview">
@@ -1388,6 +1397,7 @@ export default function RestaurantDetail() {
                 </div>
               )}
             </section>
+          )}
 
           {/* Reviews */}
           <div ref={el => { sectionRefs.current["reviews"] = el }} id="section-reviews"><ReviewsSection slug={slug} /></div>
@@ -1402,6 +1412,7 @@ export default function RestaurantDetail() {
           <div ref={el => { sectionRefs.current["policies"] = el }} id="section-policies"><PoliciesSection slug={slug} /></div>
 
           {/* Menu */}
+          {hasMenu && (
                       <section className="content-section" ref={el => { sectionRefs.current["menu"] = el }} id="section-menu">
               <h2>🍽️ Menu</h2>
 
@@ -1478,8 +1489,10 @@ export default function RestaurantDetail() {
                 <p className="no-data">No menu available</p>
               )}
             </section>
+          )}
 
           {/* Drinks */}
+          {hasDrinks && (
                       <section className="content-section" ref={el => { sectionRefs.current["drinks"] = el }} id="section-drinks">
               <h2>🍷 Drinks</h2>
 
@@ -1554,8 +1567,10 @@ export default function RestaurantDetail() {
                 </div>
               )}
             </section>
+          )}
 
           {/* Specials */}
+          {hasSpecials && (
                       <section className="content-section" ref={el => { sectionRefs.current["specials"] = el }} id="section-specials">
               <h2>⭐ Specials</h2>
 
@@ -1590,8 +1605,10 @@ export default function RestaurantDetail() {
                 <p className="no-data">No specials right now</p>
               )}
             </section>
+          )}
 
           {/* SOCIAL FEED */}
+          {hasSocialPosts && (
                       <section className="content-section" ref={el => { sectionRefs.current["social"] = el }} id="section-social">
               <h2>📱 Social Feed</h2>
               <div className="social-feed-grid">
@@ -1620,8 +1637,10 @@ export default function RestaurantDetail() {
                 ))}
               </div>
             </section>
+          )}
 
           {/* ROOMS — Hotel / Condo / Vacation Rental */}
+          {hasRooms && (
                       <section className="content-section" ref={el => { sectionRefs.current["rooms"] = el }} id="section-rooms">
               <h2>🛏️ Rooms & Units</h2>
               {propertyDetails && (
@@ -1670,8 +1689,10 @@ export default function RestaurantDetail() {
                 </div>
               )}
             </section>
+          )}
 
           {/* AMENITIES — Hotel / Stay */}
+          {hasAmenities && (
                       <section className="content-section" ref={el => { sectionRefs.current["amenities"] = el }} id="section-amenities">
               <h2>✨ Amenities</h2>
               {amenities.length === 0 ? (
@@ -1704,8 +1725,10 @@ export default function RestaurantDetail() {
                 </>
               )}
             </section>
+          )}
 
           {/* BOOK / STAY LINKS */}
+          {stayLinks.length > 0 && (
                       <section className="content-section" ref={el => { sectionRefs.current["book-stay"] = el }} id="section-book-stay">
               <h2>🔗 Book This Property</h2>
               <div className="stay-links-list">
@@ -1727,8 +1750,10 @@ export default function RestaurantDetail() {
                 </div>
               )}
             </section>
+          )}
 
           {/* SERVICES — Salon / Spa / Gym / Service */}
+          {hasServices && (
                       <section className="content-section" ref={el => { sectionRefs.current["services"] = el }} id="section-services">
               <h2>💆 Services</h2>
               {servicePackages.length > 0 && (
@@ -1808,8 +1833,10 @@ export default function RestaurantDetail() {
                 </div>
               )}
             </section>
+          )}
 
           {/* PRODUCTS — Shopping */}
+          {hasProducts && (
                       <section className="content-section" ref={el => { sectionRefs.current["products"] = el }} id="section-products">
               <h2>🛍️ Products</h2>
               {productCategories.length > 0 ? (
@@ -1850,8 +1877,10 @@ export default function RestaurantDetail() {
                 <p className="no-data">No products listed yet</p>
               )}
             </section>
+          )}
 
           {/* PARK INFO */}
+          {hasParkInfo && (
                       <section className="content-section" ref={el => { sectionRefs.current["park-info"] = el }} id="section-park-info">
               <h2>🌳 Park Information</h2>
               {accessInfo && (
@@ -1885,8 +1914,10 @@ export default function RestaurantDetail() {
                 </div>
               )}
             </section>
+          )}
 
           {/* MEETING POINT — Activity / Charter */}
+          {hasMeetingPoints && (
                       <section className="content-section" ref={el => { sectionRefs.current["meeting"] = el }} id="section-meeting">
               <h2>📌 Meeting Point</h2>
               {meetingPoints.map((mp, i) => (
@@ -1903,8 +1934,10 @@ export default function RestaurantDetail() {
                 </div>
               ))}
             </section>
+          )}
 
           {/* FISH SPECIES — Charter / Fishing */}
+          {hasFishSpecies && (
                       <section className="content-section">
               <h2>🐟 Fish Species</h2>
               <div className="fish-grid">
@@ -1916,6 +1949,7 @@ export default function RestaurantDetail() {
                 ))}
               </div>
             </section>
+          )}
 
         </main>
 
