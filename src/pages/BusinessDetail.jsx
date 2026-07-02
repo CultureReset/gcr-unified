@@ -6,11 +6,12 @@ import TeamSection from '../components/TeamSection'
 import GallerySection from '../components/GallerySection'
 import BlogSection from '../components/BlogSection'
 import PoliciesSection from '../components/PoliciesSection'
+import SectionRenderer, { groupSectionsByModule, HubChildren } from '../components/SectionRenderer'
 import BookingCalendar from '../components/BookingCalendar'
 import './BusinessDetail.css'
 import '../components/MiniSiteComponents.css'
 
-export default function RestaurantDetail() {
+export default function BusinessDetail() {
   const { slug } = useParams()
   const navigate = useNavigate()
   const [business, setBusiness] = useState(null)
@@ -50,7 +51,10 @@ export default function RestaurantDetail() {
         const hasSchedules = data.schedules?.length > 0
         // Default tab: for food types start on menu/offerings; for activities start on pricing or overview
         let defaultTab = 'overview'
-        if (hasOfferingsData) defaultTab = 'offerings'
+        if (hasOfferingsData) {
+          const firstFlex = groupSectionsByModule((data.sections || []).filter(s => (s.items || []).length > 0))[0]
+          if (firstFlex) defaultTab = firstFlex.tabId
+        }
         else if (isFood && hasMenuData) defaultTab = 'menu'
         else if (hasPricing) defaultTab = 'pricing'
         else if (hasSchedules) defaultTab = 'schedule'
@@ -138,6 +142,11 @@ export default function RestaurantDetail() {
     .filter(s => (s.items || []).length > 0)
     .map(s => ({ ...s, items: [...s.items].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0)) }))
   const hasOfferings = flexSections.length > 0
+  // Group flexible sections by module_key — each becomes its own tab (Offerings, Rooms, Services, …)
+  const flexGroups = groupSectionsByModule(flexSections)
+  // Parent-child hub — children linked via parent_entity_slug
+  const children = business.children || []
+  const hasChildren = children.length > 0
 
   // Rich menu data
   const rotating = business.rotating_sections || business.rotatingSections || []
@@ -257,7 +266,8 @@ export default function RestaurantDetail() {
 
   const sections = [
     // Data-driven — only show if data exists, regardless of type
-    ...(hasOfferings                     ? [{ id: 'offerings',   label: 'Offerings',   icon: '🎟️' }] : []),
+    ...flexGroups.map(g => ({ id: g.tabId, label: g.label, icon: g.icon })),
+    ...(hasChildren                      ? [{ id: 'hub',        label: "What's Here",  icon: '🏢' }] : []),
     ...(pricing.length                   ? [{ id: 'pricing',     label: 'Pricing',     icon: '💰' }] : []),
     ...(schedules.length                 ? [{ id: 'schedule',    label: 'Schedule',    icon: '🗓️' }] : []),
     // Food-only tabs — only show for food types (or if data somehow exists on non-food)
@@ -822,59 +832,17 @@ export default function RestaurantDetail() {
           )}
 
           {/* Pricing */}
-          {activeTab === 'offerings' && (
+          {flexGroups.map(g => activeTab === g.tabId && (
+            <section key={g.tabId} className="content-section">
+              <SectionRenderer sections={g.sections} />
+            </section>
+          ))}
+
+          {hasChildren && activeTab === 'hub' && (
             <section className="content-section">
-              {flexSections.map((sec) => (
-                <div key={sec.id} className="offering-section">
-                  <h2>{sec.section_name}</h2>
-                  <div className="offering-grid">
-                    {sec.items.map((item) => {
-                      const m = item.metadata || {}
-                      const priceText = item.price_from != null
-                        ? (item.price_to != null
-                            ? `$${item.price_from}–$${item.price_to}`
-                            : `$${item.price_from}`)
-                        : (item.price_label || 'Ask Us')
-                      const includes = Array.isArray(m.includes) ? m.includes : []
-                      const features = Array.isArray(m.features) ? m.features : []
-                      return (
-                        <div key={item.id} className="offering-card">
-                          <div className="offering-head">
-                            <span className="offering-icon">{item.icon || '•'}</span>
-                            <span className="offering-name">{item.item_name}</span>
-                            <span className="offering-price">{priceText}</span>
-                          </div>
-                          {(item.price_label || item.duration) && (
-                            <div className="offering-meta">
-                              {item.price_label && item.price_from != null && <span className="offering-label">{item.price_label}</span>}
-                              {item.duration && <span className="offering-duration">⏱ {item.duration}</span>}
-                            </div>
-                          )}
-                          {item.description && <p className="offering-desc">{item.description}</p>}
-                          {includes.length > 0 && (
-                            <div className="offering-includes">
-                              {includes.map((inc, k) => <span key={k} className="offering-chip">✓ {inc}</span>)}
-                            </div>
-                          )}
-                          {features.length > 0 && (
-                            <div className="offering-includes">
-                              {features.map((f, k) => <span key={k} className="offering-chip feature">★ {f}</span>)}
-                            </div>
-                          )}
-                          {(m.requires || m.deposit || m.ages || m.note) && (
-                            <div className="offering-notes">
-                              {m.ages && <span>👥 {m.ages}</span>}
-                              {m.requires && <span>🪪 {m.requires}</span>}
-                              {m.deposit && <span>💵 Deposit {m.deposit}</span>}
-                              {m.note && <span>ℹ️ {m.note}</span>}
-                            </div>
-                          )}
-                        </div>
-                      )
-                    })}
-                  </div>
-                </div>
-              ))}
+              <h2>🏢 What's Here</h2>
+              <p className="sr-subtitle">Everything at {business.name}</p>
+              <HubChildren children={children} />
             </section>
           )}
 

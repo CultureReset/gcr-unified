@@ -1,0 +1,73 @@
+/* SectionRenderer — extends the existing GCR profile design system.
+   Tokens match BusinessDetail.css: white cards, #e85d04 accent, green prices,
+   14px radii, chip patterns. */
+
+.sr-subtitle { margin: -4px 0 12px; font-size: 13.5px; color: #6b7280; }
+
+/* Universal fallback metadata — any unknown jsonb key renders here */
+.sr-extra-meta { margin-top: 10px; border-top: 1px dashed #e6ecf3; padding-top: 8px; display: grid; gap: 5px; }
+.sr-extra-row { display: flex; gap: 8px; font-size: 12.5px; color: #4b5563; align-items: baseline; flex-wrap: wrap; }
+.sr-extra-label { font-weight: 700; color: #111827; flex-shrink: 0; }
+.sr-extra-label::after { content: ':'; }
+.sr-meta-nested { display: inline-flex; flex-direction: column; gap: 2px; }
+.sr-chips-inline { display: inline-flex; flex-wrap: wrap; gap: 5px; }
+
+/* Chips */
+.sr-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.sr-chip { font-size: 11.5px; font-weight: 600; color: #15803d; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 3px 9px; }
+.sr-chip.big { font-size: 13px; padding: 7px 13px; border-radius: 16px; }
+
+/* List */
+.sr-list { display: flex; flex-direction: column; }
+.sr-list-row { display: flex; justify-content: space-between; gap: 12px; padding: 13px 2px; border-bottom: 1px solid #e6ecf3; }
+.sr-list-row:last-child { border-bottom: none; }
+.sr-list-main { display: flex; gap: 8px; min-width: 0; }
+.sr-list-text { min-width: 0; }
+.sr-list-side { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; flex-shrink: 0; }
+
+/* Table */
+.sr-table-wrap { overflow-x: auto; border: 1px solid #e5e7eb; border-radius: 14px; background: #fff; }
+.sr-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+.sr-table td { padding: 11px 13px; border-bottom: 1px solid #eef2f7; vertical-align: top; }
+.sr-table tr:last-child td { border-bottom: none; }
+.sr-td-name { font-weight: 700; color: #111827; }
+.sr-td-name .offering-desc { font-weight: 400; margin-top: 3px; }
+.sr-td-duration { color: #6b7280; white-space: nowrap; }
+.sr-td-price { font-weight: 800; color: #15803d; white-space: nowrap; text-align: right; }
+
+/* Accordion */
+.sr-accordion { display: flex; flex-direction: column; gap: 8px; }
+.sr-acc-item { border: 1px solid #e5e7eb; border-radius: 12px; background: #fff; padding: 0 14px; }
+.sr-acc-item summary { cursor: pointer; font-weight: 700; font-size: 14px; color: #111827; padding: 12px 0; list-style: none; position: relative; }
+.sr-acc-item summary::after { content: '+'; position: absolute; right: 2px; color: #e85d04; font-weight: 800; }
+.sr-acc-item[open] summary::after { content: '\2013'; }
+.sr-acc-item > *:not(summary) { margin-bottom: 12px; }
+
+/* Gallery */
+.sr-gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 14px; }
+.sr-gallery-card { border: 1px solid #e5e7eb; border-radius: 14px; background: #fff; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,.04); }
+.sr-gallery-card img { width: 100%; height: 150px; object-fit: cover; display: block; }
+.sr-gallery-body { padding: 12px 14px 14px; }
+.sr-card-img { width: 100%; height: 140px; object-fit: cover; border-radius: 10px; margin-bottom: 10px; }
+
+/* Stats */
+.sr-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; }
+.sr-stat { border: 1px solid #e5e7eb; border-radius: 14px; background: #fff; padding: 14px; text-align: center; display: flex; flex-direction: column; gap: 3px; }
+.sr-stat-value { font-size: 20px; font-weight: 800; color: #e85d04; }
+.sr-stat-label { font-size: 12.5px; font-weight: 700; color: #111827; }
+.sr-stat-desc { font-size: 11.5px; color: #6b7280; }
+
+/* Hub — parent/child entity cards grouped by type */
+.sr-hub-group { margin-bottom: 18px; }
+.sr-hub-group h3 { font-size: 15px; font-weight: 800; color: #111827; margin: 0 0 10px; }
+.sr-hub-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
+.sr-hub-card { border: 1px solid #e5e7eb; border-radius: 14px; background: #fff; overflow: hidden; cursor: pointer; text-align: left; padding: 0; }
+.sr-hub-card img { width: 100%; height: 110px; object-fit: cover; display: block; background: #f1f5f9; }
+.sr-hub-card-body { padding: 10px 12px 12px; }
+.sr-hub-card-name { font-weight: 700; font-size: 13.5px; color: #111827; }
+.sr-hub-card-sub { font-size: 12px; color: #6b7280; margin-top: 2px; }
+
+@media (max-width: 560px) {
+  .sr-list-row { flex-direction: column; }
+  .sr-list-side { flex-direction: row; align-items: center; }
+}
