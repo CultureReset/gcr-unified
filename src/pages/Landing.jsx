@@ -31,6 +31,10 @@ const WX_LABEL = {
 
 const CATEGORIES = [
   { emoji:'🍽️', label:'Restaurants',   path:'/restaurants' },
+  // AR Hunt moved up from last-of-9 — the category rail only shows ~2-3 cards
+  // before needing a scroll on a phone-width viewport, so at the end it was
+  // effectively invisible (no other nav entry links to /ar-hunts at all).
+  { emoji:'🎯', label:'AR Hunt',       path:'/ar-hunts' },
   { emoji:'🍻', label:'Happy Hours',   path:'/happy-hours' },
   { emoji:'🎸', label:'Live Music',    path:'/events' },
   { emoji:'🎣', label:'Charters',      path:'/things-to-do' },
@@ -38,7 +42,6 @@ const CATEGORIES = [
   { emoji:'☕', label:'Coffee',        path:'/coffee' },
   { emoji:'🛍️', label:'Shopping',     path:'/shopping' },
   { emoji:'🏖️', label:'Stays',        path:'/stays' },
-  { emoji:'🎯', label:'AR Hunt',       path:'/ar-hunts' },
 ]
 
 function imgUrl(url, slug) {
