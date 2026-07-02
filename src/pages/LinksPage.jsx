@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { API_BASE } from '../config'
+import SectionRenderer from '../components/SectionRenderer'
 import './LinksPage.css'
 
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
@@ -140,21 +141,7 @@ export default function LinksPage() {
 
       {openModal === 'offers' && (
         <Modal title="💲 Pricing & Packages" onClose={() => setOpenModal(null)}>
-          {offerSections.map(sec => (
-            <div key={sec.id} className="lp-offer-group">
-              <h4>{sec.section_name}</h4>
-              {(sec.items || []).map(item => (
-                <div key={item.id} className="lp-offer-row">
-                  <div className="lp-offer-name">{item.item_name}{item.description && <div className="lp-offer-desc">{item.description}</div>}</div>
-                  <div className="lp-offer-price">
-                    {item.price_from != null
-                      ? (item.price_to != null ? `$${item.price_from}\u2013$${item.price_to}` : `$${item.price_from}`)
-                      : (item.price_label || 'Call')}
-                  </div>
-                </div>
-              ))}
-            </div>
-          ))}
+          {offerSections.map(sec => <SectionRenderer key={sec.id} section={sec} />)}
           {pricing.map((item, i) => (
             <div key={item.id || i} className="lp-offer-row">
               <div className="lp-offer-name">{item.tier_name || item.item_name}</div>
