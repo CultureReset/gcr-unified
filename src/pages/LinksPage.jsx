@@ -76,12 +76,23 @@ export default function LinksPage() {
     business.social_tiktok && { label: 'TikTok', url: business.social_tiktok },
   ].filter(Boolean)
 
+  // Module gating: a business can turn a module OFF even if it has data for
+  // it (e.g. hide Reviews while still collecting them). Default to shown
+  // when there's no entity_modules row for that key at all — most of the
+  // ~2,900 entities don't have every module configured yet, and "no record"
+  // should never mean "hidden." Only an explicit enabled:false hides it.
+  // NOTE: key names below (gallery/reviews/booking) match the App Store
+  // module list but aren't yet confirmed 1:1 against live entity_modules
+  // rows — cheap to correct once you can check real key strings.
+  const moduleMap = new Map((business.modules || []).map(m => [m.module_key, m.enabled !== false]))
+  const moduleOn = key => moduleMap.get(key) !== false
+
   const links = [
     { id: 'about', icon: 'ℹ️', title: 'About Us', desc: 'Our story & what we offer' },
-    hasOffers && { id: 'offers', icon: '💲', title: 'Pricing & Packages', desc: 'See what\u2019s available and what it costs' },
-    (business.booking_url || business.reservation_url) && { id: 'book', icon: '📅', title: 'Book Now', desc: 'Check availability & reserve', external: business.booking_url || business.reservation_url },
-    photos.length > 0 && { id: 'photos', icon: '📸', title: 'Photo Gallery', desc: 'See it for yourself' },
-    reviews.length > 0 && { id: 'reviews', icon: '⭐', title: 'Reviews', desc: 'What customers say' },
+    hasOffers && moduleOn('offers') && { id: 'offers', icon: '💲', title: 'Pricing & Packages', desc: 'See what\u2019s available and what it costs' },
+    (business.booking_url || business.reservation_url) && moduleOn('booking') && { id: 'book', icon: '📅', title: 'Book Now', desc: 'Check availability & reserve', external: business.booking_url || business.reservation_url },
+    photos.length > 0 && moduleOn('gallery') && { id: 'photos', icon: '📸', title: 'Photo Gallery', desc: 'See it for yourself' },
+    reviews.length > 0 && moduleOn('reviews') && { id: 'reviews', icon: '⭐', title: 'Reviews', desc: 'What customers say' },
     { id: 'hours', icon: '🕐', title: 'Hours & Location', desc: 'Address, hours & directions' },
     business.website_url && { id: 'website', icon: '🌐', title: 'Visit Website', desc: business.website_url.replace(/^https?:\/\//, ''), external: business.website_url },
   ].filter(Boolean)
