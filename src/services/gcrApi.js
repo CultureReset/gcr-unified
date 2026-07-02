@@ -78,7 +78,9 @@ function toCard(entity, photos = []) {
     }
     return u
   }
-  const gallery = [...new Set((photos || []).map(p => fixUrl(p.image_url)).filter(Boolean))]
+  const swipeCurated = (photos || []).filter(p => p.usage_note === 'Trip Swipe')
+  const galleryPhotos = swipeCurated.length > 0 ? swipeCurated : photos
+  const gallery = [...new Set((galleryPhotos || []).map(p => fixUrl(p.url || p.image_url)).filter(Boolean))]
   const hero = fixUrl(entity.hero_image_url) || gallery[0] || null
   const hasLiveMusic = tags.some(t => /live\s*music/i.test(t))
   return {
