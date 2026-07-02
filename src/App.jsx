@@ -60,20 +60,28 @@ function AppRoutes() {
   const location = useLocation()
   const navigate = useNavigate()
   const { logout } = useApp()
+  // Swipe.jsx builds its own full-screen header (close button, title, view
+  // toggle) with safe-top/safe-bottom insets — same chrome-less pattern as
+  // /business, /rental, /service. It was missing from this list, so the
+  // global header + fixed bottom nav were stacking on top of it, squeezing
+  // the swipe deck's own action-button row down until it overlapped the
+  // fixed bottom nav and became partly unclickable.
   const hideNav = ['/', '/auth'].some(p => location.pathname === p) ||
     location.pathname.startsWith('/setup') ||
     location.pathname.startsWith('/artist/') ||
     location.pathname.startsWith('/business/') ||
     location.pathname.startsWith('/rental/') ||
     location.pathname.startsWith('/service/') ||
-    location.pathname.startsWith('/links/')
+    location.pathname.startsWith('/links/') ||
+    location.pathname.startsWith('/swipe/')
   const hideHeader = ['/', '/auth'].some(p => location.pathname === p) ||
     location.pathname.startsWith('/setup') ||
     location.pathname.startsWith('/artist/') ||
     location.pathname.startsWith('/business/') ||
     location.pathname.startsWith('/rental/') ||
     location.pathname.startsWith('/service/') ||
-    location.pathname.startsWith('/links/')
+    location.pathname.startsWith('/links/') ||
+    location.pathname.startsWith('/swipe/')
 
   useEffect(() => {
     function onUnauth() {
