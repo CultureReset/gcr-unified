@@ -110,6 +110,13 @@
   cursor: not-allowed;
 }
 
+.booking-disclaimer {
+  text-align: center;
+  font-size: 12px;
+  color: #718096;
+  margin: -4px 0 12px;
+}
+
 .back-btn {
   width: 100%;
   padding: 12px;

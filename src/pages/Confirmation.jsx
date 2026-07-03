@@ -7,10 +7,10 @@ export default function Confirmation() {
 
   const confirmationData = {
     rental: {
-      title: 'Rental Booking Confirmed!',
-      subtitle: 'Your reservation has been submitted',
-      status: 'Pending Payment',
-      nextStep: 'Complete payment to secure your reservation',
+      title: 'Booking Request Sent!',
+      subtitle: 'Your reservation request has been submitted',
+      status: 'Awaiting Confirmation',
+      nextStep: 'The property owner will confirm your reservation and arrange payment directly with you',
       messages: [
         '📧 A confirmation email has been sent to your email address',
         '💬 You can message the property owner with any questions',

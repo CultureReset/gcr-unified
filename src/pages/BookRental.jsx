@@ -158,7 +158,7 @@ export default function BookRental() {
           {/* Pricing Summary */}
           {pricing && (
             <section className="pricing-summary">
-              <h2>Price Breakdown</h2>
+              <h2>Estimated Price</h2>
               <div className="price-row">
                 <span>${rental.nightly_price} × {pricing.nights} nights</span>
                 <span>${pricing.subtotal}</span>
@@ -183,8 +183,11 @@ export default function BookRental() {
           )}
 
           <button type="submit" className="confirm-btn" disabled={submitting || !pricing}>
-            {submitting ? 'Processing...' : `Pay $${pricing?.total || 0}`}
+            {submitting ? 'Sending...' : `Request to Book — $${pricing?.total || 0} est.`}
           </button>
+          <p className="booking-disclaimer">
+            This sends a booking request to the property owner — no payment is collected here.
+          </p>
         </form>
 
         <button className="back-btn" onClick={() => navigate(`/rental/${slug}`)}>
