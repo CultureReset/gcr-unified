@@ -37,6 +37,7 @@ const BOOKING_PLATFORMS = {
 }
 
 function ServiceCard({ entity, navigate }) {
+  const [imgFailed, setImgFailed] = useState(false)
   const img = entity.hero_image_url
   const subtype = (entity.entity_subtype || '').toLowerCase()
   const platform = BOOKING_PLATFORMS[subtype]
@@ -56,8 +57,8 @@ function ServiceCard({ entity, navigate }) {
   return (
     <article className="svc-card" onClick={() => navigate(`/business/${entity.slug}`)}>
       <div className="svc-card-img">
-        {img
-          ? <img src={img} alt={entity.name} loading="lazy" />
+        {img && !imgFailed
+          ? <img src={img} alt={entity.name} loading="lazy" onError={() => setImgFailed(true)} />
           : <div className="svc-card-placeholder">{typeLabel.split(' ')[0]}</div>
         }
         <div className="svc-type-badge">{typeLabel}</div>
