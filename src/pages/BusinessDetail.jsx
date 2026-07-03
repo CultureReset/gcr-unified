@@ -31,6 +31,7 @@ export default function RestaurantDetail() {
   const [saved, setSaved] = useState(false)
   const [showAllTags, setShowAllTags] = useState(false)
   const [availability, setAvailability] = useState(null)
+  const [failedSlides, setFailedSlides] = useState({})
   const subSectionRefs = useRef({})
   const sectionRefs = useRef({})
   const observerRef = useRef(null)
@@ -458,25 +459,39 @@ export default function RestaurantDetail() {
       </div>
 
       {/* Photo Carousel */}
-      <div className="carousel-wrap">
+      {(() => {
+      const allFailed = slides.length > 0 && slides.every((p, idx) => failedSlides[idx] || !(p.image_url || p.url))
+      const heroEmoji = business.icon || '🍽️'
+      return (
+      <div className={`carousel-wrap${allFailed ? ' carousel-wrap-empty' : ''}`}>
         <div className="carousel">
-          {slides.map((photo, idx) => (
+          {slides.map((photo, idx) => {
+            const src = photo.image_url || photo.url || ''
+            const broken = failedSlides[idx] || !src
+            return (
             <div
               key={idx}
               className={`carousel-slide ${idx === currentSlide ? 'active' : ''}`}
             >
-              <img
-                src={photo.image_url || photo.url || ''}
-                alt=""
-                className="carousel-slide-img"
-                onError={e => { e.currentTarget.style.display = 'none' }}
-                loading="lazy"
-              />
+              {broken ? (
+                <div className="carousel-fallback">
+                  <span className="carousel-fallback-emoji">{heroEmoji}</span>
+                  <span className="carousel-fallback-name">{business.name}</span>
+                </div>
+              ) : (
+                <img
+                  src={src}
+                  alt=""
+                  className="carousel-slide-img"
+                  onError={() => setFailedSlides(prev => ({ ...prev, [idx]: true }))}
+                  loading="lazy"
+                />
+              )}
             </div>
-          ))}
-          <div className="carousel-overlay" />
+          )})}
+          {!allFailed && <div className="carousel-overlay" />}
 
-          {slides.length > 1 && (
+          {slides.length > 1 && !allFailed && (
             <>
               <button className="carousel-arrow carousel-prev" onClick={() => setCurrentSlide(prev => (prev - 1 + slides.length) % slides.length)}>
                 &#8249;
@@ -498,7 +513,7 @@ export default function RestaurantDetail() {
           )}
 
           {/* Image feature chips */}
-          {(() => {
+          {!allFailed && (() => {
             const tagStrs = (business.tags || []).map(t => (typeof t === 'string' ? t : (t.tag_name || '')).toLowerCase().replace(/[\s-]+/g,'_'))
             const chips = [
               (business.live_music || tagStrs.some(t => t.includes('live_music'))) && { cls: 'chip-music', label: '🎸 Live Music' },
@@ -515,6 +530,7 @@ export default function RestaurantDetail() {
 
         </div>
       </div>
+      )})()}
 
       {/* Permanently Closed Banner */}
       {business.business_status === 'CLOSED_PERMANENTLY' && (
@@ -1219,90 +1235,58 @@ export default function RestaurantDetail() {
           {events.length > 0 && (
                       <section className="content-section" ref={el => { sectionRefs.current["events"] = el }} id="section-events">
               <h2>🎉 Events</h2>
-                <>
-                  {/* Unique artist images — deduplicated by image_url */}
-                  {(() => {
-                    const seen = new Set()
-                    const artists = events.filter(ev => {
-                      if (!ev.image_url) return false
-                      if (seen.has(ev.image_url)) return false
-                      seen.add(ev.image_url)
-                      return true
-                    })
-                    return artists.length > 0 ? (
-                      <div className="artist-grid">
-                        {artists.map(ev => (
-                          <div key={ev.image_url} className="artist-card">
-                            <img src={ev.image_url} alt={ev.artist_name || ev.event_name} className="artist-card-img" />
-                            {ev.artist_name && <div className="artist-card-name">{ev.artist_name}</div>}
-                          </div>
-                        ))}
-                      </div>
-                    ) : null
-                  })()}
-
-                  {(() => {
-                    const todayStr = new Date().toISOString().split('T')[0]
-                    const tomorrowStr = new Date(Date.now() + 86400000).toISOString().split('T')[0]
-                    const groups = {}
-                    const noDate = []
-                    events.forEach(ev => {
-                      if (!ev.event_date) { noDate.push(ev); return }
-                      if (!groups[ev.event_date]) groups[ev.event_date] = []
-                      groups[ev.event_date].push(ev)
-                    })
-                    const sortedDates = Object.keys(groups).sort()
-                    const dateLabel = d => {
-                      if (d === todayStr) return 'Today'
-                      if (d === tomorrowStr) return 'Tomorrow'
-                      return new Date(d + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })
+                {(() => {
+                  const todayStr = new Date().toISOString().split('T')[0]
+                  const tomorrowStr = new Date(Date.now() + 86400000).toISOString().split('T')[0]
+                  // Dated events first (chronological), then recurring / undated
+                  const dated = events.filter(ev => ev.event_date).sort((a, b) => a.event_date.localeCompare(b.event_date))
+                  const undated = events.filter(ev => !ev.event_date)
+                  const ordered = [...dated, ...undated]
+                  const whenLabel = ev => {
+                    if (ev.event_date) {
+                      const base = ev.event_date === todayStr ? 'Today'
+                        : ev.event_date === tomorrowStr ? 'Tomorrow'
+                        : new Date(ev.event_date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
+                      const t = ev.start_time ? formatTime(ev.start_time) : ''
+                      const e = ev.end_time ? ` – ${formatTime(ev.end_time)}` : ''
+                      return `${base}${t ? ` · ${t}` : ''}${e}`
                     }
-                    return (
-                      <div className="events-list">
-                        {sortedDates.map(date => (
-                          <div key={date} className="event-date-group">
-                            <div className="event-date-heading">{dateLabel(date)}</div>
-                            {groups[date].map((ev, i) => (
-                              <div key={ev.id || i} className="event-row">
-                                <div className="event-row-info">
-                                  <div className="event-row-name">{ev.event_name || ev.name}</div>
-                                  {ev.artist_name && (
-                                    ev.artist_slug
-                                      ? <div className="event-row-artist" style={{cursor:'pointer',color:'var(--gcr-teal,#0a8472)',textDecoration:'underline'}} onClick={(e)=>{e.stopPropagation();navigate('/artist/'+ev.artist_slug)}}>🎤 {ev.artist_name} →</div>
-                                      : <div className="event-row-artist">🎤 {ev.artist_name}</div>
-                                  )}
-                                  {(ev.start_time || ev.end_time) && (
-                                    <div className="event-row-time">
-                                      {formatTime(ev.start_time)}{ev.end_time ? ` – ${formatTime(ev.end_time)}` : ''}
-                                    </div>
-                                  )}
-                                  {ev.description && <div className="event-row-desc">{ev.description}</div>}
-                                  {ev.cover_charge != null && ev.cover_charge > 0 && (
-                                    <div className="event-row-cover">Cover: ${ev.cover_charge}</div>
-                                  )}
-                                </div>
+                    if (ev.recurring && ev.day_of_week) {
+                      const t = ev.start_time ? ` · ${formatTime(ev.start_time)}` : ''
+                      return `Every ${ev.day_of_week}${t}`
+                    }
+                    return ev.start_time ? formatTime(ev.start_time) : ''
+                  }
+                  return (
+                    <div className="bd-events-scroller">
+                      {ordered.map((ev, i) => (
+                        <div key={ev.id || i} className="bd-event-card">
+                          <div
+                            className={`bd-event-img${ev.image_url ? '' : ' no-img'}`}
+                            style={ev.image_url ? { backgroundImage: `url(${ev.image_url})` } : undefined}
+                          >
+                            {!ev.image_url && <span className="bd-event-img-emoji">🎶</span>}
+                            {whenLabel(ev) && <div className="bd-event-when">{whenLabel(ev)}</div>}
+                          </div>
+                          <div className="bd-event-body">
+                            <div className="bd-event-name">{ev.event_name || ev.name}</div>
+                            {ev.artist_name && (
+                              ev.artist_slug
+                                ? <div className="bd-event-artist link" onClick={(e) => { e.stopPropagation(); navigate('/artist/' + ev.artist_slug) }}>🎤 {ev.artist_name} →</div>
+                                : <div className="bd-event-artist">🎤 {ev.artist_name}</div>
+                            )}
+                            {ev.description && <div className="bd-event-desc">{ev.description}</div>}
+                            {ev.cover_charge != null && (
+                              <div className="bd-event-cover">
+                                💵 {Number(ev.cover_charge) > 0 ? `$${ev.cover_charge} cover` : 'Free admission'}
                               </div>
-                            ))}
+                            )}
                           </div>
-                        ))}
-                        {noDate.map((ev, i) => (
-                          <div key={ev.id || i} className="event-row">
-                            <div className="event-row-info">
-                              <div className="event-row-name">{ev.event_name || ev.name}</div>
-                              {ev.artist_name && (
-                                    ev.artist_slug
-                                      ? <div className="event-row-artist" style={{cursor:'pointer',color:'var(--gcr-teal,#0a8472)',textDecoration:'underline'}} onClick={(e)=>{e.stopPropagation();navigate('/artist/'+ev.artist_slug)}}>🎤 {ev.artist_name} →</div>
-                                      : <div className="event-row-artist">🎤 {ev.artist_name}</div>
-                                  )}
-                              {ev.recurring && ev.day_of_week && <div className="event-row-time">Every {ev.day_of_week}</div>}
-                              {ev.description && <div className="event-row-desc">{ev.description}</div>}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )
-                  })()}
-                </>
+                        </div>
+                      ))}
+                    </div>
+                  )
+                })()}
             </section>
           )}
 
