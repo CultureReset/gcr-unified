@@ -1276,6 +1276,7 @@ export default function RestaurantDetail() {
                                       {formatTime(ev.start_time)}{ev.end_time ? ` – ${formatTime(ev.end_time)}` : ''}
                                     </div>
                                   )}
+                                  {ev.description && <div className="event-row-desc">{ev.description}</div>}
                                   {ev.cover_charge != null && ev.cover_charge > 0 && (
                                     <div className="event-row-cover">Cover: ${ev.cover_charge}</div>
                                   )}
@@ -1294,6 +1295,7 @@ export default function RestaurantDetail() {
                                       : <div className="event-row-artist">🎤 {ev.artist_name}</div>
                                   )}
                               {ev.recurring && ev.day_of_week && <div className="event-row-time">Every {ev.day_of_week}</div>}
+                              {ev.description && <div className="event-row-desc">{ev.description}</div>}
                             </div>
                           </div>
                         ))}

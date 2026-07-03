@@ -1305,6 +1305,7 @@
 .event-row-name { font-size: 15px; font-weight: 800; color: #1a2b3c; margin-bottom: 4px; }
 .event-row-artist { font-size: 13px; color: #7c3aed; font-weight: 700; margin-bottom: 3px; }
 .event-row-time { font-size: 13px; color: var(--muted); font-weight: 600; }
+.event-row-desc { font-size: 13px; color: #445; line-height: 1.5; margin-top: 4px; }
 .event-row-cover { font-size: 12px; color: #15803d; font-weight: 700; margin-top: 4px; background: #f0fdf4; display: inline-block; padding: 2px 8px; border-radius: 999px; }
 
 .artist-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 12px; margin-bottom: 24px; }
