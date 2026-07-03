@@ -542,6 +542,17 @@
   color: #fff;
   box-shadow: 0 2px 8px rgba(11,122,117,.25);
 }
+/* Meal-period markers (Breakfast/Lunch/Dinner) render as bold dark dividers,
+   with their sub-category chips following in the same sticky row. */
+.subsection-chip.period {
+  background: #0b3d3a;
+  border-color: #0b3d3a;
+  color: #fff;
+  text-transform: uppercase;
+  font-size: 12px;
+  letter-spacing: 0.05em;
+}
+.subsection-chip.period:hover { background: #072b29; border-color: #072b29; }
 
 .menu-section-anchor {
   scroll-margin-top: calc(var(--gcr-header-h, 128px) + 130px);

@@ -396,18 +396,26 @@ export default function RestaurantDetail() {
 
   // Sub-section chips — meal periods only for menu (Lunch / Dinner etc),
   // individual sections for drinks/happy-hour since they don't have period grouping
+  // Sticky sub-nav: each meal period (Breakfast/Lunch/Dinner…) followed by its own
+  // sub-categories, so you can jump straight to any section. Period chips are marked
+  // isPeriod so they render as bold dividers; section labels drop the period prefix
+  // (it's already shown by the period chip right before them).
+  const PERIOD_PREFIXES = ['Breakfast ', 'Brunch ', 'Lunch ', 'Dinner ', 'Late Night ', 'All Day ']
+  const stripPeriod = (name) => PERIOD_PREFIXES.reduce((n, p) => n.startsWith(p) ? n.slice(p.length) : n, name || '')
   const subSections = activeTab === 'menu'
     ? [
-        ...(foodRotating.length ? [{ id: 'menu-rotating', label: "Today's Features" }] : []),
-        // menuGroups is an ARRAY of { period, sections } — iterate it directly.
-        // Object.keys() returned array indices ("0","1","2"), which is why the tabs
-        // showed numbers instead of meal-period names and their scroll targets
-        // (menu-period-0) never matched the body's ids (menu-period-Breakfast).
-        ...menuGroups.map(({ period }) => ({ id: `menu-period-${period}`, label: period }))
+        ...(foodRotating.length ? [{ id: 'menu-rotating', label: "Today's Features", isPeriod: true }] : []),
+        ...menuGroups.flatMap(({ period, sections: grpSections }) => [
+          { id: `menu-period-${period}`, label: period, isPeriod: true },
+          ...grpSections.map(section => ({
+            id: `menu-sec-${section.id || section.section_name || section.name}`,
+            label: stripPeriod(section.section_name || section.name) || (section.section_name || section.name)
+          }))
+        ])
       ]
     : activeTab === 'drinks'
     ? [
-        ...(drinkRotating.length ? [{ id: 'drinks-rotating', label: 'On Tap / Featured' }] : []),
+        ...(drinkRotating.length ? [{ id: 'drinks-rotating', label: 'On Tap / Featured', isPeriod: true }] : []),
         ...flatDrinkSections.map(s => ({ id: `drink-sec-${s.id || s.section_name || s.name}`, label: s.section_name || s.name }))
       ]
     : activeTab === 'happy-hour'
@@ -673,7 +681,7 @@ export default function RestaurantDetail() {
             {subSections.map(ss => (
               <button
                 key={ss.id}
-                className={`subsection-chip ${activeSubSection === ss.id ? 'active' : ''}`}
+                className={`subsection-chip ${ss.isPeriod ? 'period' : ''} ${activeSubSection === ss.id ? 'active' : ''}`}
                 onClick={() => scrollToSubSection(ss.id)}
               >
                 {ss.label}
