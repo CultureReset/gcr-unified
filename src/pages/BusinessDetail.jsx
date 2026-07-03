@@ -399,7 +399,11 @@ export default function RestaurantDetail() {
   const subSections = activeTab === 'menu'
     ? [
         ...(foodRotating.length ? [{ id: 'menu-rotating', label: "Today's Features" }] : []),
-        ...Object.keys(menuGroups).map(period => ({ id: `menu-period-${period}`, label: period }))
+        // menuGroups is an ARRAY of { period, sections } — iterate it directly.
+        // Object.keys() returned array indices ("0","1","2"), which is why the tabs
+        // showed numbers instead of meal-period names and their scroll targets
+        // (menu-period-0) never matched the body's ids (menu-period-Breakfast).
+        ...menuGroups.map(({ period }) => ({ id: `menu-period-${period}`, label: period }))
       ]
     : activeTab === 'drinks'
     ? [
