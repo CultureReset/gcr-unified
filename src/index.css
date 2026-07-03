@@ -32,6 +32,12 @@ html, body {
   font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
   min-height: 100vh;
   min-height: 100dvh;
+  /* Fixed-position elements (GCRHeader, FABs, etc) aren't contained by
+     #root's overflow-x:clip, so a single overflowing fixed element could
+     still push the whole page into a horizontal scroll with no visible
+     scrollbar, silently shifting content off the right edge. This is the
+     true outermost clip. */
+  overflow-x: clip;
 }
 
 #root {

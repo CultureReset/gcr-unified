@@ -16,6 +16,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 8px;
   padding: 0 14px 6px;
 }
 
@@ -47,8 +48,12 @@
 
 .logo-coast { color: #e0f7fa; }
 
-/* Hide text on small screens — logo image is enough */
-@media (max-width: 380px) {
+/* Hide text on small screens — logo image is enough. Logo + Install +
+   Swipe + Sign-in buttons together were wider than a typical 390px phone
+   screen (nothing here could shrink or wrap), pushing Sign-in off the
+   right edge with no way to reach it. 480px covers real phone widths,
+   not just the smallest ones. */
+@media (max-width: 480px) {
   .logo-text { display: none; }
 }
 
@@ -56,7 +61,13 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-shrink: 0;
+  /* Safety net if these buttons still don't fit on an unusually narrow
+     device — scrolls internally instead of silently clipping. */
+  overflow-x: auto;
+  scrollbar-width: none;
 }
+.gcr-header-right::-webkit-scrollbar { display: none; }
 
 .trip-swipe-btn {
   background: rgba(255,255,255,.15);
@@ -179,6 +190,10 @@
 @media (max-width: 480px) {
   .cat-tab { font-size: 12px; padding: 7px 12px; }
   .strip-btn { font-size: 11px; padding: 7px 8px; }
+  .header-install-btn, .trip-swipe-btn, .header-auth-btn {
+    font-size: 11px;
+    padding: 7px 10px;
+  }
 }
 
 /* Loyalty Modal */

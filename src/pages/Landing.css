@@ -64,7 +64,11 @@
   font-size: 13px;
   font-weight: 700;
   margin-bottom: 14px;
-  width: max-content;
+  /* width:max-content computes this row's width as if flex-wrap never
+     kicked in, then just clamps it to max-width:100% — the wrap never
+     actually re-triggers, so long content (extra weather fields) rendered
+     off the right edge instead of dropping to a second line. A plain
+     block width fills the available space, so wrap works correctly. */
   max-width: 100%;
   flex-wrap: wrap;
 }
