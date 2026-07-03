@@ -43,6 +43,17 @@
   display: block;
 }
 
+.gcr-card-img-placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #1a3a4a, #0b7a75);
+  font-size: 42px;
+  opacity: .55;
+}
+
 .gcr-card-badge {
   position: absolute;
   top: 10px;

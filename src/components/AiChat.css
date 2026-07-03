@@ -1,7 +1,10 @@
 /* ── FAB ── */
 .ai-chat-fab {
   position: fixed;
-  bottom: 80px;
+  /* BottomNav is ~64px tall plus the home-indicator safe area — a flat
+     80px offset didn't clear that on notched phones, so the FAB sat on
+     top of the nav bar. */
+  bottom: calc(76px + env(safe-area-inset-bottom));
   right: 18px;
   z-index: 1000;
   display: flex;
@@ -231,5 +234,5 @@
     max-height: 75dvh;
     border-radius: 20px 20px 0 0;
   }
-  .ai-chat-fab { bottom: 72px; right: 14px; }
+  .ai-chat-fab { bottom: calc(70px + env(safe-area-inset-bottom)); right: 14px; }
 }

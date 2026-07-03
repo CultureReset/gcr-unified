@@ -102,6 +102,7 @@ function fmtDist(miles) {
 export default function GCRCard({ entity, category, onSave, savedSlugs }) {
   const navigate = useNavigate()
   const [showHH, setShowHH] = useState(false)
+  const [imgFailed, setImgFailed] = useState(false)
 
   if (!entity) return null
 
@@ -121,10 +122,9 @@ export default function GCRCard({ entity, category, onSave, savedSlugs }) {
 
   // Find best photo: prefer cover photo, then first photo, then hero/cover fields
   const coverPhoto = entity.photos?.find(p => p.is_cover) || entity.photos?.[0]
-  const FALLBACK = 'https://images.unsplash.com/photo-1504674900968-08049c043914?w=600&q=80'
   const hero = entity.hero_image_url || entity.cover_url ||
     coverPhoto?.url || coverPhoto?.image_url ||
-    FALLBACK
+    null
 
   const phone = entity.phone || ''
   const dir = entity.directions_url || ''
@@ -258,13 +258,22 @@ export default function GCRCard({ entity, category, onSave, savedSlugs }) {
     <div className="gcr-card" onClick={() => navigate(profileUrl)}>
       {/* Image */}
       <div className="gcr-card-img">
-        <img
-          src={hero}
-          alt=""
-          className="gcr-card-img-bg"
-          onError={e => { e.currentTarget.src = 'https://images.unsplash.com/photo-1504674900968-08049c043914?w=600&q=80' }}
-          loading="lazy"
-        />
+        {hero && !imgFailed ? (
+          <img
+            src={hero}
+            alt=""
+            className="gcr-card-img-bg"
+            onError={() => setImgFailed(true)}
+            loading="lazy"
+          />
+        ) : (
+          // No photo, or the photo URL is dead — a remote fallback image can
+          // itself go dead, so this placeholder is CSS-only with no network
+          // dependency, rather than looping back to another external URL.
+          <div className="gcr-card-img-placeholder">
+            <span>{icon}</span>
+          </div>
+        )}
         <div className="gcr-card-badge">{icon} {subtype}</div>
 
         {/* Live availability badge — today/tomorrow only */}

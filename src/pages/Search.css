@@ -5,8 +5,10 @@
 }
 
 .search-hero {
-  background: linear-gradient(180deg, #87CEEB 0%, #B0E0E6 20%, #87CEFA 40%, #4A90E2 80%, #3a7bd5 100%);
-  padding: 20px 16px 24px;
+  /* GCRHeader already renders the blue gradient band directly above this;
+     repeating it here made the two stack into one oversized blue mass. */
+  background: #f7f9fc;
+  padding: 10px 16px 12px;
 }
 
 .search-hero-inner {
@@ -54,9 +56,9 @@
 
 .search-share-btn {
   align-self: flex-end;
-  background: rgba(255,255,255,.2);
-  border: 1.5px solid rgba(255,255,255,.5);
-  color: #fff;
+  background: rgba(11,122,117,.08);
+  border: 1.5px solid rgba(11,122,117,.3);
+  color: #0b7a75;
   font-size: 13px;
   font-weight: 600;
   padding: 6px 14px;
@@ -288,7 +290,7 @@
 /* ── Mode toggle ── */
 .search-mode-toggle {
   display: flex;
-  background: rgba(255,255,255,0.15);
+  background: rgba(11,122,117,0.08);
   border-radius: 12px;
   padding: 3px;
   gap: 2px;
@@ -301,7 +303,7 @@
   border-radius: 9px;
   font-size: 14px;
   font-weight: 700;
-  color: rgba(255,255,255,0.7);
+  color: #4a5568;
   background: none;
   border: none;
   cursor: pointer;
@@ -311,7 +313,7 @@
 .search-mode-btn.active {
   background: white;
   color: #0b6475;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
 /* ── Date search controls ── */
@@ -323,7 +325,7 @@
 
 .date-search-label {
   font-size: 13px;
-  color: rgba(255,255,255,0.85);
+  color: #4a5568;
   font-weight: 600;
 }
 
@@ -342,7 +344,7 @@
 .date-field label {
   font-size: 11px;
   font-weight: 700;
-  color: rgba(255,255,255,0.6);
+  color: #718096;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -371,9 +373,9 @@
   border-radius: 99px;
   font-size: 13px;
   font-weight: 600;
-  background: rgba(255,255,255,0.15);
-  color: rgba(255,255,255,0.8);
-  border: 1.5px solid rgba(255,255,255,0.2);
+  background: rgba(11,122,117,0.08);
+  color: #4a5568;
+  border: 1.5px solid rgba(11,122,117,0.2);
   cursor: pointer;
   white-space: nowrap;
   transition: all 0.15s;

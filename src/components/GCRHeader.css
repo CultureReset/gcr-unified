@@ -6,14 +6,17 @@
   right: 0;
   z-index: 1000;
   box-shadow: 0 2px 16px rgba(0,0,0,.25);
-  padding: 10px 0 0;
+  /* env(safe-area-inset-top) clears the notch/Dynamic Island — without it
+     the header's top row renders directly under the status bar, so any
+     status-bar indicator (mic/location/etc) visually overlaps the logo. */
+  padding: calc(6px + env(safe-area-inset-top)) 0 0;
 }
 
 .gcr-header-top {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 14px 8px;
+  padding: 0 14px 6px;
 }
 
 .gcr-logo {
@@ -26,15 +29,15 @@
 }
 
 .logo-img {
-  width: 52px;
-  height: 52px;
-  border-radius: 12px;
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
   object-fit: cover;
   box-shadow: 0 2px 8px rgba(0,0,0,0.25);
 }
 
 .logo-text {
-  font-size: 15px;
+  font-size: 13px;
   font-weight: 900;
   color: #fff;
   letter-spacing: -0.5px;
@@ -102,8 +105,8 @@
 /* Category Tabs */
 .gcr-cat-tabs {
   display: flex;
-  gap: 7px;
-  padding: 0 10px 10px;
+  gap: 6px;
+  padding: 0 10px 7px;
   overflow-x: auto;
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
@@ -113,15 +116,15 @@
 
 .cat-tab {
   flex-shrink: 0;
-  padding: 8px 16px;
-  min-height: 36px;
+  padding: 6px 12px;
+  min-height: 28px;
   display: inline-flex;
   align-items: center;
   gap: 4px;
   background: rgba(255,255,255,.88);
   border: 1.5px solid rgba(255,255,255,.5);
   border-radius: 22px;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
   color: #2C5282;
   white-space: nowrap;

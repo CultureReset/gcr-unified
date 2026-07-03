@@ -7,21 +7,21 @@
 /* ── Hero ── */
 .category-hero {
   width: 100%;
-  min-height: 200px;
+  min-height: 110px;
   background-size: cover;
   background-position: center;
   display: flex;
   align-items: flex-end;
-  padding: 28px 16px;
+  padding: 16px 16px 14px;
 }
 
 .hero-content { color: #fff; }
 
 .hero-title {
-  font-size: clamp(26px, 6vw, 44px);
+  font-size: clamp(22px, 5vw, 32px);
   font-weight: 900;
   letter-spacing: -0.03em;
-  margin: 0 0 6px;
+  margin: 0 0 4px;
   line-height: 1.1;
   text-shadow: 0 2px 8px rgba(0,0,0,.4);
 }

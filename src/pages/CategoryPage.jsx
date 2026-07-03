@@ -21,19 +21,22 @@ const CATEGORY_CONFIG = {
 }
 
 
-const HERO_IMAGES = {
-  restaurants: 'https://images.unsplash.com/photo-1504674900967-77800e8e33fe?w=1200&q=80',
-  coffee: 'https://images.unsplash.com/photo-1511537190424-bbbab87ac5d0?w=1200&q=80',
-  'happy-hours': 'https://images.unsplash.com/photo-1514432324607-2e467f4af445?w=1200&q=80',
-  events: 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=1200&q=80',
-  'things-to-do': 'https://images.unsplash.com/photo-1544716278-ca5e3af4abd8?w=1200&q=80',
-  services: 'https://images.unsplash.com/photo-1552664730-d307ca884978?w=1200&q=80',
-  'public-spots': 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1200&q=80',
-  feed:         'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=1200&q=80',
-  nightlife:    'https://images.unsplash.com/photo-1566417713940-fe7c737a9ef2?w=1200&q=80',
-  wellness:     'https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=1200&q=80',
-  shopping: 'https://images.unsplash.com/photo-1555685812-4b943f1cb0eb?w=1200&q=80',
-  staying: 'https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=1200&q=80',
+// Solid CSS gradients instead of hotlinked photos — the previous Unsplash
+// URLs had no fallback, so a single blocked/dead link showed as a blank
+// gray hero banner across every category.
+const HERO_GRADIENTS = {
+  restaurants: 'linear-gradient(135deg, #c2410c, #7c2d12)',
+  coffee: 'linear-gradient(135deg, #92400e, #451a03)',
+  'happy-hours': 'linear-gradient(135deg, #b45309, #78350f)',
+  events: 'linear-gradient(135deg, #6d28d9, #4c1d95)',
+  'things-to-do': 'linear-gradient(135deg, #0e7490, #164e63)',
+  services: 'linear-gradient(135deg, #334155, #1e293b)',
+  'public-spots': 'linear-gradient(135deg, #15803d, #14532d)',
+  feed:         'linear-gradient(135deg, #1d4ed8, #1e3a8a)',
+  nightlife:    'linear-gradient(135deg, #7e22ce, #3b0764)',
+  wellness:     'linear-gradient(135deg, #0d9488, #134e4a)',
+  shopping: 'linear-gradient(135deg, #be185d, #831843)',
+  staying: 'linear-gradient(135deg, #0369a1, #0c4a6e)',
 }
 
 export default function CategoryPage() {
@@ -66,7 +69,7 @@ export default function CategoryPage() {
   }
 
   const config = CATEGORY_CONFIG[category]
-  const heroImage = HERO_IMAGES[category]
+  const heroGradient = HERO_GRADIENTS[category] || 'linear-gradient(135deg, #334155, #1e293b)'
 
   const PAGE_SIZE = 10
 
@@ -185,9 +188,7 @@ export default function CategoryPage() {
       {/* Hero Section */}
       <div
         className="category-hero"
-        style={{
-          backgroundImage: `linear-gradient(rgba(0,0,0,0.35), rgba(0,0,0,0.35)), url(${heroImage})`,
-        }}
+        style={{ background: heroGradient }}
       >
         <div className="hero-content">
           <h1 className="hero-title">{config?.label || 'Browse'}</h1>
