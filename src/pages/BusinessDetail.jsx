@@ -52,12 +52,23 @@ export default function RestaurantDetail() {
         const hasOfferingsData = (data.sections || []).some(s => (s.items || []).length > 0)
         const hasPricing = data.pricing?.length > 0
         const hasSchedules = data.schedules?.length > 0
-        // Default tab: for food types start on menu/offerings; for activities start on pricing or overview
+        // Industry data presence — mirror the has-data flags used to build the tab row below
+        const hasRoomsData = (data.room_types || []).length > 0
+        const hasServicesData = (data.service_menu || []).length > 0 || (data.service_categories || []).length > 0 || (data.service_packages || []).length > 0 || (data.class_schedule || []).length > 0
+        const hasProductsData = (data.products || []).length > 0
+        const hasParkData = (data.facilities || []).length > 0 || (data.spot_rules || []).length > 0 || !!data.access_info
+        // Default tab: open on the most relevant populated section for THIS entity type,
+        // not always 'overview'. Order mirrors the tab row so a hotel opens on Rooms,
+        // a shop on Products, a service on Services, a park on Park Info.
         let defaultTab = 'overview'
         if (hasOfferingsData) defaultTab = 'offerings'
         else if (isFood && hasMenuData) defaultTab = 'menu'
         else if (hasPricing) defaultTab = 'pricing'
         else if (hasSchedules) defaultTab = 'schedule'
+        else if (hasRoomsData) defaultTab = 'rooms'
+        else if (hasServicesData) defaultTab = 'services'
+        else if (hasProductsData) defaultTab = 'products'
+        else if (hasParkData) defaultTab = 'park-info'
         setActiveTab(defaultTab)
 
         // Preload counts for conditional tabs
