@@ -106,9 +106,14 @@ export default function Swipe() {
   // CAT_TABS comment) — catch direct/bookmarked links to them too, not just
   // the tab bar. Drinks has no dedicated page, so send it to the closest
   // real category (bars/cocktails already surface under Nightlife).
+  // /swipe/restaurants isn't a real category either (the real id is "food")
+  // but it's hardcoded as the Swipe entry point in BottomNav, GCRHeader,
+  // Landing, and Browse — every one of those was a guaranteed dead end
+  // (0 cards, no matching filter) until this redirect existed.
   useEffect(() => {
     if (category === 'events') navigate('/events', { replace: true })
     else if (category === 'drinks') navigate('/swipe/nightlife', { replace: true })
+    else if (category === 'restaurants') navigate('/swipe/food', { replace: true })
   }, [category, navigate])
 
   const businesses = (category === 'all'

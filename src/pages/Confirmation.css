@@ -5,6 +5,11 @@
   align-items: center;
   justify-content: center;
   padding: 20px;
+  /* This page keeps the global header + bottom nav + AI chat FAB. Flex
+     vertical-centering doesn't account for that fixed chrome, so on a
+     short mobile viewport the bottom action buttons rendered underneath
+     the bottom nav/FAB with almost nothing left clickable. */
+  padding-bottom: max(20px, calc(100px + env(safe-area-inset-bottom)));
 }
 
 .confirmation-container {

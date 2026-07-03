@@ -143,8 +143,11 @@ export default function BookService() {
           </div>
 
           <button type="submit" className="confirm-btn" disabled={submitting}>
-            {submitting ? 'Booking...' : `Book Service ($${service.nightly_price || 0})`}
+            {submitting ? 'Sending...' : `Request to Book — $${service.nightly_price || 0} est.`}
           </button>
+          <p className="booking-disclaimer">
+            This sends a booking request to the service provider — no payment is collected here.
+          </p>
         </form>
 
         <button className="back-btn" onClick={() => navigate(`/service/${slug}`)}>
