@@ -29,6 +29,7 @@ export default function RestaurantDetail() {
   const [hasBlog, setHasBlog] = useState(false)
   const [hasPolicies, setHasPolicies] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [showAllTags, setShowAllTags] = useState(false)
   const [availability, setAvailability] = useState(null)
   const subSectionRefs = useRef({})
   const sectionRefs = useRef({})
@@ -468,7 +469,7 @@ export default function RestaurantDetail() {
                 src={photo.image_url || photo.url || ''}
                 alt=""
                 className="carousel-slide-img"
-                onError={e => { e.currentTarget.src = 'https://images.unsplash.com/photo-1504674900968-08049c043914?w=600&q=80' }}
+                onError={e => { e.currentTarget.style.display = 'none' }}
                 loading="lazy"
               />
             </div>
@@ -512,18 +513,6 @@ export default function RestaurantDetail() {
             ) : null
           })()}
 
-          {/* Hero Text */}
-          <div className="carousel-hero">
-            <div className="hero-name">{business.name}</div>
-            <div className="hero-meta">
-              {business.rating && (
-                <span className="hero-rating">
-                  ★ {Number(business.rating).toFixed(1)} {business.review_count && `(${business.review_count})`}
-                </span>
-              )}
-              {business.city && <span>📍 {business.city}, {business.state}</span>}
-            </div>
-          </div>
         </div>
       </div>
 
@@ -570,9 +559,10 @@ export default function RestaurantDetail() {
         {/* Tags */}
         {tags.length > 0 && (
           <div className="badge-row">
-            {tags.map(tag => (
+            {tags.slice(0, 6).map(tag => (
               <span key={tag.tag_name} className="badge">{formatTag(tag.tag_name)}</span>
             ))}
+            {tags.length > 6 && <span className="badge badge-more">+{tags.length - 6} more</span>}
           </div>
         )}
 
@@ -950,10 +940,15 @@ export default function RestaurantDetail() {
                 <div>
                   <h3>Categories</h3>
                   <div className="tag-row">
-                    {tags.map(tag => (
+                    {(showAllTags ? tags : tags.slice(0, 10)).map(tag => (
                       <span key={tag.tag_name} className="tag">{formatTag(tag.tag_name)}</span>
                     ))}
                   </div>
+                  {tags.length > 10 && (
+                    <button className="see-more-btn" onClick={() => setShowAllTags(s => !s)}>
+                      {showAllTags ? 'See less' : `See all ${tags.length}`}
+                    </button>
+                  )}
                 </div>
               )}
             </section>
