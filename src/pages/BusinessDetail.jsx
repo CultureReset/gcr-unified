@@ -2020,27 +2020,6 @@ export default function RestaurantDetail() {
             )}
           </div>
 
-          {/* Hours Sidebar */}
-          {hours.length > 0 && (
-            <div className="sidebar-card">
-              <h3 className="sidebar-title">Hours</h3>
-              <ul className="hours-list">
-                {hours.map((hr, idx) => (
-                  <li key={idx} className={hr.day_of_week === new Date().getDay() ? 'today' : ''}>
-                    <span className="day">
-                      {['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][hr.day_of_week || 0]}
-                    </span>
-                    <span className="time">
-                      {hr.is_closed
-                        ? 'Closed'
-                        : `${formatTime(hr.opens_at) || '—'} – ${formatTime(hr.closes_at) || '—'}`}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-
           {/* Happy Hour Sidebar */}
           {business.hh_days && (
             <div className="sidebar-card hh-card">

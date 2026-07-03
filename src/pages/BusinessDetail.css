@@ -24,9 +24,9 @@
   background: var(--card);
   border-bottom: 1px solid var(--border);
   position: sticky;
-  /* No global GCRHeader on this route (App.jsx hides it for /business/*),
-     so this is the top-most sticky element — it belongs at top:0. */
-  top: 0;
+  /* GCRHeader is now shown on this route — stick just below it, same
+     pattern as CategoryPage's .category-toolbar. */
+  top: var(--gcr-header-h, 88px);
   z-index: 100;
 }
 
