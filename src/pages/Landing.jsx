@@ -842,7 +842,7 @@ export default function Landing() {
             <p style={{ fontSize:'.92rem', color:'#555', marginBottom:'1.25rem', lineHeight:1.5 }}>
               Text <strong>BEACH</strong> to get exclusive promos, happy hour alerts &amp; last-minute deals sent to your phone.
             </p>
-            <a className="ld-loyalty-sms" href="sms:2519777770?body=BEACH">
+            <a className="ld-loyalty-sms" href="sms:+12513135464?body=BEACH">
               📱 Text BEACH to Sign Up
             </a>
             <p style={{ fontSize:'.78rem', color:'#aaa', marginTop:'.85rem' }}>
