@@ -4,6 +4,7 @@
   "framework": "vite",
   "outputDirectory": "dist",
   "rewrites": [
+    { "source": "/:slug/profile", "destination": "/song-request.html?slug=:slug" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
