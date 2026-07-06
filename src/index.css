@@ -191,6 +191,10 @@ input { outline: none; font-family: inherit; }
 .badge-music { background: rgba(124,106,247,0.2); color: #c4b5fd; }
 .badge-verified { background: rgba(34,197,94,0.15); color: #86efac; }
 .badge-waterfront { background: rgba(56,189,248,0.15); color: #7dd3fc; }
+.badge-status-open { background: rgba(34,197,94,0.2); color: #86efac; }
+.badge-status-opening { background: rgba(56,189,248,0.2); color: #7dd3fc; }
+.badge-status-closing { background: rgba(251,146,60,0.2); color: #fdba74; }
+.badge-status-closed { background: rgba(148,163,184,0.2); color: #cbd5e1; }
 
 
 .top-bar {

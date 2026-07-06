@@ -74,6 +74,51 @@ function tagColor(tag) {
   return 'tag-default'
 }
 
+// Open/closed status line — same logic as GCRCard.jsx (not shared as a util
+// since that component pulls in its own CSS/deps this page doesn't need).
+function fmt12(t) {
+  if (!t) return ''
+  const [h, m] = t.split(':').map(Number)
+  const ap = h >= 12 ? 'pm' : 'am'
+  const h12 = h % 12 || 12
+  return m ? `${h12}:${String(m).padStart(2,'0')}${ap}` : `${h12}${ap}`
+}
+
+function getTodayHours(hours) {
+  if (!hours || !hours.length) return null
+  const todayIdx = new Date().getDay()
+  const DAYS = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday']
+  const todayName = DAYS[todayIdx]
+  return hours.find(h => {
+    if (typeof h.day_of_week === 'number') return h.day_of_week === todayIdx
+    const s = String(h.day_of_week || h.day || '').toLowerCase()
+    return s === todayName || s === String(todayIdx)
+  }) || null
+}
+
+function computeStatus(hours) {
+  if (!hours || !hours.length) return null
+  const h = getTodayHours(hours)
+  if (!h) return null
+  if (h.is_closed) return { label: 'Closed Today', cls: 'closed' }
+
+  const openStr  = h.open_time  || h.opens_at  || h.open  || ''
+  const closeStr = h.close_time || h.closes_at || h.close || ''
+  if (!openStr || !closeStr) return null
+
+  const cur = new Date().getHours() * 60 + new Date().getMinutes()
+  const [oh, om] = openStr.split(':').map(Number)
+  const [ch, cm] = closeStr.split(':').map(Number)
+  const openMin  = oh * 60 + om
+  const closeMin = ch * 60 + cm
+
+  if (cur < openMin - 60) return null
+  if (cur < openMin)       return { label: `Opens ${fmt12(openStr)}`,           cls: 'opening' }
+  if (cur < closeMin - 30) return { label: `Open · Closes ${fmt12(closeStr)}`,  cls: 'open'    }
+  if (cur < closeMin)      return { label: `Closing Soon · ${fmt12(closeStr)}`, cls: 'closing' }
+  return { label: 'Closed', cls: 'closed' }
+}
+
 export default function Swipe() {
   const { category } = useParams()
   const navigate = useNavigate()
@@ -397,11 +442,18 @@ export default function Swipe() {
           edge case), so it was permanently eating ~40px of card space. */}
       <div className="swipe-header-wrap">
         <div className="swipe-header">
-          <button className="back-btn-sm close-btn" onClick={closeTrip} aria-label="Close">
-            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} width={20} height={20}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
+          <div className="swipe-header-left">
+            <button className="back-btn-sm" onClick={() => navigate('/home')} aria-label="Home">
+              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} width={19} height={19}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l9-9 9 9M5 10v10a1 1 0 001 1h4a1 1 0 001-1v-4h2v4a1 1 0 001 1h4a1 1 0 001-1V10" />
+              </svg>
+            </button>
+            <button className="back-btn-sm close-btn" onClick={closeTrip} aria-label="Close">
+              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} width={20} height={20}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
           <div className="swipe-title">
             <span>{catInfo.emoji}</span>
             <span>Swipe Your Trip</span>
@@ -748,6 +800,7 @@ function BusinessCard({ business, isTop, onDetail, userLocation, swipingDir }) {
 
   const displayedTags = (business.tags || []).slice(0, 4)
   const desc = business.subtitle || (business.description ? business.description.slice(0, 90) + (business.description.length > 90 ? '…' : '') : '')
+  const status = computeStatus(business.hours || [])
 
   return (
     <div className={`business-card ${isTop ? 'top' : ''}`}>
@@ -801,15 +854,22 @@ function BusinessCard({ business, isTop, onDetail, userLocation, swipingDir }) {
         )}
         <div className="card-name-row">
           <h3 className="card-name">{business.name}</h3>
-          {business.rating ? <div className="card-rating">⭐ {business.rating}</div> : null}
+          {business.rating ? (
+            <div className="card-rating">
+              ⭐ {business.rating}
+              {business.review_count > 0 && <span className="card-review-count"> ({business.review_count})</span>}
+            </div>
+          ) : null}
         </div>
         <div className="card-meta-row">
           {business.city && <span>📍 {business.city}</span>}
           {business.price_range && <><span className="dot">·</span><span>{business.price_range}</span></>}
           {distLabel && <><span className="dot">·</span><span>🚗 {distLabel}</span></>}
         </div>
-        {(business.live_music || business.happy_hour || business.duration) && (
+        {desc && <p className="card-desc">{desc}</p>}
+        {(status || business.live_music || business.happy_hour || business.duration) && (
           <div className="card-badges" style={{marginTop:6}}>
+            {status && <span className={`badge badge-status-${status.cls}`}>{status.label}</span>}
             {business.live_music && <span className="badge badge-live">🎵 Live</span>}
             {business.happy_hour && <span className="badge badge-happy">🍹 HH</span>}
             {business.duration && <span className="badge badge-music">⏱ {business.duration}</span>}
@@ -836,7 +896,7 @@ function BusinessCard({ business, isTop, onDetail, userLocation, swipingDir }) {
             <button className="cta-detail pressable"
               onPointerUp={e => { e.stopPropagation(); onDetail() }}
               onClick={e => { e.stopPropagation(); onDetail() }}>
-              More Info →
+              View Details →
             </button>
           </div>
         </div>
@@ -1083,7 +1143,7 @@ function DealSwipeCard({ deal, isTop, onDetail }) {
             <button className="cta-detail pressable"
               onPointerUp={e => { e.stopPropagation(); onDetail() }}
               onClick={e => { e.stopPropagation(); onDetail() }}>
-              More Info →
+              View Details →
             </button>
           </div>
         </div>
