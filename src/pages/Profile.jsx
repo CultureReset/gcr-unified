@@ -61,6 +61,7 @@ export default function Profile() {
   const [companionCount, setCompanionCount] = useState(0)
   const [myPhotos, setMyPhotos] = useState([])
   const [myReviews, setMyReviews] = useState([])
+  const [points, setPoints] = useState(null)
   const [photosLoaded, setPhotosLoaded] = useState(false)
   const [togglingLocation, setTogglingLocation] = useState(false)
   const [filterCategory, setFilterCategory] = useState('all')
@@ -119,11 +120,15 @@ export default function Profile() {
     let cancelled = false
     ;(async () => {
       try {
-        const [groupsRes, photosRes, reviewsRes] = await Promise.all([
+        const [groupsRes, photosRes, reviewsRes, pointsRes] = await Promise.all([
           authFetch('/api/tourist/groups'),
           authFetch('/api/tourist/photos'),
           authFetch('/api/tourist/reviews'),
+          authFetch('/api/tourist/points'),
         ])
+        if (!cancelled && pointsRes?.ok) {
+          setPoints(await pointsRes.json())
+        }
         if (!cancelled && groupsRes?.ok) {
           const { groups = [] } = await groupsRes.json()
           const others = new Set()
@@ -266,6 +271,27 @@ export default function Profile() {
         <div style={{background:'linear-gradient(135deg,rgba(124,106,247,.18),rgba(14,165,233,.12))',border:'1px solid rgba(124,106,247,.3)',borderRadius:14,padding:'12px 14px',display:'flex',alignItems:'center',gap:10}}>
           <span style={{fontSize:22}}>{tripCountdown.emoji}</span>
           <span style={{fontWeight:700,color:'var(--text)',fontSize:14}}>{tripCountdown.label}</span>
+        </div>
+      )}
+
+      {/* Rewards — points balance + tier (rolls over trip to trip) */}
+      {points && (
+        <div style={{background:'linear-gradient(135deg,#f59e0b,#d97706)',borderRadius:16,padding:'14px 16px',color:'#fff'}}>
+          <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',gap:10}}>
+            <div>
+              <div style={{fontSize:12,fontWeight:800,opacity:.95,textTransform:'uppercase',letterSpacing:.5}}>👑 {points.tier?.name || 'Member'}</div>
+              <div style={{fontSize:26,fontWeight:900,lineHeight:1.1,marginTop:2}}>{points.balance ?? 0} <span style={{fontSize:14,fontWeight:600}}>pts</span></div>
+            </div>
+            {points.tier?.perks && <div style={{fontSize:11,textAlign:'right',maxWidth:140,opacity:.95,lineHeight:1.4}}>{points.tier.perks}</div>}
+          </div>
+          {points.next && (
+            <div style={{marginTop:10}}>
+              <div style={{height:6,background:'rgba(255,255,255,.3)',borderRadius:4,overflow:'hidden'}}>
+                <div style={{height:'100%',background:'#fff',width:`${Math.min(100, Math.round(((points.balance || 0) / points.next.min) * 100))}%`}} />
+              </div>
+              <div style={{fontSize:11,marginTop:4,opacity:.95}}>{Math.max(0, points.next.min - (points.balance || 0))} pts to {points.next.name}</div>
+            </div>
+          )}
         </div>
       )}
 
