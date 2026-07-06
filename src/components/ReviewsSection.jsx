@@ -13,8 +13,6 @@ export default function ReviewsSection({ slug }) {
   const [page, setPage] = useState(1)
   const [showForm, setShowForm] = useState(false)
   const [formData, setFormData] = useState({
-    reviewer_name: '',
-    reviewer_email: '',
     rating: 5,
     title: '',
     body: ''
@@ -73,7 +71,7 @@ export default function ReviewsSection({ slug }) {
       })
       if (res.ok) {
         setMessage('Review submitted — pending review. Thank you!')
-        setFormData({ reviewer_name: '', reviewer_email: '', rating: 5, title: '', body: '' })
+        setFormData({ rating: 5, title: '', body: '' })
         setShowForm(false)
         loadReviews()
         loadStats()

@@ -1600,6 +1600,7 @@ export default function RestaurantDetail() {
                       <a
                         key={link.id || i}
                         href={link.url}
+                        onClick={e => trackAndOpen(e, link.url, 'order')}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="order-link-btn"
@@ -2016,12 +2017,12 @@ export default function RestaurantDetail() {
               </a>
             )}
             {business.reservation_url && (
-              <a href={business.reservation_url} target="_blank" rel="noopener noreferrer" className="sidebar-btn">
+              <a href={business.reservation_url} onClick={e => trackAndOpen(e, business.reservation_url, 'reserve')} target="_blank" rel="noopener noreferrer" className="sidebar-btn">
                 🍽️ Reserve
               </a>
             )}
             {business.order_url && (
-              <a href={business.order_url} target="_blank" rel="noopener noreferrer" className="sidebar-btn">
+              <a href={business.order_url} onClick={e => trackAndOpen(e, business.order_url, 'order')} target="_blank" rel="noopener noreferrer" className="sidebar-btn">
                 🛵 Order
               </a>
             )}
@@ -2029,6 +2030,7 @@ export default function RestaurantDetail() {
               <a
                 key={link.id || i}
                 href={link.url}
+                onClick={e => trackAndOpen(e, link.url, 'order')}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="sidebar-btn"

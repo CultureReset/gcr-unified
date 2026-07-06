@@ -46,7 +46,7 @@
   font-size: 22px;
 }
 
-.stay-banner-title { font-size: 14px; font-weight: 700; color: white; }
+.stay-banner-title { font-size: 14px; font-weight: 700; color: var(--text); }
 .stay-banner-sub { font-size: 12px; color: var(--text2); }
 .stay-banner-btn {
   background: var(--accent);
@@ -461,6 +461,6 @@
 .setup-banner:active { background: rgba(14,165,233,0.18); }
 .setup-banner-icon { font-size: 24px; flex-shrink: 0; }
 .setup-banner-text { flex: 1; min-width: 0; }
-.setup-banner-title { font-size: 14px; font-weight: 700; color: white; }
+.setup-banner-title { font-size: 14px; font-weight: 700; color: var(--text); }
 .setup-banner-sub { font-size: 12px; color: var(--text2); margin-top: 2px; }
 .setup-banner-arrow { font-size: 18px; color: var(--accent); font-weight: 700; flex-shrink: 0; }
