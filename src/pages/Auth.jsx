@@ -133,14 +133,17 @@ export default function Auth() {
     if (normalized.length < 10) { setError('Enter a valid US phone number'); return }
     setLoading(true); setError(''); setInfo('')
     try {
-      // Phone auth disabled
-      // await sendFirebaseOTP(normalized)
+      const r = await fetch(`${API}/api/tourist-auth/phone`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: normalized }),
+      })
+      const d = await r.json()
+      if (!r.ok) { setError(d.error || 'Could not send code — try again.'); return }
       setDigits(['', '', '', '', '', ''])
       setStep('verify-code')
-    } catch (err) {
-      // resetRecaptcha()
-      // setupRecaptcha()
-      setError(err.message || 'Could not send code — try again.')
+    } catch {
+      setError('Network error — try again.')
     }
     finally { setLoading(false) }
   }
@@ -149,39 +152,24 @@ export default function Auth() {
     const code = digits.join('')
     if (code.length < 6) return
     setLoading(true); setError(''); setInfo('')
-    setError('Phone authentication disabled. Use email sign in instead.')
-    setLoading(false)
-    // Phone auth disabled
-    /*
     try {
-      const { idToken, firebaseUser } = await confirmFirebaseOTP(code)
-      if (!idToken || typeof idToken !== 'string') {
-        setError('Could not get auth token — please request a new code.')
-        resetRecaptcha()
-        setStep('input')
-        return
-      }
       const r = await fetch(`${API}/api/tourist-auth/phone-verify`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: normalizePhone(phone), idToken }),
+        body: JSON.stringify({ phone: normalizePhone(phone), code }),
       })
       const d = await r.json()
-      if (!r.ok) {
-        setError(d.error || `Sign-in failed (${r.status}) — try again.`)
-        return
-      }
+      if (!r.ok) { setError(d.error || 'Invalid code — try again.'); return }
       const session = d.session || (d.access_token ? { access_token: d.access_token } : null)
       if (session?.access_token) {
         localStorage.setItem('gcr_access_token', session.access_token)
         if (session.refresh_token) localStorage.setItem('gcr_refresh_token', session.refresh_token)
         if (session.expires_at)    localStorage.setItem('gcr_expires_at', String(session.expires_at))
       }
-      if (d.user?.id || d.tourist?.user_id) {
-        localStorage.setItem('gcr_user_id', d.user?.id || d.tourist?.user_id || '')
-      }
+      const uid = d.user?.id || d.tourist?.user_id
+      if (uid) localStorage.setItem('gcr_user_id', uid)
       if (d.user?.email) localStorage.setItem('gcr_user_email', d.user.email)
-      if (firebaseUser.phoneNumber) localStorage.setItem('gcr_user_phone', firebaseUser.phoneNumber)
+      localStorage.setItem('gcr_user_phone', normalizePhone(phone))
 
       const pending = sessionStorage.getItem('gcr_pending_invite')
       if (pending) {
@@ -192,16 +180,25 @@ export default function Auth() {
       const profile = await setSessionFromLogin?.(d)
       const complete = profile?.setupComplete || profile?.setup_complete || d.tourist?.setup_complete
       navigate(complete ? (returnTo || '/home') : '/setup/name', { replace: true })
-    } catch (err) {
-      setError(err.message || 'Invalid code — try again.')
+    } catch {
+      setError('Network error — try again.')
     }
     finally { setLoading(false) }
-    */
   }
 
   async function resendPhoneOTP() {
-    // Phone auth disabled
-    setError('Phone authentication disabled. Use email sign in instead.')
+    setLoading(true); setError(''); setInfo('')
+    try {
+      const r = await fetch(`${API}/api/tourist-auth/phone`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: normalizePhone(phone) }),
+      })
+      const d = await r.json()
+      if (!r.ok) { setError(d.error || 'Failed to resend'); return }
+      setInfo('New code sent.')
+    } catch { setError('Network error — try again.') }
+    finally { setLoading(false) }
   }
 
   async function resendCode() {
