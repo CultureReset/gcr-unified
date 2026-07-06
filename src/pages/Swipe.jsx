@@ -144,6 +144,7 @@ export default function Swipe() {
   const [undoStack, setUndoStack] = useState([]) // { business, action: 'like'|'nope'|'super' }
   const swipeCountRef = useRef(0)
   const pageRef = useRef(null)
+  const personalizationCounterRef = useRef(0)
 
   const catInfo = CATEGORIES.find(c => c.id === category) || CATEGORIES[5]
 
@@ -347,6 +348,30 @@ export default function Swipe() {
     return { ...business, id: business._sponsorSlug, slug: business._sponsorSlug }
   }
 
+  // Re-fetch preference scores every 10 swipes and re-sort the remaining pool
+  // (not the visible deck — that would yank cards out from under the user
+  // and reset likedCount) so cards pulled in from here on reflect patterns
+  // from *this* session, not just whatever was known when the page loaded.
+  async function refreshPersonalization() {
+    try {
+      const prefs = await fetchPreferences()
+      if (prefs && Object.keys(prefs).length) {
+        setPool(prev => personalizeAndSort(prev, prefs))
+      }
+    } catch {}
+  }
+
+  function bumpPersonalizationCounter() {
+    personalizationCounterRef.current += 1
+    if (personalizationCounterRef.current >= 10) {
+      personalizationCounterRef.current = 0
+      // Small delay — the swipe batch itself flushes to the backend on its
+      // own timer (see AppContext's flushSwipes), which is what actually
+      // updates the preference scores we're about to re-fetch.
+      setTimeout(refreshPersonalization, 1500)
+    }
+  }
+
   function onSwipe(direction, business) {
     setSwipingDir(null)
     if (direction === 'right') {
@@ -360,6 +385,7 @@ export default function Swipe() {
       recordSwipe(business, 'nope')
       setUndoStack(prev => [...prev.slice(-4), { business, action: 'nope' }])
     }
+    bumpPersonalizationCounter()
     // swipe-count based SMS trigger
     if (!smsDone && swipeCountRef.current < 0) {
       swipeCountRef.current += 1
@@ -380,6 +406,7 @@ export default function Swipe() {
     setCards(prev => refillDeck(prev.slice(0, -1)))
     flash('like')
     setUndoStack(prev => [...prev.slice(-4), { business: top, action: 'like' }])
+    bumpPersonalizationCounter()
   }
 
   function pressNope() {
@@ -389,6 +416,7 @@ export default function Swipe() {
     setCards(prev => refillDeck(prev.slice(0, -1)))
     flash('nope')
     setUndoStack(prev => [...prev.slice(-4), { business: top, action: 'nope' }])
+    bumpPersonalizationCounter()
   }
 
   function pressSuper() {
@@ -400,6 +428,7 @@ export default function Swipe() {
     setCards(prev => refillDeck(prev.slice(0, -1)))
     flash('super')
     setUndoStack(prev => [...prev.slice(-4), { business: top, action: 'super' }])
+    bumpPersonalizationCounter()
   }
 
   // "Not sure yet" — distinct from Pass (rejected) and Like (want to go).
@@ -411,6 +440,7 @@ export default function Swipe() {
     recordSwipe(top, 'maybe')
     setCards(prev => refillDeck(prev.slice(0, -1)))
     flash('maybe')
+    bumpPersonalizationCounter()
     setUndoStack(prev => [...prev.slice(-4), { business: top, action: 'maybe' }])
   }
 
