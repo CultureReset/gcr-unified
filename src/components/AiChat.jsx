@@ -6,12 +6,31 @@ function getToken() {
   return localStorage.getItem('gcr_access_token')
 }
 
+// Best-effort location grab. Never blocks the chat — resolves null on denial/timeout.
+function getLocation() {
+  return new Promise((resolve) => {
+    if (!navigator.geolocation) return resolve(null)
+    navigator.geolocation.getCurrentPosition(
+      (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      () => resolve(null),
+      { timeout: 3000, maximumAge: 300000 }
+    )
+  })
+}
+
 async function sendMessage({ message, history, conversationId }) {
   const token = getToken()
+  const loc = await getLocation()
   const res = await fetch(`${API_BASE}/api/tourist/ai-chat`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-    body: JSON.stringify({ message, history: history.slice(-10), conversation_id: conversationId }),
+    body: JSON.stringify({
+      message,
+      history: history.slice(-10),
+      conversation_id: conversationId,
+      lat: loc?.lat ?? null,
+      lng: loc?.lng ?? null,
+    }),
   })
   if (!res.ok) throw new Error('Chat error')
   return res.json()

@@ -99,6 +99,7 @@ function toCard(entity, photos = []) {
     tagline: entity.subtitle || '',
     happy_hour: formatHappyHour(entity),
     hh_description: entity.hh_description || '',
+    hours: entity.hours || [],
     live_music: hasLiveMusic,
     city: [entity.city, entity.state].filter(Boolean).join(', '),
     address: formatAddress(entity),

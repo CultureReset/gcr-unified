@@ -32,6 +32,30 @@ export default function Auth() {
     }
   }, [step])
 
+  // WebOTP: auto-fill the code straight from the incoming SMS — no typing,
+  // no switching apps. Android Chrome only; other browsers fall back to
+  // autoComplete="one-time-code" (iOS/Chrome keyboard suggestion) or manual entry.
+  useEffect(() => {
+    if (step !== 'verify-code' || authMethod !== 'phone') return
+    if (!('OTPCredential' in window)) return
+    const ac = new AbortController()
+    navigator.credentials.get({ otp: { transport: ['sms'] }, signal: ac.signal })
+      .then(otp => {
+        const code = (otp?.code || '').replace(/\D/g, '').slice(0, 6)
+        if (code.length === 6) setDigits(code.split(''))
+      })
+      .catch(() => {})
+    return () => ac.abort()
+  }, [step, authMethod])
+
+  // Auto-submit the instant all 6 digits are present — from autofill or manual entry —
+  // so there's nothing left to tap.
+  useEffect(() => {
+    if (step === 'verify-code' && digits.join('').length === 6 && !loading) {
+      authMethod === 'phone' ? verifyPhoneCode() : verifyCode()
+    }
+  }, [digits])
+
 
   // Pre-fill phone from ?phone= param (set by inbound SMS link)
   useEffect(() => {
@@ -40,6 +64,50 @@ export default function Auth() {
       setPhone(p.replace(/^\+1/, ''))
       setAuthMethod('phone')
     }
+  }, [])
+
+  // Tap-to-sign-in link — for texts sent from off-platform ("text BEACH to
+  // this number from anywhere"). Verifies the one-time token and signs in
+  // automatically; no form, nothing to type.
+  useEffect(() => {
+    const magicToken = searchParams.get('token')
+    if (!magicToken) return
+    ;(async () => {
+      setLoading(true); setError(''); setInfo('')
+      try {
+        const r = await fetch(`${API}/api/tourist-auth/phone-token`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token: magicToken }),
+        })
+        const d = await r.json()
+        if (!r.ok) { setError(d.error || 'This sign-in link is invalid or expired.'); return }
+        const session = d.session || (d.access_token ? { access_token: d.access_token } : null)
+        if (session?.access_token) {
+          localStorage.setItem('gcr_access_token', session.access_token)
+          if (session.refresh_token) localStorage.setItem('gcr_refresh_token', session.refresh_token)
+          if (session.expires_at)    localStorage.setItem('gcr_expires_at', String(session.expires_at))
+        }
+        const uid = d.user?.id || d.tourist?.user_id
+        if (uid) localStorage.setItem('gcr_user_id', uid)
+        if (d.user?.email) localStorage.setItem('gcr_user_email', d.user.email)
+        if (d.user?.phone) localStorage.setItem('gcr_user_phone', d.user.phone)
+
+        const pending = sessionStorage.getItem('gcr_pending_invite')
+        if (pending) {
+          sessionStorage.removeItem('gcr_pending_invite')
+          navigate('/join?t=' + encodeURIComponent(pending), { replace: true })
+          return
+        }
+        const profile = await setSessionFromLogin?.(d)
+        const complete = profile?.setupComplete || profile?.setup_complete || d.tourist?.setup_complete
+        navigate(complete ? (returnTo || '/home') : '/setup/name', { replace: true })
+      } catch {
+        setError('Network error — try again.')
+      } finally {
+        setLoading(false)
+      }
+    })()
   }, [])
 
   useEffect(() => {
@@ -133,14 +201,17 @@ export default function Auth() {
     if (normalized.length < 10) { setError('Enter a valid US phone number'); return }
     setLoading(true); setError(''); setInfo('')
     try {
-      // Phone auth disabled
-      // await sendFirebaseOTP(normalized)
+      const r = await fetch(`${API}/api/tourist-auth/phone`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: normalized }),
+      })
+      const d = await r.json()
+      if (!r.ok) { setError(d.error || 'Could not send code — try again.'); return }
       setDigits(['', '', '', '', '', ''])
       setStep('verify-code')
-    } catch (err) {
-      // resetRecaptcha()
-      // setupRecaptcha()
-      setError(err.message || 'Could not send code — try again.')
+    } catch {
+      setError('Network error — try again.')
     }
     finally { setLoading(false) }
   }
@@ -149,39 +220,24 @@ export default function Auth() {
     const code = digits.join('')
     if (code.length < 6) return
     setLoading(true); setError(''); setInfo('')
-    setError('Phone authentication disabled. Use email sign in instead.')
-    setLoading(false)
-    // Phone auth disabled
-    /*
     try {
-      const { idToken, firebaseUser } = await confirmFirebaseOTP(code)
-      if (!idToken || typeof idToken !== 'string') {
-        setError('Could not get auth token — please request a new code.')
-        resetRecaptcha()
-        setStep('input')
-        return
-      }
       const r = await fetch(`${API}/api/tourist-auth/phone-verify`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: normalizePhone(phone), idToken }),
+        body: JSON.stringify({ phone: normalizePhone(phone), code }),
       })
       const d = await r.json()
-      if (!r.ok) {
-        setError(d.error || `Sign-in failed (${r.status}) — try again.`)
-        return
-      }
+      if (!r.ok) { setError(d.error || 'Invalid code — try again.'); return }
       const session = d.session || (d.access_token ? { access_token: d.access_token } : null)
       if (session?.access_token) {
         localStorage.setItem('gcr_access_token', session.access_token)
         if (session.refresh_token) localStorage.setItem('gcr_refresh_token', session.refresh_token)
         if (session.expires_at)    localStorage.setItem('gcr_expires_at', String(session.expires_at))
       }
-      if (d.user?.id || d.tourist?.user_id) {
-        localStorage.setItem('gcr_user_id', d.user?.id || d.tourist?.user_id || '')
-      }
+      const uid = d.user?.id || d.tourist?.user_id
+      if (uid) localStorage.setItem('gcr_user_id', uid)
       if (d.user?.email) localStorage.setItem('gcr_user_email', d.user.email)
-      if (firebaseUser.phoneNumber) localStorage.setItem('gcr_user_phone', firebaseUser.phoneNumber)
+      localStorage.setItem('gcr_user_phone', normalizePhone(phone))
 
       const pending = sessionStorage.getItem('gcr_pending_invite')
       if (pending) {
@@ -192,16 +248,25 @@ export default function Auth() {
       const profile = await setSessionFromLogin?.(d)
       const complete = profile?.setupComplete || profile?.setup_complete || d.tourist?.setup_complete
       navigate(complete ? (returnTo || '/home') : '/setup/name', { replace: true })
-    } catch (err) {
-      setError(err.message || 'Invalid code — try again.')
+    } catch {
+      setError('Network error — try again.')
     }
     finally { setLoading(false) }
-    */
   }
 
   async function resendPhoneOTP() {
-    // Phone auth disabled
-    setError('Phone authentication disabled. Use email sign in instead.')
+    setLoading(true); setError(''); setInfo('')
+    try {
+      const r = await fetch(`${API}/api/tourist-auth/phone`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: normalizePhone(phone) }),
+      })
+      const d = await r.json()
+      if (!r.ok) { setError(d.error || 'Failed to resend'); return }
+      setInfo('New code sent.')
+    } catch { setError('Network error — try again.') }
+    finally { setLoading(false) }
   }
 
   async function resendCode() {
@@ -220,8 +285,17 @@ export default function Auth() {
   }
 
   function handleDigit(i, val) {
+    const cleaned = val.replace(/\D/g, '')
+    // Keyboard-suggestion autofill (iOS/Android "from Messages") drops the
+    // whole code into one box at once — treat that like a paste.
+    if (cleaned.length > 1) {
+      const d = Array(6).fill('').map((_, idx) => cleaned[idx] || '')
+      setDigits(d)
+      inputRefs.current[Math.min(cleaned.length, 5)]?.focus()
+      return
+    }
     const d = [...digits]
-    d[i] = val.replace(/\D/g, '').slice(-1)
+    d[i] = cleaned.slice(-1)
     setDigits(d)
     if (d[i] && i < 5) inputRefs.current[i + 1]?.focus()
   }
@@ -274,7 +348,12 @@ export default function Auth() {
 
         <div className="auth-logo">🌊 Gulf Coast Radar</div>
 
-        {step === 'input' ? (
+        {searchParams.get('token') && !error ? (
+          <div className="auth-form animate-fade-up" style={{ textAlign: 'center' }}>
+            <h2>Signing you in… 🌊</h2>
+            <p>Tap complete — just a second.</p>
+          </div>
+        ) : step === 'input' ? (
           <div className="auth-form animate-fade-up">
             <h2>{authMethod === 'phone' ? 'Get a text to sign in' : mode === 'signup' ? 'Create your account' : 'Welcome back'}</h2>
             <p>{authMethod === 'phone' ? "We'll text you a code — no password needed." : mode === 'signup' ? 'Save your trip across devices with an email + password.' : 'Sign in to see your saved places & itinerary.'}</p>
@@ -433,6 +512,7 @@ export default function Auth() {
                   onPaste={i === 0 ? handlePaste : undefined}
                   onFocus={() => setFocusedIdx(i)}
                   onBlur={() => setFocusedIdx(null)}
+                  autoComplete={i === 0 ? 'one-time-code' : 'off'}
                   style={{
                     width: 44, height: 54, textAlign: 'center', fontSize: 26, fontWeight: 700,
                     background: 'rgba(255,255,255,0.12)',

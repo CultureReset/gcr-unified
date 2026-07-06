@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import TinderCard from 'react-tinder-card'
 import { useApp } from '../context/AppContext'
 import { CATEGORIES } from '../data/categories'
-import { fetchBusinesses, calcDistance, formatDistance, fetchPreferences, personalizeAndSort } from '../services/gcrApi'
+import { fetchBusinesses, calcDistance, formatDistance, fetchPreferences, personalizeAndSort, searchProperties } from '../services/gcrApi'
 import { API_BASE } from '../config'
 import './Swipe.css'
 
@@ -44,6 +44,65 @@ const CAT_TABS = [
   { id: 'events',     label: 'Events',     emoji: '🎪', to: '/events' },
 ]
 
+// Same options as /api/tourist/setup-questions' group_type question —
+// kept in sync manually since that endpoint returns a static, hardcoded list.
+const GROUP_TYPES = [
+  { value: 'solo',    label: 'Solo',    emoji: '🙋' },
+  { value: 'couple',  label: 'Couple',  emoji: '👫' },
+  { value: 'family',  label: 'Family',  emoji: '👨‍👩‍👧' },
+  { value: 'friends', label: 'Friends', emoji: '👯' },
+]
+
+// Same live property search Setup.jsx already uses for "where are you
+// staying" — reused here so returning tourists can set/update it too,
+// not just at initial signup.
+function PropertyAutocomplete({ value, onChange, placeholder }) {
+  const [suggestions, setSuggestions] = useState([])
+  const [open, setOpen] = useState(false)
+
+  const handleChange = async (e) => {
+    const text = e.target.value
+    onChange(text)
+    if (text.length > 0) {
+      const results = await searchProperties(text)
+      setSuggestions(results)
+      setOpen(true)
+    } else {
+      setSuggestions([])
+      setOpen(false)
+    }
+  }
+
+  const select = (s) => {
+    onChange(s.name)
+    setSuggestions([])
+    setOpen(false)
+  }
+
+  return (
+    <div style={{ position: 'relative' }}>
+      <input
+        className="trip-edit-input"
+        type="text"
+        placeholder={placeholder}
+        value={value || ''}
+        onChange={handleChange}
+        onFocus={() => { if (suggestions.length > 0) setOpen(true) }}
+      />
+      {open && suggestions.length > 0 && (
+        <div className="trip-edit-autocomplete">
+          {suggestions.map(s => (
+            <button key={s.id} type="button" className="trip-edit-autocomplete-item" onClick={() => select(s)}>
+              <div className="ac-name">{s.name}</div>
+              <div className="ac-meta">{s.type} · {s.city}</div>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 const DECK_SIZE = 15
 
 function shuffle(arr) {
@@ -74,10 +133,70 @@ function tagColor(tag) {
   return 'tag-default'
 }
 
+// Open/closed status line — same logic as GCRCard.jsx (not shared as a util
+// since that component pulls in its own CSS/deps this page doesn't need).
+function fmt12(t) {
+  if (!t) return ''
+  const [h, m] = t.split(':').map(Number)
+  const ap = h >= 12 ? 'pm' : 'am'
+  const h12 = h % 12 || 12
+  return m ? `${h12}:${String(m).padStart(2,'0')}${ap}` : `${h12}${ap}`
+}
+
+function getTodayHours(hours) {
+  if (!hours || !hours.length) return null
+  const todayIdx = new Date().getDay()
+  const DAYS = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday']
+  const todayName = DAYS[todayIdx]
+  return hours.find(h => {
+    if (typeof h.day_of_week === 'number') return h.day_of_week === todayIdx
+    const s = String(h.day_of_week || h.day || '').toLowerCase()
+    return s === todayName || s === String(todayIdx)
+  }) || null
+}
+
+function computeStatus(hours) {
+  if (!hours || !hours.length) return null
+  const h = getTodayHours(hours)
+  if (!h) return null
+  if (h.is_closed) return { label: 'Closed Today', cls: 'closed' }
+
+  const openStr  = h.open_time  || h.opens_at  || h.open  || ''
+  const closeStr = h.close_time || h.closes_at || h.close || ''
+  if (!openStr || !closeStr) return null
+
+  const cur = new Date().getHours() * 60 + new Date().getMinutes()
+  const [oh, om] = openStr.split(':').map(Number)
+  const [ch, cm] = closeStr.split(':').map(Number)
+  const openMin  = oh * 60 + om
+  const closeMin = ch * 60 + cm
+
+  if (cur < openMin - 60) return null
+  if (cur < openMin)       return { label: `Opens ${fmt12(openStr)}`,           cls: 'opening' }
+  if (cur < closeMin - 30) return { label: `Open · Closes ${fmt12(closeStr)}`,  cls: 'open'    }
+  if (cur < closeMin)      return { label: `Closing Soon · ${fmt12(closeStr)}`, cls: 'closing' }
+  return { label: 'Closed', cls: 'closed' }
+}
+
+// Per-category "where they left off" deck order — just ids, looked up
+// against freshly-fetched businesses on restore so the data itself never goes stale.
+const SWIPE_QUEUE_PREFIX = 'gcr_swipe_queue_'
+
+function loadQueuedDeck(category) {
+  try {
+    const raw = localStorage.getItem(SWIPE_QUEUE_PREFIX + category)
+    return raw ? JSON.parse(raw) : []
+  } catch { return [] }
+}
+
+function saveQueuedDeck(category, ids) {
+  try { localStorage.setItem(SWIPE_QUEUE_PREFIX + category, JSON.stringify(ids)) } catch {}
+}
+
 export default function Swipe() {
   const { category } = useParams()
   const navigate = useNavigate()
-  const { addSavedPlace, removeSavedPlace, savedPlaces, addSuperLike, tourist, seenSlugs, setSeenSlugs, recordSwipe, resetSeenSlugs, userLocation, requestLocation, geocodeStay } = useApp()
+  const { addSavedPlace, removeSavedPlace, savedPlaces, addSuperLike, tourist, seenSlugs, setSeenSlugs, recordSwipe, retractLastSwipe, resetSeenSlugs, userLocation, requestLocation, geocodeStay, saveTourist } = useApp()
 
   const [allBusinesses, setAllBusinesses] = useState([])
   const [pool, setPool] = useState([])
@@ -99,6 +218,18 @@ export default function Swipe() {
   const [undoStack, setUndoStack] = useState([]) // { business, action: 'like'|'nope'|'super' }
   const swipeCountRef = useRef(0)
   const pageRef = useRef(null)
+  const personalizationCounterRef = useRef(0)
+
+  // Trip-context "Change" modal — lets a returning tourist update their dates
+  // and who they're traveling with. Destination isn't editable: the app is
+  // Orange Beach/Gulf Shores only today (Setup.jsx hardcodes it), so there's
+  // nothing real to switch between yet.
+  const [showTripEdit, setShowTripEdit] = useState(false)
+  const [editArrival, setEditArrival] = useState('')
+  const [editDeparture, setEditDeparture] = useState('')
+  const [editGroupType, setEditGroupType] = useState('')
+  const [editHotelName, setEditHotelName] = useState('')
+  const [savingTrip, setSavingTrip] = useState(false)
 
   const catInfo = CATEGORIES.find(c => c.id === category) || CATEGORIES[5]
 
@@ -211,15 +342,37 @@ export default function Swipe() {
       : allBusinesses.filter(b => b.category === category))
       .filter(b => isGuest ? true : !seenSlugs.includes(b.slug))
     setPool(visible)
+
+    // Resume exactly where they left off: restore whichever still-unseen
+    // cards were queued last time (same order — last item stays "on top"),
+    // then fill any remaining deck capacity with freshly personalized/shuffled
+    // cards, same convention refillDeck() already uses for new cards (added
+    // to the front, so what was queued keeps priority).
+    const queuedIds = isGuest ? [] : loadQueuedDeck(category)
+    const byId = new Map(visible.map(b => [b.id, b]))
+    const resumed = queuedIds.map(id => byId.get(id)).filter(Boolean)
+    const resumedIds = new Set(resumed.map(b => b.id))
+    const rest = visible.filter(b => !resumedIds.has(b.id))
+
     // Use personalized order if we have preference data, else shuffle
-    const sorted = Object.keys(prefMap).length
-      ? personalizeAndSort(visible, prefMap)
-      : shuffle(visible)
-    setCards(sorted.slice(0, DECK_SIZE))
+    const sortedRest = Object.keys(prefMap).length
+      ? personalizeAndSort(rest, prefMap)
+      : shuffle(rest)
+
+    const fillCount = Math.max(0, DECK_SIZE - resumed.length)
+    setCards([...sortedRest.slice(0, fillCount), ...resumed])
     setLikedCount(0)
     setDeckReady(true)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [category, allBusinesses, prefMap])
+
+  // Persist the current deck order (by id) so returning to this category
+  // resumes instead of rebuilding a fresh personalized/shuffled list.
+  useEffect(() => {
+    if (localStorage.getItem('gcr_access_token') && deckReady) {
+      saveQueuedDeck(category, cards.map(c => c.id))
+    }
+  }, [cards, category, deckReady])
 
   useEffect(() => {
     if (allBusinesses.length === 0) return
@@ -302,6 +455,30 @@ export default function Swipe() {
     return { ...business, id: business._sponsorSlug, slug: business._sponsorSlug }
   }
 
+  // Re-fetch preference scores every 10 swipes and re-sort the remaining pool
+  // (not the visible deck — that would yank cards out from under the user
+  // and reset likedCount) so cards pulled in from here on reflect patterns
+  // from *this* session, not just whatever was known when the page loaded.
+  async function refreshPersonalization() {
+    try {
+      const prefs = await fetchPreferences()
+      if (prefs && Object.keys(prefs).length) {
+        setPool(prev => personalizeAndSort(prev, prefs))
+      }
+    } catch {}
+  }
+
+  function bumpPersonalizationCounter() {
+    personalizationCounterRef.current += 1
+    if (personalizationCounterRef.current >= 10) {
+      personalizationCounterRef.current = 0
+      // Small delay — the swipe batch itself flushes to the backend on its
+      // own timer (see AppContext's flushSwipes), which is what actually
+      // updates the preference scores we're about to re-fetch.
+      setTimeout(refreshPersonalization, 1500)
+    }
+  }
+
   function onSwipe(direction, business) {
     setSwipingDir(null)
     if (direction === 'right') {
@@ -315,6 +492,7 @@ export default function Swipe() {
       recordSwipe(business, 'nope')
       setUndoStack(prev => [...prev.slice(-4), { business, action: 'nope' }])
     }
+    bumpPersonalizationCounter()
     // swipe-count based SMS trigger
     if (!smsDone && swipeCountRef.current < 0) {
       swipeCountRef.current += 1
@@ -335,6 +513,7 @@ export default function Swipe() {
     setCards(prev => refillDeck(prev.slice(0, -1)))
     flash('like')
     setUndoStack(prev => [...prev.slice(-4), { business: top, action: 'like' }])
+    bumpPersonalizationCounter()
   }
 
   function pressNope() {
@@ -344,6 +523,7 @@ export default function Swipe() {
     setCards(prev => refillDeck(prev.slice(0, -1)))
     flash('nope')
     setUndoStack(prev => [...prev.slice(-4), { business: top, action: 'nope' }])
+    bumpPersonalizationCounter()
   }
 
   function pressSuper() {
@@ -355,6 +535,20 @@ export default function Swipe() {
     setCards(prev => refillDeck(prev.slice(0, -1)))
     flash('super')
     setUndoStack(prev => [...prev.slice(-4), { business: top, action: 'super' }])
+    bumpPersonalizationCounter()
+  }
+
+  // "Not sure yet" — distinct from Pass (rejected) and Like (want to go).
+  // Mild positive signal for preference scoring (see SWIPE_WEIGHTS.maybe on
+  // the backend), doesn't save the place, but is undo-able like every other action.
+  function pressMaybe() {
+    if (cards.length === 0) return
+    const top = cards[cards.length - 1]
+    recordSwipe(top, 'maybe')
+    setCards(prev => refillDeck(prev.slice(0, -1)))
+    flash('maybe')
+    bumpPersonalizationCounter()
+    setUndoStack(prev => [...prev.slice(-4), { business: top, action: 'maybe' }])
   }
 
   function pressUndo() {
@@ -369,6 +563,9 @@ export default function Swipe() {
       removeSavedPlace(last.business.id)
       setLikedCount(p => Math.max(0, p - 1))
     }
+    // Best-effort: pull the swipe back out of the not-yet-sent queue so an
+    // undone action doesn't still get counted toward preference scoring.
+    retractLastSwipe(last.business._sponsorSlug || last.business.slug)
     // Put the card back on top of the deck
     setCards(prev => {
       const without = prev.filter(b => b.id !== last.business.id)
@@ -384,10 +581,42 @@ export default function Swipe() {
 
   const allGone = deckReady && cards.length === 0 && pool.filter(b => !seenSlugs.includes(b.slug)).length === 0
 
+  const groupInfo = GROUP_TYPES.find(g => g.value === tourist?.group_type)
   const tripLabel = [
     tourist?.destination?.split(',')[0],
-    tourist?.arrival && new Date(tourist.arrival).toLocaleDateString('en-US', {month:'short', day:'numeric'}),
+    tourist?.arrival && new Date(tourist.arrival).toLocaleDateString('en-US', {month:'short', day:'numeric'})
+      + (tourist?.departure ? ` – ${new Date(tourist.departure).toLocaleDateString('en-US', {month:'short', day:'numeric'})}` : ''),
+    groupInfo && `${groupInfo.emoji} ${groupInfo.label}`,
   ].filter(Boolean).join(' · ') || 'Gulf Coast'
+
+  function openTripEdit() {
+    setEditArrival(tourist?.arrival || '')
+    setEditDeparture(tourist?.departure || '')
+    setEditGroupType(tourist?.group_type || '')
+    setEditHotelName(tourist?.hotel_name || '')
+    setShowTripEdit(true)
+  }
+
+  async function saveTripEdit() {
+    setSavingTrip(true)
+    try {
+      let trip_days = tourist?.trip_days || null
+      if (editArrival && editDeparture) {
+        const a = new Date(editArrival), b = new Date(editDeparture)
+        trip_days = Math.max(1, Math.round((b - a) / 86400000) + 1)
+      }
+      await saveTourist({
+        arrival: editArrival || null,
+        departure: editDeparture || null,
+        group_type: editGroupType || null,
+        hotel_name: editHotelName || null,
+        trip_days,
+      })
+      setShowTripEdit(false)
+    } finally {
+      setSavingTrip(false)
+    }
+  }
 
   return (
     <div className="swipe-page page safe-top" ref={pageRef}>
@@ -397,11 +626,18 @@ export default function Swipe() {
           edge case), so it was permanently eating ~40px of card space. */}
       <div className="swipe-header-wrap">
         <div className="swipe-header">
-          <button className="back-btn-sm close-btn" onClick={closeTrip} aria-label="Close">
-            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} width={20} height={20}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
+          <div className="swipe-header-left">
+            <button className="back-btn-sm" onClick={() => navigate('/home')} aria-label="Home">
+              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} width={19} height={19}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l9-9 9 9M5 10v10a1 1 0 001 1h4a1 1 0 001-1v-4h2v4a1 1 0 001 1h4a1 1 0 001-1V10" />
+              </svg>
+            </button>
+            <button className="back-btn-sm close-btn" onClick={closeTrip} aria-label="Close">
+              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} width={20} height={20}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
           <div className="swipe-title">
             <span>{catInfo.emoji}</span>
             <span>Swipe Your Trip</span>
@@ -446,6 +682,7 @@ export default function Swipe() {
 
       <div className="swipe-dest">
         📍 {tripLabel}
+        <button className="swipe-change-btn" onClick={openTripEdit}>Change</button>
         {view === 'swipe' && (
           <span className="swipe-progress">
             {businesses.length - cards.length}/{businesses.length}
@@ -455,6 +692,46 @@ export default function Swipe() {
           <span className="swipe-progress">{businesses.length} places</span>
         )}
       </div>
+
+      {showTripEdit && (
+        <div className="trip-edit-overlay" onClick={() => !savingTrip && setShowTripEdit(false)}>
+          <div className="trip-edit-sheet" onClick={e => e.stopPropagation()}>
+            <h3>Update your trip</h3>
+            <label className="trip-edit-label">Dates</label>
+            <div className="trip-edit-dates">
+              <input type="date" value={editArrival} onChange={e => setEditArrival(e.target.value)} />
+              <span>–</span>
+              <input type="date" value={editDeparture} min={editArrival || undefined} onChange={e => setEditDeparture(e.target.value)} />
+            </div>
+            <label className="trip-edit-label">Who's joining you?</label>
+            <div className="trip-edit-group-row">
+              {GROUP_TYPES.map(g => (
+                <button
+                  key={g.value}
+                  className={`trip-edit-group-btn ${editGroupType === g.value ? 'active' : ''}`}
+                  onClick={() => setEditGroupType(g.value)}
+                >
+                  <span>{g.emoji}</span><span>{g.label}</span>
+                </button>
+              ))}
+            </div>
+            <label className="trip-edit-label">Where are you staying?</label>
+            <div style={{ marginBottom: 24 }}>
+              <PropertyAutocomplete
+                value={editHotelName}
+                onChange={setEditHotelName}
+                placeholder="Search condos, hotels…"
+              />
+            </div>
+            <div className="trip-edit-actions">
+              <button className="trip-edit-cancel" onClick={() => setShowTripEdit(false)} disabled={savingTrip}>Cancel</button>
+              <button className="trip-edit-save" onClick={saveTripEdit} disabled={savingTrip}>
+                {savingTrip ? 'Saving…' : 'Save'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── SWIPE VIEW ── */}
       {view === 'swipe' && (
@@ -466,7 +743,7 @@ export default function Swipe() {
 
           {lastAction && (
             <div className={`swipe-flash ${lastAction}`}>
-              {lastAction === 'like' ? '❤️ LIKE' : lastAction === 'super' ? '⭐ MUST DO' : '✕ NOPE'}
+              {lastAction === 'like' ? '❤️ LIKE' : lastAction === 'super' ? '⭐ MUST DO' : lastAction === 'maybe' ? '🤔 MAYBE' : '✕ NOPE'}
             </div>
           )}
 
@@ -509,27 +786,35 @@ export default function Swipe() {
 
           {!allGone && (
             <div className="swipe-actions">
-              <button className="action-btn nope" onClick={pressNope}>
-                <span>✕</span>
-                <span>NOPE</span>
-              </button>
-              <button className="action-btn super" onClick={pressSuper}>
-                <span>⭐</span>
-                <span>MUST DO</span>
-              </button>
-              <button className="action-btn like" onClick={pressLike}>
-                <span>♥</span>
-                <span>LIKE</span>
-              </button>
-              <button
-                className={`action-btn undo ${undoStack.length === 0 ? 'disabled' : ''}`}
-                onClick={pressUndo}
-                disabled={undoStack.length === 0}
-                aria-label="Undo last swipe"
-              >
-                <span>↩</span>
-                <span>UNDO</span>
-              </button>
+              <div className="swipe-actions-row secondary">
+                <button className="action-btn maybe" onClick={pressMaybe}>
+                  <span>🤔</span>
+                  <span>MAYBE</span>
+                </button>
+                <button
+                  className={`action-btn undo ${undoStack.length === 0 ? 'disabled' : ''}`}
+                  onClick={pressUndo}
+                  disabled={undoStack.length === 0}
+                  aria-label="Undo last swipe"
+                >
+                  <span>↩</span>
+                  <span>UNDO</span>
+                </button>
+              </div>
+              <div className="swipe-actions-row primary">
+                <button className="action-btn nope" onClick={pressNope}>
+                  <span>✕</span>
+                  <span>NOPE</span>
+                </button>
+                <button className="action-btn super" onClick={pressSuper}>
+                  <span>⭐</span>
+                  <span>MUST DO</span>
+                </button>
+                <button className="action-btn like" onClick={pressLike}>
+                  <span>♥</span>
+                  <span>LIKE</span>
+                </button>
+              </div>
             </div>
           )}
         </>
@@ -748,6 +1033,7 @@ function BusinessCard({ business, isTop, onDetail, userLocation, swipingDir }) {
 
   const displayedTags = (business.tags || []).slice(0, 4)
   const desc = business.subtitle || (business.description ? business.description.slice(0, 90) + (business.description.length > 90 ? '…' : '') : '')
+  const status = computeStatus(business.hours || [])
 
   return (
     <div className={`business-card ${isTop ? 'top' : ''}`}>
@@ -801,15 +1087,22 @@ function BusinessCard({ business, isTop, onDetail, userLocation, swipingDir }) {
         )}
         <div className="card-name-row">
           <h3 className="card-name">{business.name}</h3>
-          {business.rating ? <div className="card-rating">⭐ {business.rating}</div> : null}
+          {business.rating ? (
+            <div className="card-rating">
+              ⭐ {business.rating}
+              {business.review_count > 0 && <span className="card-review-count"> ({business.review_count})</span>}
+            </div>
+          ) : null}
         </div>
         <div className="card-meta-row">
           {business.city && <span>📍 {business.city}</span>}
           {business.price_range && <><span className="dot">·</span><span>{business.price_range}</span></>}
           {distLabel && <><span className="dot">·</span><span>🚗 {distLabel}</span></>}
         </div>
-        {(business.live_music || business.happy_hour || business.duration) && (
+        {desc && <p className="card-desc">{desc}</p>}
+        {(status || business.live_music || business.happy_hour || business.duration) && (
           <div className="card-badges" style={{marginTop:6}}>
+            {status && <span className={`badge badge-status-${status.cls}`}>{status.label}</span>}
             {business.live_music && <span className="badge badge-live">🎵 Live</span>}
             {business.happy_hour && <span className="badge badge-happy">🍹 HH</span>}
             {business.duration && <span className="badge badge-music">⏱ {business.duration}</span>}
@@ -836,7 +1129,7 @@ function BusinessCard({ business, isTop, onDetail, userLocation, swipingDir }) {
             <button className="cta-detail pressable"
               onPointerUp={e => { e.stopPropagation(); onDetail() }}
               onClick={e => { e.stopPropagation(); onDetail() }}>
-              More Info →
+              View Details →
             </button>
           </div>
         </div>
@@ -1083,7 +1376,7 @@ function DealSwipeCard({ deal, isTop, onDetail }) {
             <button className="cta-detail pressable"
               onPointerUp={e => { e.stopPropagation(); onDetail() }}
               onClick={e => { e.stopPropagation(); onDetail() }}>
-              More Info →
+              View Details →
             </button>
           </div>
         </div>

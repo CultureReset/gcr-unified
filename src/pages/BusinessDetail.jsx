@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { API_BASE } from '../config'
+import { authFetch } from '../context/AppContext'
 import ReviewsSection from '../components/ReviewsSection'
 import TeamSection from '../components/TeamSection'
 import GallerySection from '../components/GallerySection'
@@ -14,6 +15,24 @@ import '../components/MiniSiteComponents.css'
 export default function RestaurantDetail() {
   const { slug } = useParams()
   const navigate = useNavigate()
+
+  // Log an outbound booking/order click tied to this tourist, then open the
+  // destination with a gcr_ref so the conversion can be attributed back to them.
+  async function trackAndOpen(e, url, type) {
+    if (!url) return
+    e.preventDefault()
+    let ref = ''
+    try {
+      const r = await authFetch('/api/tourist/track-click', {
+        method: 'POST',
+        body: JSON.stringify({ entity_slug: slug, click_type: type, target_url: url }),
+      })
+      if (r.ok) { const d = await r.json().catch(() => ({})); ref = d.click_id || '' }
+    } catch { /* never block the outbound link */ }
+    const sep = url.includes('?') ? '&' : '?'
+    window.open(ref ? `${url}${sep}gcr_ref=${encodeURIComponent(ref)}` : url, '_blank', 'noopener,noreferrer')
+  }
+
   const [business, setBusiness] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -595,15 +614,15 @@ export default function RestaurantDetail() {
           return (business.reservation_url || business.order_url || business.booking_url) ? (
             <div className="primary-cta">
               {business.reservation_url && (
-                <a href={business.reservation_url} target="_blank" rel="noopener noreferrer" className="btn-primary-cta">{reserveLabel}</a>
+                <a href={business.reservation_url} onClick={e => trackAndOpen(e, business.reservation_url, 'reserve')} target="_blank" rel="noopener noreferrer" className="btn-primary-cta">{reserveLabel}</a>
               )}
               {business.order_url && (
-                <a href={business.order_url} target="_blank" rel="noopener noreferrer" className="btn-primary-cta">
+                <a href={business.order_url} onClick={e => trackAndOpen(e, business.order_url, 'order')} target="_blank" rel="noopener noreferrer" className="btn-primary-cta">
                   {isFood ? '🛵 Order Online' : '🛒 Order / Buy'}
                 </a>
               )}
               {business.booking_url && !business.reservation_url && (
-                <a href={business.booking_url} target="_blank" rel="noopener noreferrer" className="btn-primary-cta">{bookLabel}</a>
+                <a href={business.booking_url} onClick={e => trackAndOpen(e, business.booking_url, 'book')} target="_blank" rel="noopener noreferrer" className="btn-primary-cta">{bookLabel}</a>
               )}
             </div>
           ) : null
@@ -777,7 +796,7 @@ export default function RestaurantDetail() {
                       })}
                     </div>
                     {business.booking_url && (
-                      <a href={business.booking_url} target="_blank" rel="noopener noreferrer" className="avail-book-btn">
+                      <a href={business.booking_url} onClick={e => trackAndOpen(e, business.booking_url, 'book')} target="_blank" rel="noopener noreferrer" className="avail-book-btn">
                         📅 Book Now — Before It's Gone
                       </a>
                     )}

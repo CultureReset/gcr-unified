@@ -1,8 +1,41 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useApp, authFetch } from '../context/AppContext'
+import { API_BASE } from '../config'
 import Toast from '../components/Toast'
 import './Profile.css'
+
+// Downscale + compress a picked image to a JPEG data URL before upload,
+// so we're not shipping multi-MB originals into the photos table.
+function compressImage(file, maxW = 1200, quality = 0.8) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = e => {
+      const img = new Image()
+      img.onload = () => {
+        const scale = Math.min(1, maxW / img.width)
+        const w = Math.round(img.width * scale)
+        const h = Math.round(img.height * scale)
+        const canvas = document.createElement('canvas')
+        canvas.width = w; canvas.height = h
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h)
+        resolve(canvas.toDataURL('image/jpeg', quality))
+      }
+      img.onerror = reject
+      img.src = e.target.result
+    }
+    reader.onerror = reject
+    reader.readAsDataURL(file)
+  })
+}
+
+// Images get compressed to a JPEG blob; videos upload as-is.
+async function fileToUploadBlob(file) {
+  if (file.type?.startsWith('video/')) return file
+  const dataUrl = await compressImage(file)
+  const res = await fetch(dataUrl)
+  return await res.blob()
+}
 
 function hasRealEmail(email) {
   return !!email && !/@gcr\.tourist$/i.test(email)
@@ -27,11 +60,16 @@ export default function Profile() {
   const { tourist, savedPlaces, itinerary, logout, removeSavedPlace, seenSlugs, resetSeenSlugs, userId, locationSharingEnabled, enableLocationSharing, disableLocationSharing } = useApp()
   const [companionCount, setCompanionCount] = useState(0)
   const [myPhotos, setMyPhotos] = useState([])
+  const [myReviews, setMyReviews] = useState([])
+  const [points, setPoints] = useState(null)
   const [photosLoaded, setPhotosLoaded] = useState(false)
   const [togglingLocation, setTogglingLocation] = useState(false)
   const [filterCategory, setFilterCategory] = useState('all')
   const [accountOpen, setAccountOpen] = useState(false)
   const [toast, setToast] = useState(null)
+  const [uploadSlug, setUploadSlug] = useState('')
+  const [uploading, setUploading] = useState(false)
+  const photoInputRef = useRef(null)
 
   const [addEmailOpen, setAddEmailOpen] = useState(false)
   const [addEmailStep, setAddEmailStep] = useState('input')
@@ -82,10 +120,15 @@ export default function Profile() {
     let cancelled = false
     ;(async () => {
       try {
-        const [groupsRes, photosRes] = await Promise.all([
+        const [groupsRes, photosRes, reviewsRes, pointsRes] = await Promise.all([
           authFetch('/api/tourist/groups'),
           authFetch('/api/tourist/photos'),
+          authFetch('/api/tourist/reviews'),
+          authFetch('/api/tourist/points'),
         ])
+        if (!cancelled && pointsRes?.ok) {
+          setPoints(await pointsRes.json())
+        }
         if (!cancelled && groupsRes?.ok) {
           const { groups = [] } = await groupsRes.json()
           const others = new Set()
@@ -95,6 +138,10 @@ export default function Profile() {
         if (!cancelled && photosRes?.ok) {
           const { photos = [] } = await photosRes.json()
           setMyPhotos(photos)
+        }
+        if (!cancelled && reviewsRes?.ok) {
+          const { reviews = [] } = await reviewsRes.json()
+          setMyReviews(reviews)
         }
         if (!cancelled) setPhotosLoaded(true)
       } catch (e) { if (!cancelled) setPhotosLoaded(true) }
@@ -123,6 +170,42 @@ export default function Profile() {
       console.error('Error toggling location sharing:', e)
     } finally {
       setTogglingLocation(false)
+    }
+  }
+
+  async function handlePhotoUpload(e) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const slug = uploadSlug || savedPlaces[0]?.slug
+    if (!slug) { setToast({ message: 'Pick a place first, then add a photo or video to it', type: 'error' }); return }
+    setUploading(true)
+    try {
+      // 1) upload the file (image or video) → get a hosted URL
+      const blob = await fileToUploadBlob(file)
+      const fd = new FormData()
+      fd.append('file', blob, file.name || (file.type?.startsWith('video/') ? 'video.mp4' : 'photo.jpg'))
+      const token = localStorage.getItem('gcr_access_token')
+      const up = await fetch(`${API_BASE}/api/tourist/upload-media`, {
+        method: 'POST',
+        headers: token ? { Authorization: 'Bearer ' + token } : {},
+        body: fd,
+      })
+      if (!up.ok) { const d = await up.json().catch(() => ({})); throw new Error(d.error || 'Upload failed') }
+      const { url, media_type } = await up.json()
+      // 2) attach it to the saved place (goes to admin review queue, tied to this account)
+      const r = await authFetch('/api/tourist/photos', {
+        method: 'POST',
+        body: JSON.stringify({ entity_slug: slug, image_url: url, media_type, category: 'general' }),
+      })
+      if (!r.ok) { const d = await r.json().catch(() => ({})); throw new Error(d.error || 'Submit failed') }
+      const { photo } = await r.json()
+      if (photo) setMyPhotos(prev => [photo, ...prev])
+      setToast({ message: `${media_type === 'video' ? 'Video' : 'Photo'} submitted — pending review`, type: 'success' })
+    } catch (err) {
+      setToast({ message: err.message || 'Upload failed', type: 'error' })
+    } finally {
+      setUploading(false)
+      if (photoInputRef.current) photoInputRef.current.value = ''
     }
   }
 
@@ -178,7 +261,7 @@ export default function Profile() {
             {phoneFormatted ? `📱 ${phoneFormatted}` : realEmail ? `✉️ ${realEmail}` : 'Not set'}
           </p>
           {phoneFormatted && realEmail && (
-            <p style={{margin:'2px 0 0',fontSize:12,color:'rgba(255,255,255,.55)',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>✉️ {realEmail}</p>
+            <p style={{margin:'2px 0 0',fontSize:12,color:'var(--text3)',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>✉️ {realEmail}</p>
           )}
         </div>
         <button className="edit-btn" onClick={() => navigate('/setup/name')}>Edit</button>
@@ -187,7 +270,28 @@ export default function Profile() {
       {tripCountdown && (
         <div style={{background:'linear-gradient(135deg,rgba(124,106,247,.18),rgba(14,165,233,.12))',border:'1px solid rgba(124,106,247,.3)',borderRadius:14,padding:'12px 14px',display:'flex',alignItems:'center',gap:10}}>
           <span style={{fontSize:22}}>{tripCountdown.emoji}</span>
-          <span style={{fontWeight:700,color:'#fff',fontSize:14}}>{tripCountdown.label}</span>
+          <span style={{fontWeight:700,color:'var(--text)',fontSize:14}}>{tripCountdown.label}</span>
+        </div>
+      )}
+
+      {/* Rewards — points balance + tier (rolls over trip to trip) */}
+      {points && (
+        <div style={{background:'linear-gradient(135deg,#f59e0b,#d97706)',borderRadius:16,padding:'14px 16px',color:'#fff'}}>
+          <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',gap:10}}>
+            <div>
+              <div style={{fontSize:12,fontWeight:800,opacity:.95,textTransform:'uppercase',letterSpacing:.5}}>👑 {points.tier?.name || 'Member'}</div>
+              <div style={{fontSize:26,fontWeight:900,lineHeight:1.1,marginTop:2}}>{points.balance ?? 0} <span style={{fontSize:14,fontWeight:600}}>pts</span></div>
+            </div>
+            {points.tier?.perks && <div style={{fontSize:11,textAlign:'right',maxWidth:140,opacity:.95,lineHeight:1.4}}>{points.tier.perks}</div>}
+          </div>
+          {points.next && (
+            <div style={{marginTop:10}}>
+              <div style={{height:6,background:'rgba(255,255,255,.3)',borderRadius:4,overflow:'hidden'}}>
+                <div style={{height:'100%',background:'#fff',width:`${Math.min(100, Math.round(((points.balance || 0) / points.next.min) * 100))}%`}} />
+              </div>
+              <div style={{fontSize:11,marginTop:4,opacity:.95}}>{Math.max(0, points.next.min - (points.balance || 0))} pts to {points.next.name}</div>
+            </div>
+          )}
         </div>
       )}
 
@@ -267,7 +371,7 @@ export default function Profile() {
               disabled={togglingLocation}
               style={{cursor:'pointer',width:18,height:18}}
             />
-            <span style={{fontSize:12,color:'rgba(255,255,255,.7)'}}>
+            <span style={{fontSize:12,color:'var(--text2)'}}>
               {togglingLocation ? 'Updating...' : locationSharingEnabled ? 'On' : 'Off'}
             </span>
           </label>
@@ -275,12 +379,12 @@ export default function Profile() {
         {locationSharingEnabled ? (
           <div style={{fontSize:13,color:'rgba(14,165,233,.9)',lineHeight:1.6}}>
             ✅ You'll get SMS offers when you're near places you've shown interest in. We use your location every 30 seconds and delete location history after 30 days.
-            <div style={{marginTop:12,fontSize:12,color:'rgba(255,255,255,.5)'}}>
+            <div style={{marginTop:12,fontSize:12,color:'var(--text3)'}}>
               📍 Radius: 1 mile | 📨 Frequency: Once per day | 🔒 Privacy-first
             </div>
           </div>
         ) : (
-          <div style={{fontSize:13,color:'rgba(255,255,255,.6)',lineHeight:1.6}}>
+          <div style={{fontSize:13,color:'var(--text2)',lineHeight:1.6}}>
             Enable location sharing to receive personalized SMS offers for places you'll love, sent when you're nearby.
           </div>
         )}
@@ -290,7 +394,7 @@ export default function Profile() {
         <h3 style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:12}}>
           <span>My Saves</span>
           {savedPlaces.length > 0 && (
-            <span style={{fontSize:13,color:'rgba(255,255,255,.6)'}}>
+            <span style={{fontSize:13,color:'var(--text2)'}}>
               {savedPlaces.length}{superCount > 0 ? ` · ⭐ ${superCount} must-do` : ''}
             </span>
           )}
@@ -317,11 +421,11 @@ export default function Profile() {
         {savedPlaces.length === 0 ? (
           <div style={{background:'rgba(255,255,255,.04)',border:'1px solid rgba(255,255,255,.08)',borderRadius:14,padding:20,textAlign:'center'}}>
             <div style={{fontSize:32,marginBottom:8}}>💫</div>
-            <div style={{color:'rgba(255,255,255,.8)',marginBottom:12}}>No saves yet</div>
+            <div style={{color:'var(--text2)',marginBottom:12}}>No saves yet</div>
             <button className="btn-primary" onClick={() => navigate('/home')} style={{padding:'10px 18px'}}>Start Swiping</button>
           </div>
         ) : filteredSaves.length === 0 ? (
-          <div style={{background:'rgba(255,255,255,.04)',border:'1px solid rgba(255,255,255,.08)',borderRadius:14,padding:20,textAlign:'center',color:'rgba(255,255,255,.6)',fontSize:13}}>
+          <div style={{background:'rgba(255,255,255,.04)',border:'1px solid rgba(255,255,255,.08)',borderRadius:14,padding:20,textAlign:'center',color:'var(--text2)',fontSize:13}}>
             Nothing in this category yet.
           </div>
         ) : (
@@ -335,9 +439,9 @@ export default function Profile() {
                   <img src={p.hero_image_url} alt="" style={{width:64,height:64,borderRadius:10,objectFit:'cover',flexShrink:0,cursor:'pointer'}} onClick={() => navigate(`/business/${p.slug}`)} />
                 )}
                 <div style={{flex:1,minWidth:0,cursor:'pointer'}} onClick={() => navigate(`/business/${p.slug}`)}>
-                  <div style={{fontWeight:700,color:'#fff',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{p.name}</div>
-                  {p.subtitle && <div style={{fontSize:12,color:'rgba(255,255,255,.6)',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{p.subtitle}</div>}
-                  <div style={{fontSize:11,color:'rgba(255,255,255,.45)',marginTop:2}}>
+                  <div style={{fontWeight:700,color:'var(--text)',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{p.name}</div>
+                  {p.subtitle && <div style={{fontSize:12,color:'var(--text2)',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{p.subtitle}</div>}
+                  <div style={{fontSize:11,color:'var(--text3)',marginTop:2}}>
                     {p.rating ? `⭐ ${p.rating}` : ''}
                     {p.rating && p.price_range ? ' · ' : ''}
                     {p.price_range || ''}
@@ -346,7 +450,7 @@ export default function Profile() {
                 </div>
                 <button
                   onClick={() => removeSavedPlace(p.id)}
-                  style={{background:'none',border:'none',color:'rgba(255,255,255,.5)',fontSize:18,cursor:'pointer',padding:8}}
+                  style={{background:'none',border:'none',color:'var(--text3)',fontSize:18,cursor:'pointer',padding:8}}
                   aria-label="Remove"
                 >✕</button>
               </div>
@@ -359,21 +463,47 @@ export default function Profile() {
         <div style={{margin:'20px 0'}}>
           <h3 style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:12}}>
             <span>My Photos</span>
-            {myPhotos.length > 0 && <span style={{fontSize:13,color:'rgba(255,255,255,.6)'}}>{myPhotos.length} submitted</span>}
+            {myPhotos.length > 0 && <span style={{fontSize:13,color:'var(--text2)'}}>{myPhotos.length} submitted</span>}
           </h3>
+
+          {/* Upload your own photo (goes to admin review queue), attached to a saved place */}
+          <input type="file" accept="image/*,video/*" ref={photoInputRef} onChange={handlePhotoUpload} style={{display:'none'}} />
+          {savedPlaces.length > 0 ? (
+            <div style={{display:'flex',gap:8,marginBottom:12}}>
+              <select value={uploadSlug} onChange={e => setUploadSlug(e.target.value)}
+                style={{flex:1,minWidth:0,padding:'10px 12px',borderRadius:12,border:'1px solid var(--border)',background:'var(--bg1)',color:'var(--text)',fontSize:13}}>
+                <option value="">Which place is this photo/video of?</option>
+                {savedPlaces.map(p => <option key={p.id} value={p.slug}>{p.name}</option>)}
+              </select>
+              <button className="btn-primary" disabled={uploading}
+                onClick={() => photoInputRef.current?.click()}
+                style={{padding:'10px 16px',whiteSpace:'nowrap',flexShrink:0}}>
+                {uploading ? 'Uploading…' : '📸 Add Photo / Video'}
+              </button>
+            </div>
+          ) : (
+            <div style={{fontSize:12,color:'var(--text3)',marginBottom:12}}>Save a place first, then you can add your own photos or videos to it.</div>
+          )}
+
           {myPhotos.length === 0 ? (
             <div style={{background:'rgba(255,255,255,.04)',border:'1px solid rgba(255,255,255,.08)',borderRadius:14,padding:20,textAlign:'center'}}>
               <div style={{fontSize:32,marginBottom:8}}>📸</div>
-              <div style={{color:'rgba(255,255,255,.7)',fontSize:14}}>No photos yet</div>
-              <div style={{color:'rgba(255,255,255,.4)',fontSize:12,marginTop:4}}>Photos you share after visiting places will appear here</div>
+              <div style={{color:'var(--text2)',fontSize:14}}>No photos yet</div>
+              <div style={{color:'var(--text3)',fontSize:12,marginTop:4}}>Photos you share after visiting places will appear here</div>
             </div>
           ) : (
             <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:6}}>
               {myPhotos.map(p => (
-                <div key={p.id} style={{position:'relative',aspectRatio:'1',borderRadius:10,overflow:'hidden',background:'rgba(255,255,255,.06)',cursor:'pointer'}}
+                <div key={p.id} style={{position:'relative',aspectRatio:'1',borderRadius:10,overflow:'hidden',background:'var(--bg2)',cursor:'pointer'}}
                   onClick={() => navigate(`/business/${p.entity_slug}`)}>
-                  <img src={p.image_url} alt={p.caption || ''} style={{width:'100%',height:'100%',objectFit:'cover'}}
-                    onError={e => { e.target.style.display='none' }} />
+                  {p.media_type === 'video'
+                    ? <>
+                        <video src={p.image_url} style={{width:'100%',height:'100%',objectFit:'cover'}} muted playsInline preload="metadata" />
+                        <span style={{position:'absolute',top:6,right:6,fontSize:14}}>▶️</span>
+                      </>
+                    : <img src={p.image_url} alt={p.caption || ''} style={{width:'100%',height:'100%',objectFit:'cover'}}
+                        onError={e => { e.target.style.display='none' }} />
+                  }
                   <div style={{position:'absolute',bottom:0,left:0,right:0,padding:'4px 6px',background:'rgba(0,0,0,.6)'}}>
                     <span style={{fontSize:9,fontWeight:600,color:p.status==='approved'?'#86efac':p.status==='rejected'?'#fca5a5':'#fcd34d',textTransform:'uppercase',letterSpacing:.5}}>
                       {p.status}
@@ -386,21 +516,61 @@ export default function Profile() {
         </div>
       )}
 
+      {/* My Reviews — authentic reviews tied to this phone account */}
+      {photosLoaded && (
+        <div style={{margin:'20px 0'}}>
+          <h3 style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:12}}>
+            <span>My Reviews</span>
+            {myReviews.length > 0 && <span style={{fontSize:13,color:'var(--text2)'}}>{myReviews.length}</span>}
+          </h3>
+          {myReviews.length === 0 ? (
+            <div style={{background:'var(--bg2)',border:'1px solid var(--border)',borderRadius:14,padding:20,textAlign:'center'}}>
+              <div style={{fontSize:32,marginBottom:8}}>✍️</div>
+              <div style={{color:'var(--text2)',fontSize:14}}>No reviews yet</div>
+              <div style={{color:'var(--text3)',fontSize:12,marginTop:4}}>Reviews you write show up here — verified as really you</div>
+            </div>
+          ) : (
+            <div style={{display:'flex',flexDirection:'column',gap:10}}>
+              {myReviews.map(rv => (
+                <div key={rv.id} style={{background:'var(--bg2)',border:'1px solid var(--border)',borderRadius:12,padding:12,cursor:'pointer'}}
+                  onClick={() => navigate(`/business/${rv.entity_slug}`)}>
+                  <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:8,marginBottom:4}}>
+                    <span style={{fontWeight:700,color:'var(--text)',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{rv.title}</span>
+                    <span style={{color:'#fbbf24',fontSize:13,flexShrink:0}}>{'★'.repeat(rv.rating)}{'☆'.repeat(Math.max(0, 5 - rv.rating))}</span>
+                  </div>
+                  <div style={{fontSize:13,color:'var(--text2)',lineHeight:1.5,marginBottom:6}}>{rv.body}</div>
+                  {rv.media_url && (rv.media_type === 'video'
+                    ? <video src={rv.media_url} style={{width:'100%',maxHeight:180,borderRadius:8,objectFit:'cover'}} muted playsInline preload="metadata" />
+                    : <img src={rv.media_url} alt="" style={{width:'100%',maxHeight:180,borderRadius:8,objectFit:'cover'}} />
+                  )}
+                  <div style={{display:'flex',alignItems:'center',gap:8,marginTop:6}}>
+                    <span style={{fontSize:11,color:'var(--text3)'}}>{rv.entity_slug}</span>
+                    <span style={{fontSize:10,fontWeight:700,padding:'2px 7px',borderRadius:8,background:rv.approved?'rgba(34,197,94,.15)':'rgba(251,191,36,.15)',color:rv.approved?'#16a34a':'#b45309'}}>
+                      {rv.approved ? 'PUBLISHED' : 'PENDING'}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       <div style={{background:'var(--bg2)',border:'1px solid var(--border)',borderRadius:20,overflow:'hidden'}}>
         <button
           onClick={() => setAccountOpen(o => !o)}
-          style={{width:'100%',display:'flex',alignItems:'center',gap:12,padding:16,fontSize:15,fontWeight:600,color:'#fff',background:'transparent',textAlign:'left',border:'none'}}
+          style={{width:'100%',display:'flex',alignItems:'center',gap:12,padding:16,fontSize:15,fontWeight:600,color:'var(--text)',background:'transparent',textAlign:'left',border:'none'}}
         >
           <span style={{fontSize:18}}>👤</span>
           <span>Account</span>
-          <span style={{marginLeft:'auto',color:'rgba(255,255,255,.5)',fontSize:18,transform:accountOpen?'rotate(90deg)':'none',transition:'transform 0.15s'}}>›</span>
+          <span style={{marginLeft:'auto',color:'var(--text3)',fontSize:18,transform:accountOpen?'rotate(90deg)':'none',transition:'transform 0.15s'}}>›</span>
         </button>
         {accountOpen && (
           <div style={{padding:'4px 16px 16px',display:'flex',flexDirection:'column',gap:0,borderTop:'1px solid var(--border)'}}>
             {phoneFormatted && (
               <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'12px 0'}}>
                 <div>
-                  <div style={{fontSize:12,color:'rgba(255,255,255,.55)',marginBottom:2}}>Phone</div>
+                  <div style={{fontSize:12,color:'var(--text3)',marginBottom:2}}>Phone</div>
                   <div style={{fontWeight:600}}>📱 {phoneFormatted}</div>
                 </div>
                 <span style={{fontSize:11,fontWeight:700,padding:'3px 8px',borderRadius:10,background:'rgba(34,197,94,.15)',color:'#86efac'}}>VERIFIED</span>
@@ -409,9 +579,9 @@ export default function Profile() {
 
             <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'12px 0',borderTop:phoneFormatted?'1px solid var(--border)':'none'}}>
               <div style={{minWidth:0,flex:1}}>
-                <div style={{fontSize:12,color:'rgba(255,255,255,.55)',marginBottom:2}}>Email</div>
+                <div style={{fontSize:12,color:'var(--text3)',marginBottom:2}}>Email</div>
                 <div style={{fontWeight:600,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>
-                  {realEmail ? `✉️ ${realEmail}` : <span style={{color:'rgba(255,255,255,.55)'}}>Not set</span>}
+                  {realEmail ? `✉️ ${realEmail}` : <span style={{color:'var(--text3)'}}>Not set</span>}
                 </div>
               </div>
               {!realEmail && !addEmailOpen && (
@@ -424,7 +594,7 @@ export default function Profile() {
                 {addEmailStep === 'input' ? (
                   <>
                     <div style={{fontWeight:700,marginBottom:6,fontSize:14}}>Add email + password</div>
-                    <div style={{fontSize:12,color:'rgba(255,255,255,.6)',marginBottom:10}}>So you can also sign in by email and recover your account if you lose your phone.</div>
+                    <div style={{fontSize:12,color:'var(--text2)',marginBottom:10}}>So you can also sign in by email and recover your account if you lose your phone.</div>
                     <input
                       type="email" placeholder="you@email.com" value={newEmail}
                       onChange={e => setNewEmail(e.target.value)}
@@ -441,12 +611,12 @@ export default function Profile() {
                       <button className="btn-primary" onClick={sendAddEmailCode} disabled={emailBusy || !newEmail || newPassword.length < 6} style={{flex:1}}>
                         {emailBusy ? 'Sending…' : 'Send code →'}
                       </button>
-                      <button onClick={() => { setAddEmailOpen(false); setEmailErr(''); setEmailInfo('') }} style={{background:'transparent',border:'1px solid rgba(255,255,255,.2)',color:'#fff',borderRadius:10,padding:'10px 14px'}}>Cancel</button>
+                      <button onClick={() => { setAddEmailOpen(false); setEmailErr(''); setEmailInfo('') }} style={{background:'transparent',border:'1px solid rgba(255,255,255,.2)',color:'var(--text)',borderRadius:10,padding:'10px 14px'}}>Cancel</button>
                     </div>
                   </>
                 ) : (
                   <>
-                    <div style={{fontWeight:700,marginBottom:8,fontSize:14}}>Enter the 6-digit code we emailed to <span style={{color:'#fff'}}>{newEmail}</span></div>
+                    <div style={{fontWeight:700,marginBottom:8,fontSize:14}}>Enter the 6-digit code we emailed to <span style={{color:'var(--text)'}}>{newEmail}</span></div>
                     <input
                       type="text" inputMode="numeric" maxLength={6} placeholder="6-digit code" value={emailCode}
                       onChange={e => setEmailCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
@@ -458,7 +628,7 @@ export default function Profile() {
                       <button className="btn-primary" onClick={confirmAddEmail} disabled={emailBusy || emailCode.length < 6} style={{flex:1}}>
                         {emailBusy ? 'Confirming…' : 'Confirm →'}
                       </button>
-                      <button onClick={() => setAddEmailStep('input')} style={{background:'transparent',border:'1px solid rgba(255,255,255,.2)',color:'#fff',borderRadius:10,padding:'10px 14px'}}>Back</button>
+                      <button onClick={() => setAddEmailStep('input')} style={{background:'transparent',border:'1px solid rgba(255,255,255,.2)',color:'var(--text)',borderRadius:10,padding:'10px 14px'}}>Back</button>
                     </div>
                   </>
                 )}

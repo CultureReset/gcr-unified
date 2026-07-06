@@ -28,6 +28,12 @@
   color: white;
 }
 
+.swipe-header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .swipe-title {
   font-size: 16px;
   font-weight: 800;
@@ -166,6 +172,172 @@
 
 .swipe-progress {
   color: var(--text3);
+}
+
+.swipe-change-btn {
+  background: none;
+  border: none;
+  color: #7c6af7;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 0;
+  cursor: pointer;
+}
+
+.trip-edit-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  z-index: 200;
+  display: flex;
+  align-items: flex-end;
+}
+
+.trip-edit-sheet {
+  background: #14161f;
+  width: 100%;
+  border-radius: 20px 20px 0 0;
+  padding: 24px 20px calc(24px + env(safe-area-inset-bottom));
+}
+
+.trip-edit-sheet h3 {
+  color: white;
+  font-size: 18px;
+  font-weight: 800;
+  margin: 0 0 18px;
+}
+
+.trip-edit-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+.trip-edit-dates {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.trip-edit-dates input {
+  flex: 1;
+  padding: 10px 12px;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 10px;
+  color: white;
+  font-size: 14px;
+}
+
+.trip-edit-dates span {
+  color: rgba(255,255,255,0.4);
+}
+
+.trip-edit-group-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+
+.trip-edit-group-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 14px;
+  background: rgba(255,255,255,0.08);
+  border: 1.5px solid rgba(255,255,255,0.15);
+  border-radius: 20px;
+  color: rgba(255,255,255,0.75);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.trip-edit-group-btn.active {
+  background: rgba(124,106,247,0.2);
+  border-color: #7c6af7;
+  color: white;
+}
+
+.trip-edit-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 10px;
+  color: white;
+  font-size: 14px;
+}
+
+.trip-edit-autocomplete {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: #1a1c28;
+  border: 1px solid rgba(255,255,255,0.15);
+  border-top: none;
+  border-radius: 0 0 10px 10px;
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 10;
+}
+
+.trip-edit-autocomplete-item {
+  display: block;
+  width: 100%;
+  padding: 10px 12px;
+  background: none;
+  border: none;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  text-align: left;
+  cursor: pointer;
+}
+
+.trip-edit-autocomplete-item .ac-name {
+  color: white;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.trip-edit-autocomplete-item .ac-meta {
+  color: rgba(255,255,255,0.5);
+  font-size: 12px;
+  margin-top: 2px;
+}
+
+.trip-edit-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.trip-edit-cancel, .trip-edit-save {
+  flex: 1;
+  padding: 13px;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 700;
+  border: none;
+}
+
+.trip-edit-cancel {
+  background: rgba(255,255,255,0.08);
+  color: white;
+}
+
+.trip-edit-save {
+  background: #7c6af7;
+  color: white;
+}
+
+.trip-edit-cancel:disabled, .trip-edit-save:disabled {
+  opacity: 0.6;
 }
 
 .swipe-hint {
@@ -421,16 +593,23 @@
 
 .swipe-actions {
   display: flex;
-  justify-content: center;
+  flex-direction: column;
   align-items: center;
-  gap: 20px;
-  /* The 86px used to clear the global bottom tab bar, which used to render
-     on top of this page. /swipe/* now hides it (App.jsx hideNav) since this
-     page has always had its own full-screen header — that bottom nav
-     clearance is dead weight now, just needs normal safe-area room. */
+  /* Two rows instead of one — lets every button share one larger, uniform
+     size instead of shrinking to cram 5 circles into a single line. */
+  gap: clamp(10px, 3vw, 16px);
   padding: 10px 20px calc(20px + env(safe-area-inset-bottom));
 }
 
+.swipe-actions-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: clamp(14px, 5vw, 28px);
+}
+
+/* Every action button — regardless of row or variant — is the exact same
+   size, scaled to the viewport instead of fixed pixels. */
 .action-btn {
   display: flex;
   flex-direction: column;
@@ -442,9 +621,12 @@
   letter-spacing: 0.5px;
   transition: transform 0.12s, box-shadow 0.12s;
   justify-content: center;
-  width: 64px;
-  height: 64px;
+  width: clamp(60px, 20vw, 84px);
+  height: clamp(60px, 20vw, 84px);
+  flex-shrink: 0;
 }
+
+.action-btn span:first-child { font-size: clamp(20px, 6vw, 28px); }
 
 .action-btn:active { transform: scale(0.88); }
 
@@ -455,18 +637,25 @@
   box-shadow: 0 4px 20px rgba(239,68,68,0.15);
 }
 
-.action-btn.nope span:first-child { font-size: 22px; }
+.action-btn.maybe {
+  background: rgba(148,163,184,0.1);
+  border: 2px solid rgba(148,163,184,0.4);
+  color: #cbd5e1;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+}
+
+.swipe-flash.maybe {
+  background: rgba(148,163,184,0.95);
+  color: #1e293b;
+  border: 4px solid #cbd5e1;
+}
 
 .action-btn.like {
   background: rgba(34,197,94,0.12);
   border: 2.5px solid rgba(34,197,94,0.5);
   color: #86efac;
-  width: 80px;
-  height: 80px;
   box-shadow: 0 4px 24px rgba(34,197,94,0.2);
 }
-
-.action-btn.like span:first-child { font-size: 28px; }
 
 .all-done {
   text-align: center;
@@ -587,17 +776,6 @@
 .tag-purple  { background: rgba(168,85,247,0.18); color: #d8b4fe; border: 1px solid rgba(168,85,247,0.3); }
 .tag-orange  { background: rgba(249,115,22,0.18); color: #fdba74; border: 1px solid rgba(249,115,22,0.3); }
 .tag-default { background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.55); border: 1px solid rgba(255,255,255,0.12); }
-
-/* ── Super Like button ── */
-.action-btn.super {
-  background: rgba(59,130,246,0.15);
-  border: 2px solid rgba(59,130,246,0.4);
-  color: #93c5fd;
-  width: 62px;
-  height: 62px;
-}
-
-.action-btn.super span:first-child { font-size: 18px; }
 
 /* ── Super flash ── */
 .swipe-flash.super {
@@ -725,6 +903,22 @@
   flex-shrink: 0;
 }
 
+.card-review-count {
+  font-weight: 600;
+  color: rgba(255,255,255,0.6);
+}
+
+.card-desc {
+  font-size: 13px;
+  line-height: 1.4;
+  color: rgba(255,255,255,0.85);
+  margin: 6px 0 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
 .card-overlay-info .card-meta-row {
   display: flex;
   align-items: center;
@@ -755,11 +949,8 @@
   background: rgba(250,204,21,0.12);
   border: 2.5px solid rgba(250,204,21,0.5);
   color: #fde68a;
-  width: 56px;
-  height: 56px;
   box-shadow: 0 4px 16px rgba(250,204,21,0.1);
 }
-.action-btn.super span:first-child { font-size: 20px; }
 
 /* ── Tags moved to overlay bottom (above name) — no badge collision ── */
 .card-tags-overlay-bottom {
@@ -833,12 +1024,8 @@
   background: rgba(148, 163, 184, 0.1);
   border: 2px solid rgba(148, 163, 184, 0.35);
   color: #94a3b8;
-  width: 52px;
-  height: 52px;
   box-shadow: 0 4px 16px rgba(0,0,0,0.15);
 }
-
-.action-btn.undo span:first-child { font-size: 20px; }
 
 .action-btn.undo.disabled {
   opacity: 0.3;
