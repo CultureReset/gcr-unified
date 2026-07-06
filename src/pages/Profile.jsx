@@ -60,6 +60,7 @@ export default function Profile() {
   const { tourist, savedPlaces, itinerary, logout, removeSavedPlace, seenSlugs, resetSeenSlugs, userId, locationSharingEnabled, enableLocationSharing, disableLocationSharing } = useApp()
   const [companionCount, setCompanionCount] = useState(0)
   const [myPhotos, setMyPhotos] = useState([])
+  const [myReviews, setMyReviews] = useState([])
   const [photosLoaded, setPhotosLoaded] = useState(false)
   const [togglingLocation, setTogglingLocation] = useState(false)
   const [filterCategory, setFilterCategory] = useState('all')
@@ -118,9 +119,10 @@ export default function Profile() {
     let cancelled = false
     ;(async () => {
       try {
-        const [groupsRes, photosRes] = await Promise.all([
+        const [groupsRes, photosRes, reviewsRes] = await Promise.all([
           authFetch('/api/tourist/groups'),
           authFetch('/api/tourist/photos'),
+          authFetch('/api/tourist/reviews'),
         ])
         if (!cancelled && groupsRes?.ok) {
           const { groups = [] } = await groupsRes.json()
@@ -131,6 +133,10 @@ export default function Profile() {
         if (!cancelled && photosRes?.ok) {
           const { photos = [] } = await photosRes.json()
           setMyPhotos(photos)
+        }
+        if (!cancelled && reviewsRes?.ok) {
+          const { reviews = [] } = await reviewsRes.json()
+          setMyReviews(reviews)
         }
         if (!cancelled) setPhotosLoaded(true)
       } catch (e) { if (!cancelled) setPhotosLoaded(true) }
@@ -475,6 +481,46 @@ export default function Profile() {
                   <div style={{position:'absolute',bottom:0,left:0,right:0,padding:'4px 6px',background:'rgba(0,0,0,.6)'}}>
                     <span style={{fontSize:9,fontWeight:600,color:p.status==='approved'?'#86efac':p.status==='rejected'?'#fca5a5':'#fcd34d',textTransform:'uppercase',letterSpacing:.5}}>
                       {p.status}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* My Reviews — authentic reviews tied to this phone account */}
+      {photosLoaded && (
+        <div style={{margin:'20px 0'}}>
+          <h3 style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:12}}>
+            <span>My Reviews</span>
+            {myReviews.length > 0 && <span style={{fontSize:13,color:'var(--text2)'}}>{myReviews.length}</span>}
+          </h3>
+          {myReviews.length === 0 ? (
+            <div style={{background:'var(--bg2)',border:'1px solid var(--border)',borderRadius:14,padding:20,textAlign:'center'}}>
+              <div style={{fontSize:32,marginBottom:8}}>✍️</div>
+              <div style={{color:'var(--text2)',fontSize:14}}>No reviews yet</div>
+              <div style={{color:'var(--text3)',fontSize:12,marginTop:4}}>Reviews you write show up here — verified as really you</div>
+            </div>
+          ) : (
+            <div style={{display:'flex',flexDirection:'column',gap:10}}>
+              {myReviews.map(rv => (
+                <div key={rv.id} style={{background:'var(--bg2)',border:'1px solid var(--border)',borderRadius:12,padding:12,cursor:'pointer'}}
+                  onClick={() => navigate(`/business/${rv.entity_slug}`)}>
+                  <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:8,marginBottom:4}}>
+                    <span style={{fontWeight:700,color:'var(--text)',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{rv.title}</span>
+                    <span style={{color:'#fbbf24',fontSize:13,flexShrink:0}}>{'★'.repeat(rv.rating)}{'☆'.repeat(Math.max(0, 5 - rv.rating))}</span>
+                  </div>
+                  <div style={{fontSize:13,color:'var(--text2)',lineHeight:1.5,marginBottom:6}}>{rv.body}</div>
+                  {rv.media_url && (rv.media_type === 'video'
+                    ? <video src={rv.media_url} style={{width:'100%',maxHeight:180,borderRadius:8,objectFit:'cover'}} muted playsInline preload="metadata" />
+                    : <img src={rv.media_url} alt="" style={{width:'100%',maxHeight:180,borderRadius:8,objectFit:'cover'}} />
+                  )}
+                  <div style={{display:'flex',alignItems:'center',gap:8,marginTop:6}}>
+                    <span style={{fontSize:11,color:'var(--text3)'}}>{rv.entity_slug}</span>
+                    <span style={{fontSize:10,fontWeight:700,padding:'2px 7px',borderRadius:8,background:rv.approved?'rgba(34,197,94,.15)':'rgba(251,191,36,.15)',color:rv.approved?'#16a34a':'#b45309'}}>
+                      {rv.approved ? 'PUBLISHED' : 'PENDING'}
                     </span>
                   </div>
                 </div>
