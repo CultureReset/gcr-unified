@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useApp, authFetch } from '../context/AppContext'
+import { API_BASE } from '../config'
 import Toast from '../components/Toast'
 import './Profile.css'
 
@@ -26,6 +27,14 @@ function compressImage(file, maxW = 1200, quality = 0.8) {
     reader.onerror = reject
     reader.readAsDataURL(file)
   })
+}
+
+// Images get compressed to a JPEG blob; videos upload as-is.
+async function fileToUploadBlob(file) {
+  if (file.type?.startsWith('video/')) return file
+  const dataUrl = await compressImage(file)
+  const res = await fetch(dataUrl)
+  return await res.blob()
 }
 
 function hasRealEmail(email) {
@@ -157,18 +166,30 @@ export default function Profile() {
     const file = e.target.files?.[0]
     if (!file) return
     const slug = uploadSlug || savedPlaces[0]?.slug
-    if (!slug) { setToast({ message: 'Pick a place first, then add a photo to it', type: 'error' }); return }
+    if (!slug) { setToast({ message: 'Pick a place first, then add a photo or video to it', type: 'error' }); return }
     setUploading(true)
     try {
-      const dataUrl = await compressImage(file)
+      // 1) upload the file (image or video) → get a hosted URL
+      const blob = await fileToUploadBlob(file)
+      const fd = new FormData()
+      fd.append('file', blob, file.name || (file.type?.startsWith('video/') ? 'video.mp4' : 'photo.jpg'))
+      const token = localStorage.getItem('gcr_access_token')
+      const up = await fetch(`${API_BASE}/api/tourist/upload-media`, {
+        method: 'POST',
+        headers: token ? { Authorization: 'Bearer ' + token } : {},
+        body: fd,
+      })
+      if (!up.ok) { const d = await up.json().catch(() => ({})); throw new Error(d.error || 'Upload failed') }
+      const { url, media_type } = await up.json()
+      // 2) attach it to the saved place (goes to admin review queue, tied to this account)
       const r = await authFetch('/api/tourist/photos', {
         method: 'POST',
-        body: JSON.stringify({ entity_slug: slug, image_url: dataUrl, category: 'general' }),
+        body: JSON.stringify({ entity_slug: slug, image_url: url, media_type, category: 'general' }),
       })
-      if (!r.ok) { const d = await r.json().catch(() => ({})); throw new Error(d.error || 'Upload failed') }
+      if (!r.ok) { const d = await r.json().catch(() => ({})); throw new Error(d.error || 'Submit failed') }
       const { photo } = await r.json()
       if (photo) setMyPhotos(prev => [photo, ...prev])
-      setToast({ message: 'Photo submitted — pending review', type: 'success' })
+      setToast({ message: `${media_type === 'video' ? 'Video' : 'Photo'} submitted — pending review`, type: 'success' })
     } catch (err) {
       setToast({ message: err.message || 'Upload failed', type: 'error' })
     } finally {
@@ -414,22 +435,22 @@ export default function Profile() {
           </h3>
 
           {/* Upload your own photo (goes to admin review queue), attached to a saved place */}
-          <input type="file" accept="image/*" ref={photoInputRef} onChange={handlePhotoUpload} style={{display:'none'}} />
+          <input type="file" accept="image/*,video/*" ref={photoInputRef} onChange={handlePhotoUpload} style={{display:'none'}} />
           {savedPlaces.length > 0 ? (
             <div style={{display:'flex',gap:8,marginBottom:12}}>
               <select value={uploadSlug} onChange={e => setUploadSlug(e.target.value)}
                 style={{flex:1,minWidth:0,padding:'10px 12px',borderRadius:12,border:'1px solid var(--border)',background:'var(--bg1)',color:'var(--text)',fontSize:13}}>
-                <option value="">Which place is this photo of?</option>
+                <option value="">Which place is this photo/video of?</option>
                 {savedPlaces.map(p => <option key={p.id} value={p.slug}>{p.name}</option>)}
               </select>
               <button className="btn-primary" disabled={uploading}
                 onClick={() => photoInputRef.current?.click()}
                 style={{padding:'10px 16px',whiteSpace:'nowrap',flexShrink:0}}>
-                {uploading ? 'Uploading…' : '📸 Add Photo'}
+                {uploading ? 'Uploading…' : '📸 Add Photo / Video'}
               </button>
             </div>
           ) : (
-            <div style={{fontSize:12,color:'var(--text3)',marginBottom:12}}>Save a place first, then you can add your own photos to it.</div>
+            <div style={{fontSize:12,color:'var(--text3)',marginBottom:12}}>Save a place first, then you can add your own photos or videos to it.</div>
           )}
 
           {myPhotos.length === 0 ? (
@@ -441,10 +462,16 @@ export default function Profile() {
           ) : (
             <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:6}}>
               {myPhotos.map(p => (
-                <div key={p.id} style={{position:'relative',aspectRatio:'1',borderRadius:10,overflow:'hidden',background:'rgba(255,255,255,.06)',cursor:'pointer'}}
+                <div key={p.id} style={{position:'relative',aspectRatio:'1',borderRadius:10,overflow:'hidden',background:'var(--bg2)',cursor:'pointer'}}
                   onClick={() => navigate(`/business/${p.entity_slug}`)}>
-                  <img src={p.image_url} alt={p.caption || ''} style={{width:'100%',height:'100%',objectFit:'cover'}}
-                    onError={e => { e.target.style.display='none' }} />
+                  {p.media_type === 'video'
+                    ? <>
+                        <video src={p.image_url} style={{width:'100%',height:'100%',objectFit:'cover'}} muted playsInline preload="metadata" />
+                        <span style={{position:'absolute',top:6,right:6,fontSize:14}}>▶️</span>
+                      </>
+                    : <img src={p.image_url} alt={p.caption || ''} style={{width:'100%',height:'100%',objectFit:'cover'}}
+                        onError={e => { e.target.style.display='none' }} />
+                  }
                   <div style={{position:'absolute',bottom:0,left:0,right:0,padding:'4px 6px',background:'rgba(0,0,0,.6)'}}>
                     <span style={{fontSize:9,fontWeight:600,color:p.status==='approved'?'#86efac':p.status==='rejected'?'#fca5a5':'#fcd34d',textTransform:'uppercase',letterSpacing:.5}}>
                       {p.status}
