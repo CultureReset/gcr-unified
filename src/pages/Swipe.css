@@ -427,16 +427,23 @@
 
 .swipe-actions {
   display: flex;
-  justify-content: center;
+  flex-direction: column;
   align-items: center;
-  gap: 10px;
-  /* The 86px used to clear the global bottom tab bar, which used to render
-     on top of this page. /swipe/* now hides it (App.jsx hideNav) since this
-     page has always had its own full-screen header — that bottom nav
-     clearance is dead weight now, just needs normal safe-area room. */
+  /* Two rows instead of one — lets every button share one larger, uniform
+     size instead of shrinking to cram 5 circles into a single line. */
+  gap: clamp(10px, 3vw, 16px);
   padding: 10px 20px calc(20px + env(safe-area-inset-bottom));
 }
 
+.swipe-actions-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: clamp(14px, 5vw, 28px);
+}
+
+/* Every action button — regardless of row or variant — is the exact same
+   size, scaled to the viewport instead of fixed pixels. */
 .action-btn {
   display: flex;
   flex-direction: column;
@@ -448,9 +455,12 @@
   letter-spacing: 0.5px;
   transition: transform 0.12s, box-shadow 0.12s;
   justify-content: center;
-  width: 64px;
-  height: 64px;
+  width: clamp(60px, 20vw, 84px);
+  height: clamp(60px, 20vw, 84px);
+  flex-shrink: 0;
 }
+
+.action-btn span:first-child { font-size: clamp(20px, 6vw, 28px); }
 
 .action-btn:active { transform: scale(0.88); }
 
@@ -458,23 +468,15 @@
   background: rgba(239,68,68,0.12);
   border: 2.5px solid rgba(239,68,68,0.5);
   color: #fca5a5;
-  width: 56px;
-  height: 56px;
   box-shadow: 0 4px 20px rgba(239,68,68,0.15);
 }
-
-.action-btn.nope span:first-child { font-size: 22px; }
 
 .action-btn.maybe {
   background: rgba(148,163,184,0.1);
   border: 2px solid rgba(148,163,184,0.4);
   color: #cbd5e1;
-  width: 52px;
-  height: 52px;
   box-shadow: 0 4px 16px rgba(0,0,0,0.12);
 }
-
-.action-btn.maybe span:first-child { font-size: 18px; }
 
 .swipe-flash.maybe {
   background: rgba(148,163,184,0.95);
@@ -486,12 +488,8 @@
   background: rgba(34,197,94,0.12);
   border: 2.5px solid rgba(34,197,94,0.5);
   color: #86efac;
-  width: 80px;
-  height: 80px;
   box-shadow: 0 4px 24px rgba(34,197,94,0.2);
 }
-
-.action-btn.like span:first-child { font-size: 28px; }
 
 .all-done {
   text-align: center;
@@ -612,17 +610,6 @@
 .tag-purple  { background: rgba(168,85,247,0.18); color: #d8b4fe; border: 1px solid rgba(168,85,247,0.3); }
 .tag-orange  { background: rgba(249,115,22,0.18); color: #fdba74; border: 1px solid rgba(249,115,22,0.3); }
 .tag-default { background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.55); border: 1px solid rgba(255,255,255,0.12); }
-
-/* ── Super Like button ── */
-.action-btn.super {
-  background: rgba(59,130,246,0.15);
-  border: 2px solid rgba(59,130,246,0.4);
-  color: #93c5fd;
-  width: 62px;
-  height: 62px;
-}
-
-.action-btn.super span:first-child { font-size: 18px; }
 
 /* ── Super flash ── */
 .swipe-flash.super {
@@ -796,11 +783,8 @@
   background: rgba(250,204,21,0.12);
   border: 2.5px solid rgba(250,204,21,0.5);
   color: #fde68a;
-  width: 56px;
-  height: 56px;
   box-shadow: 0 4px 16px rgba(250,204,21,0.1);
 }
-.action-btn.super span:first-child { font-size: 20px; }
 
 /* ── Tags moved to overlay bottom (above name) — no badge collision ── */
 .card-tags-overlay-bottom {
@@ -874,12 +858,8 @@
   background: rgba(148, 163, 184, 0.1);
   border: 2px solid rgba(148, 163, 184, 0.35);
   color: #94a3b8;
-  width: 52px;
-  height: 52px;
   box-shadow: 0 4px 16px rgba(0,0,0,0.15);
 }
-
-.action-btn.undo span:first-child { font-size: 20px; }
 
 .action-btn.undo.disabled {
   opacity: 0.3;

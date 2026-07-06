@@ -573,31 +573,35 @@ export default function Swipe() {
 
           {!allGone && (
             <div className="swipe-actions">
-              <button className="action-btn nope" onClick={pressNope}>
-                <span>✕</span>
-                <span>NOPE</span>
-              </button>
-              <button className="action-btn maybe" onClick={pressMaybe}>
-                <span>🤔</span>
-                <span>MAYBE</span>
-              </button>
-              <button className="action-btn super" onClick={pressSuper}>
-                <span>⭐</span>
-                <span>MUST DO</span>
-              </button>
-              <button className="action-btn like" onClick={pressLike}>
-                <span>♥</span>
-                <span>LIKE</span>
-              </button>
-              <button
-                className={`action-btn undo ${undoStack.length === 0 ? 'disabled' : ''}`}
-                onClick={pressUndo}
-                disabled={undoStack.length === 0}
-                aria-label="Undo last swipe"
-              >
-                <span>↩</span>
-                <span>UNDO</span>
-              </button>
+              <div className="swipe-actions-row secondary">
+                <button className="action-btn maybe" onClick={pressMaybe}>
+                  <span>🤔</span>
+                  <span>MAYBE</span>
+                </button>
+                <button
+                  className={`action-btn undo ${undoStack.length === 0 ? 'disabled' : ''}`}
+                  onClick={pressUndo}
+                  disabled={undoStack.length === 0}
+                  aria-label="Undo last swipe"
+                >
+                  <span>↩</span>
+                  <span>UNDO</span>
+                </button>
+              </div>
+              <div className="swipe-actions-row primary">
+                <button className="action-btn nope" onClick={pressNope}>
+                  <span>✕</span>
+                  <span>NOPE</span>
+                </button>
+                <button className="action-btn super" onClick={pressSuper}>
+                  <span>⭐</span>
+                  <span>MUST DO</span>
+                </button>
+                <button className="action-btn like" onClick={pressLike}>
+                  <span>♥</span>
+                  <span>LIKE</span>
+                </button>
+              </div>
             </div>
           )}
         </>
