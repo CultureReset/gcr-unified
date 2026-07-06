@@ -1,8 +1,32 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useApp, authFetch } from '../context/AppContext'
 import Toast from '../components/Toast'
 import './Profile.css'
+
+// Downscale + compress a picked image to a JPEG data URL before upload,
+// so we're not shipping multi-MB originals into the photos table.
+function compressImage(file, maxW = 1200, quality = 0.8) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = e => {
+      const img = new Image()
+      img.onload = () => {
+        const scale = Math.min(1, maxW / img.width)
+        const w = Math.round(img.width * scale)
+        const h = Math.round(img.height * scale)
+        const canvas = document.createElement('canvas')
+        canvas.width = w; canvas.height = h
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h)
+        resolve(canvas.toDataURL('image/jpeg', quality))
+      }
+      img.onerror = reject
+      img.src = e.target.result
+    }
+    reader.onerror = reject
+    reader.readAsDataURL(file)
+  })
+}
 
 function hasRealEmail(email) {
   return !!email && !/@gcr\.tourist$/i.test(email)
@@ -32,6 +56,9 @@ export default function Profile() {
   const [filterCategory, setFilterCategory] = useState('all')
   const [accountOpen, setAccountOpen] = useState(false)
   const [toast, setToast] = useState(null)
+  const [uploadSlug, setUploadSlug] = useState('')
+  const [uploading, setUploading] = useState(false)
+  const photoInputRef = useRef(null)
 
   const [addEmailOpen, setAddEmailOpen] = useState(false)
   const [addEmailStep, setAddEmailStep] = useState('input')
@@ -123,6 +150,30 @@ export default function Profile() {
       console.error('Error toggling location sharing:', e)
     } finally {
       setTogglingLocation(false)
+    }
+  }
+
+  async function handlePhotoUpload(e) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const slug = uploadSlug || savedPlaces[0]?.slug
+    if (!slug) { setToast({ message: 'Pick a place first, then add a photo to it', type: 'error' }); return }
+    setUploading(true)
+    try {
+      const dataUrl = await compressImage(file)
+      const r = await authFetch('/api/tourist/photos', {
+        method: 'POST',
+        body: JSON.stringify({ entity_slug: slug, image_url: dataUrl, category: 'general' }),
+      })
+      if (!r.ok) { const d = await r.json().catch(() => ({})); throw new Error(d.error || 'Upload failed') }
+      const { photo } = await r.json()
+      if (photo) setMyPhotos(prev => [photo, ...prev])
+      setToast({ message: 'Photo submitted — pending review', type: 'success' })
+    } catch (err) {
+      setToast({ message: err.message || 'Upload failed', type: 'error' })
+    } finally {
+      setUploading(false)
+      if (photoInputRef.current) photoInputRef.current.value = ''
     }
   }
 
@@ -361,6 +412,26 @@ export default function Profile() {
             <span>My Photos</span>
             {myPhotos.length > 0 && <span style={{fontSize:13,color:'var(--text2)'}}>{myPhotos.length} submitted</span>}
           </h3>
+
+          {/* Upload your own photo (goes to admin review queue), attached to a saved place */}
+          <input type="file" accept="image/*" ref={photoInputRef} onChange={handlePhotoUpload} style={{display:'none'}} />
+          {savedPlaces.length > 0 ? (
+            <div style={{display:'flex',gap:8,marginBottom:12}}>
+              <select value={uploadSlug} onChange={e => setUploadSlug(e.target.value)}
+                style={{flex:1,minWidth:0,padding:'10px 12px',borderRadius:12,border:'1px solid var(--border)',background:'var(--bg1)',color:'var(--text)',fontSize:13}}>
+                <option value="">Which place is this photo of?</option>
+                {savedPlaces.map(p => <option key={p.id} value={p.slug}>{p.name}</option>)}
+              </select>
+              <button className="btn-primary" disabled={uploading}
+                onClick={() => photoInputRef.current?.click()}
+                style={{padding:'10px 16px',whiteSpace:'nowrap',flexShrink:0}}>
+                {uploading ? 'Uploading…' : '📸 Add Photo'}
+              </button>
+            </div>
+          ) : (
+            <div style={{fontSize:12,color:'var(--text3)',marginBottom:12}}>Save a place first, then you can add your own photos to it.</div>
+          )}
+
           {myPhotos.length === 0 ? (
             <div style={{background:'rgba(255,255,255,.04)',border:'1px solid rgba(255,255,255,.08)',borderRadius:14,padding:20,textAlign:'center'}}>
               <div style={{fontSize:32,marginBottom:8}}>📸</div>
