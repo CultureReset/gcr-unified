@@ -44,6 +44,15 @@ const CAT_TABS = [
   { id: 'events',     label: 'Events',     emoji: '🎪', to: '/events' },
 ]
 
+// Same options as /api/tourist/setup-questions' group_type question —
+// kept in sync manually since that endpoint returns a static, hardcoded list.
+const GROUP_TYPES = [
+  { value: 'solo',    label: 'Solo',    emoji: '🙋' },
+  { value: 'couple',  label: 'Couple',  emoji: '👫' },
+  { value: 'family',  label: 'Family',  emoji: '👨‍👩‍👧' },
+  { value: 'friends', label: 'Friends', emoji: '👯' },
+]
+
 const DECK_SIZE = 15
 
 function shuffle(arr) {
@@ -137,7 +146,7 @@ function saveQueuedDeck(category, ids) {
 export default function Swipe() {
   const { category } = useParams()
   const navigate = useNavigate()
-  const { addSavedPlace, removeSavedPlace, savedPlaces, addSuperLike, tourist, seenSlugs, setSeenSlugs, recordSwipe, resetSeenSlugs, userLocation, requestLocation, geocodeStay } = useApp()
+  const { addSavedPlace, removeSavedPlace, savedPlaces, addSuperLike, tourist, seenSlugs, setSeenSlugs, recordSwipe, resetSeenSlugs, userLocation, requestLocation, geocodeStay, saveTourist } = useApp()
 
   const [allBusinesses, setAllBusinesses] = useState([])
   const [pool, setPool] = useState([])
@@ -160,6 +169,16 @@ export default function Swipe() {
   const swipeCountRef = useRef(0)
   const pageRef = useRef(null)
   const personalizationCounterRef = useRef(0)
+
+  // Trip-context "Change" modal — lets a returning tourist update their dates
+  // and who they're traveling with. Destination isn't editable: the app is
+  // Orange Beach/Gulf Shores only today (Setup.jsx hardcodes it), so there's
+  // nothing real to switch between yet.
+  const [showTripEdit, setShowTripEdit] = useState(false)
+  const [editArrival, setEditArrival] = useState('')
+  const [editDeparture, setEditDeparture] = useState('')
+  const [editGroupType, setEditGroupType] = useState('')
+  const [savingTrip, setSavingTrip] = useState(false)
 
   const catInfo = CATEGORIES.find(c => c.id === category) || CATEGORIES[5]
 
@@ -508,10 +527,40 @@ export default function Swipe() {
 
   const allGone = deckReady && cards.length === 0 && pool.filter(b => !seenSlugs.includes(b.slug)).length === 0
 
+  const groupInfo = GROUP_TYPES.find(g => g.value === tourist?.group_type)
   const tripLabel = [
     tourist?.destination?.split(',')[0],
-    tourist?.arrival && new Date(tourist.arrival).toLocaleDateString('en-US', {month:'short', day:'numeric'}),
+    tourist?.arrival && new Date(tourist.arrival).toLocaleDateString('en-US', {month:'short', day:'numeric'})
+      + (tourist?.departure ? ` – ${new Date(tourist.departure).toLocaleDateString('en-US', {month:'short', day:'numeric'})}` : ''),
+    groupInfo && `${groupInfo.emoji} ${groupInfo.label}`,
   ].filter(Boolean).join(' · ') || 'Gulf Coast'
+
+  function openTripEdit() {
+    setEditArrival(tourist?.arrival || '')
+    setEditDeparture(tourist?.departure || '')
+    setEditGroupType(tourist?.group_type || '')
+    setShowTripEdit(true)
+  }
+
+  async function saveTripEdit() {
+    setSavingTrip(true)
+    try {
+      let trip_days = tourist?.trip_days || null
+      if (editArrival && editDeparture) {
+        const a = new Date(editArrival), b = new Date(editDeparture)
+        trip_days = Math.max(1, Math.round((b - a) / 86400000) + 1)
+      }
+      await saveTourist({
+        arrival: editArrival || null,
+        departure: editDeparture || null,
+        group_type: editGroupType || null,
+        trip_days,
+      })
+      setShowTripEdit(false)
+    } finally {
+      setSavingTrip(false)
+    }
+  }
 
   return (
     <div className="swipe-page page safe-top" ref={pageRef}>
@@ -577,6 +626,7 @@ export default function Swipe() {
 
       <div className="swipe-dest">
         📍 {tripLabel}
+        <button className="swipe-change-btn" onClick={openTripEdit}>Change</button>
         {view === 'swipe' && (
           <span className="swipe-progress">
             {businesses.length - cards.length}/{businesses.length}
@@ -586,6 +636,38 @@ export default function Swipe() {
           <span className="swipe-progress">{businesses.length} places</span>
         )}
       </div>
+
+      {showTripEdit && (
+        <div className="trip-edit-overlay" onClick={() => !savingTrip && setShowTripEdit(false)}>
+          <div className="trip-edit-sheet" onClick={e => e.stopPropagation()}>
+            <h3>Update your trip</h3>
+            <label className="trip-edit-label">Dates</label>
+            <div className="trip-edit-dates">
+              <input type="date" value={editArrival} onChange={e => setEditArrival(e.target.value)} />
+              <span>–</span>
+              <input type="date" value={editDeparture} min={editArrival || undefined} onChange={e => setEditDeparture(e.target.value)} />
+            </div>
+            <label className="trip-edit-label">Who's joining you?</label>
+            <div className="trip-edit-group-row">
+              {GROUP_TYPES.map(g => (
+                <button
+                  key={g.value}
+                  className={`trip-edit-group-btn ${editGroupType === g.value ? 'active' : ''}`}
+                  onClick={() => setEditGroupType(g.value)}
+                >
+                  <span>{g.emoji}</span><span>{g.label}</span>
+                </button>
+              ))}
+            </div>
+            <div className="trip-edit-actions">
+              <button className="trip-edit-cancel" onClick={() => setShowTripEdit(false)} disabled={savingTrip}>Cancel</button>
+              <button className="trip-edit-save" onClick={saveTripEdit} disabled={savingTrip}>
+                {savingTrip ? 'Saving…' : 'Save'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── SWIPE VIEW ── */}
       {view === 'swipe' && (

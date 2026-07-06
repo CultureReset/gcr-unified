@@ -174,6 +174,124 @@
   color: var(--text3);
 }
 
+.swipe-change-btn {
+  background: none;
+  border: none;
+  color: #7c6af7;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 0;
+  cursor: pointer;
+}
+
+.trip-edit-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  z-index: 200;
+  display: flex;
+  align-items: flex-end;
+}
+
+.trip-edit-sheet {
+  background: #14161f;
+  width: 100%;
+  border-radius: 20px 20px 0 0;
+  padding: 24px 20px calc(24px + env(safe-area-inset-bottom));
+}
+
+.trip-edit-sheet h3 {
+  color: white;
+  font-size: 18px;
+  font-weight: 800;
+  margin: 0 0 18px;
+}
+
+.trip-edit-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+.trip-edit-dates {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.trip-edit-dates input {
+  flex: 1;
+  padding: 10px 12px;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 10px;
+  color: white;
+  font-size: 14px;
+}
+
+.trip-edit-dates span {
+  color: rgba(255,255,255,0.4);
+}
+
+.trip-edit-group-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+
+.trip-edit-group-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 14px;
+  background: rgba(255,255,255,0.08);
+  border: 1.5px solid rgba(255,255,255,0.15);
+  border-radius: 20px;
+  color: rgba(255,255,255,0.75);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.trip-edit-group-btn.active {
+  background: rgba(124,106,247,0.2);
+  border-color: #7c6af7;
+  color: white;
+}
+
+.trip-edit-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.trip-edit-cancel, .trip-edit-save {
+  flex: 1;
+  padding: 13px;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 700;
+  border: none;
+}
+
+.trip-edit-cancel {
+  background: rgba(255,255,255,0.08);
+  color: white;
+}
+
+.trip-edit-save {
+  background: #7c6af7;
+  color: white;
+}
+
+.trip-edit-cancel:disabled, .trip-edit-save:disabled {
+  opacity: 0.6;
+}
+
 .swipe-hint {
   display: flex;
   justify-content: space-between;
