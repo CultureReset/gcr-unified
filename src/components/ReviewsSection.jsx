@@ -1,7 +1,12 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { API_BASE } from '../config'
+import { useApp, authFetch } from '../context/AppContext'
 
 export default function ReviewsSection({ slug }) {
+  const navigate = useNavigate()
+  const { userId } = useApp()
+  const loggedIn = !!userId || !!localStorage.getItem('gcr_access_token')
   const [reviews, setReviews] = useState([])
   const [stats, setStats] = useState(null)
   const [loading, setLoading] = useState(false)
@@ -50,25 +55,31 @@ export default function ReviewsSection({ slug }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    if (!formData.reviewer_name || !formData.reviewer_email || !formData.title || !formData.body) {
-      setMessage('Please fill in all fields')
+    if (!formData.title || !formData.body) {
+      setMessage('Please add a title and your review')
       return
     }
-
     try {
-      const res = await fetch(`${API_BASE}/api/reviews/${slug}`, {
+      // Logged-in tourists post authentic reviews tied to their phone account
+      // (name/email come from the account — no anonymous typing).
+      const res = await authFetch('/api/tourist/reviews', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
+        body: JSON.stringify({
+          entity_slug: slug,
+          rating: formData.rating,
+          title: formData.title,
+          body: formData.body,
+        }),
       })
       if (res.ok) {
-        setMessage('Review submitted! Thank you.')
+        setMessage('Review submitted — pending review. Thank you!')
         setFormData({ reviewer_name: '', reviewer_email: '', rating: 5, title: '', body: '' })
         setShowForm(false)
         loadReviews()
         loadStats()
       } else {
-        setMessage('Error submitting review')
+        const d = await res.json().catch(() => ({}))
+        setMessage(d.error || 'Error submitting review')
       }
     } catch (err) {
       setMessage('Error submitting review')
@@ -115,36 +126,25 @@ export default function ReviewsSection({ slug }) {
       )}
 
       <div className="reviews-actions">
-        <button
-          className="btn btn-primary"
-          onClick={() => setShowForm(!showForm)}
-        >
-          {showForm ? 'Cancel' : 'Write a Review'}
-        </button>
+        {loggedIn ? (
+          <button
+            className="btn btn-primary"
+            onClick={() => setShowForm(!showForm)}
+          >
+            {showForm ? 'Cancel' : 'Write a Review'}
+          </button>
+        ) : (
+          <button
+            className="btn btn-primary"
+            onClick={() => navigate('/auth')}
+          >
+            Sign in to write a review
+          </button>
+        )}
       </div>
 
-      {showForm && (
+      {showForm && loggedIn && (
         <form className="review-form" onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label>Name *</label>
-            <input
-              type="text"
-              value={formData.reviewer_name}
-              onChange={(e) => setFormData({ ...formData, reviewer_name: e.target.value })}
-              placeholder="Your name"
-            />
-          </div>
-
-          <div className="form-group">
-            <label>Email *</label>
-            <input
-              type="email"
-              value={formData.reviewer_email}
-              onChange={(e) => setFormData({ ...formData, reviewer_email: e.target.value })}
-              placeholder="Your email"
-            />
-          </div>
-
           <div className="form-group">
             <label>Rating *</label>
             <div className="rating-selector">
