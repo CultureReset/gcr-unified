@@ -402,6 +402,18 @@ export default function Swipe() {
     setUndoStack(prev => [...prev.slice(-4), { business: top, action: 'super' }])
   }
 
+  // "Not sure yet" — distinct from Pass (rejected) and Like (want to go).
+  // Mild positive signal for preference scoring (see SWIPE_WEIGHTS.maybe on
+  // the backend), doesn't save the place, but is undo-able like every other action.
+  function pressMaybe() {
+    if (cards.length === 0) return
+    const top = cards[cards.length - 1]
+    recordSwipe(top, 'maybe')
+    setCards(prev => refillDeck(prev.slice(0, -1)))
+    flash('maybe')
+    setUndoStack(prev => [...prev.slice(-4), { business: top, action: 'maybe' }])
+  }
+
   function pressUndo() {
     if (undoStack.length === 0) return
     const last = undoStack[undoStack.length - 1]
@@ -518,7 +530,7 @@ export default function Swipe() {
 
           {lastAction && (
             <div className={`swipe-flash ${lastAction}`}>
-              {lastAction === 'like' ? '❤️ LIKE' : lastAction === 'super' ? '⭐ MUST DO' : '✕ NOPE'}
+              {lastAction === 'like' ? '❤️ LIKE' : lastAction === 'super' ? '⭐ MUST DO' : lastAction === 'maybe' ? '🤔 MAYBE' : '✕ NOPE'}
             </div>
           )}
 
@@ -564,6 +576,10 @@ export default function Swipe() {
               <button className="action-btn nope" onClick={pressNope}>
                 <span>✕</span>
                 <span>NOPE</span>
+              </button>
+              <button className="action-btn maybe" onClick={pressMaybe}>
+                <span>🤔</span>
+                <span>MAYBE</span>
               </button>
               <button className="action-btn super" onClick={pressSuper}>
                 <span>⭐</span>
