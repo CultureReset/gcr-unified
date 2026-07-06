@@ -119,6 +119,21 @@ function computeStatus(hours) {
   return { label: 'Closed', cls: 'closed' }
 }
 
+// Per-category "where they left off" deck order — just ids, looked up
+// against freshly-fetched businesses on restore so the data itself never goes stale.
+const SWIPE_QUEUE_PREFIX = 'gcr_swipe_queue_'
+
+function loadQueuedDeck(category) {
+  try {
+    const raw = localStorage.getItem(SWIPE_QUEUE_PREFIX + category)
+    return raw ? JSON.parse(raw) : []
+  } catch { return [] }
+}
+
+function saveQueuedDeck(category, ids) {
+  try { localStorage.setItem(SWIPE_QUEUE_PREFIX + category, JSON.stringify(ids)) } catch {}
+}
+
 export default function Swipe() {
   const { category } = useParams()
   const navigate = useNavigate()
@@ -257,15 +272,37 @@ export default function Swipe() {
       : allBusinesses.filter(b => b.category === category))
       .filter(b => isGuest ? true : !seenSlugs.includes(b.slug))
     setPool(visible)
+
+    // Resume exactly where they left off: restore whichever still-unseen
+    // cards were queued last time (same order — last item stays "on top"),
+    // then fill any remaining deck capacity with freshly personalized/shuffled
+    // cards, same convention refillDeck() already uses for new cards (added
+    // to the front, so what was queued keeps priority).
+    const queuedIds = isGuest ? [] : loadQueuedDeck(category)
+    const byId = new Map(visible.map(b => [b.id, b]))
+    const resumed = queuedIds.map(id => byId.get(id)).filter(Boolean)
+    const resumedIds = new Set(resumed.map(b => b.id))
+    const rest = visible.filter(b => !resumedIds.has(b.id))
+
     // Use personalized order if we have preference data, else shuffle
-    const sorted = Object.keys(prefMap).length
-      ? personalizeAndSort(visible, prefMap)
-      : shuffle(visible)
-    setCards(sorted.slice(0, DECK_SIZE))
+    const sortedRest = Object.keys(prefMap).length
+      ? personalizeAndSort(rest, prefMap)
+      : shuffle(rest)
+
+    const fillCount = Math.max(0, DECK_SIZE - resumed.length)
+    setCards([...sortedRest.slice(0, fillCount), ...resumed])
     setLikedCount(0)
     setDeckReady(true)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [category, allBusinesses, prefMap])
+
+  // Persist the current deck order (by id) so returning to this category
+  // resumes instead of rebuilding a fresh personalized/shuffled list.
+  useEffect(() => {
+    if (localStorage.getItem('gcr_access_token') && deckReady) {
+      saveQueuedDeck(category, cards.map(c => c.id))
+    }
+  }, [cards, category, deckReady])
 
   useEffect(() => {
     if (allBusinesses.length === 0) return
