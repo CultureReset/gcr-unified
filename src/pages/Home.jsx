@@ -112,6 +112,18 @@ export default function Home() {
         </div>
       )}
 
+      {/* Still need a place to stay? — shown when tourist is looking for lodging */}
+      {tourist?.stay_status === 'looking' && (
+        <div className="stay-banner">
+          <span>🏨</span>
+          <div>
+            <div className="stay-banner-title">Still need a place to stay?</div>
+            <div className="stay-banner-sub">We'll show hotels & condos in your deck</div>
+          </div>
+          <button className="stay-banner-btn" onClick={() => navigate('/swipe/stay')}>Browse →</button>
+        </div>
+      )}
+
       {/* Quick stats */}
       <div className="home-stats">
         <div className="stat"><div className="stat-num">{savedPlaces.length}</div><div className="stat-label">Saved</div></div>
@@ -120,6 +132,16 @@ export default function Home() {
         <div className="stat-divider" />
         <div className="stat"><div className="stat-num">{itinerary ? itinerary.days.length : '—'}</div><div className="stat-label">Planned</div></div>
       </div>
+
+      {/* Plan with friends — group trips entry point */}
+      <button className="stay-banner" onClick={() => navigate('/groups')} style={{width:'100%',border:'none',cursor:'pointer',background:'linear-gradient(135deg,rgba(14,165,233,.15),rgba(124,106,247,.15))',borderColor:'rgba(124,106,247,.3)'}}>
+        <span>👥</span>
+        <div style={{flex:1,textAlign:'left'}}>
+          <div className="stay-banner-title">Plan with friends</div>
+          <div className="stay-banner-sub">Swipe together, see overlaps, build a shared trip</div>
+        </div>
+        <span className="stay-banner-btn">Open →</span>
+      </button>
 
       {/* Loading skeletons */}
       {loading && (

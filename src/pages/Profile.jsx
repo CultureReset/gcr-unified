@@ -178,7 +178,7 @@ export default function Profile() {
             {phoneFormatted ? `📱 ${phoneFormatted}` : realEmail ? `✉️ ${realEmail}` : 'Not set'}
           </p>
           {phoneFormatted && realEmail && (
-            <p style={{margin:'2px 0 0',fontSize:12,color:'rgba(255,255,255,.55)',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>✉️ {realEmail}</p>
+            <p style={{margin:'2px 0 0',fontSize:12,color:'var(--text3)',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>✉️ {realEmail}</p>
           )}
         </div>
         <button className="edit-btn" onClick={() => navigate('/setup/name')}>Edit</button>
@@ -187,7 +187,7 @@ export default function Profile() {
       {tripCountdown && (
         <div style={{background:'linear-gradient(135deg,rgba(124,106,247,.18),rgba(14,165,233,.12))',border:'1px solid rgba(124,106,247,.3)',borderRadius:14,padding:'12px 14px',display:'flex',alignItems:'center',gap:10}}>
           <span style={{fontSize:22}}>{tripCountdown.emoji}</span>
-          <span style={{fontWeight:700,color:'#fff',fontSize:14}}>{tripCountdown.label}</span>
+          <span style={{fontWeight:700,color:'var(--text)',fontSize:14}}>{tripCountdown.label}</span>
         </div>
       )}
 
@@ -267,7 +267,7 @@ export default function Profile() {
               disabled={togglingLocation}
               style={{cursor:'pointer',width:18,height:18}}
             />
-            <span style={{fontSize:12,color:'rgba(255,255,255,.7)'}}>
+            <span style={{fontSize:12,color:'var(--text2)'}}>
               {togglingLocation ? 'Updating...' : locationSharingEnabled ? 'On' : 'Off'}
             </span>
           </label>
@@ -275,12 +275,12 @@ export default function Profile() {
         {locationSharingEnabled ? (
           <div style={{fontSize:13,color:'rgba(14,165,233,.9)',lineHeight:1.6}}>
             ✅ You'll get SMS offers when you're near places you've shown interest in. We use your location every 30 seconds and delete location history after 30 days.
-            <div style={{marginTop:12,fontSize:12,color:'rgba(255,255,255,.5)'}}>
+            <div style={{marginTop:12,fontSize:12,color:'var(--text3)'}}>
               📍 Radius: 1 mile | 📨 Frequency: Once per day | 🔒 Privacy-first
             </div>
           </div>
         ) : (
-          <div style={{fontSize:13,color:'rgba(255,255,255,.6)',lineHeight:1.6}}>
+          <div style={{fontSize:13,color:'var(--text2)',lineHeight:1.6}}>
             Enable location sharing to receive personalized SMS offers for places you'll love, sent when you're nearby.
           </div>
         )}
@@ -290,7 +290,7 @@ export default function Profile() {
         <h3 style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:12}}>
           <span>My Saves</span>
           {savedPlaces.length > 0 && (
-            <span style={{fontSize:13,color:'rgba(255,255,255,.6)'}}>
+            <span style={{fontSize:13,color:'var(--text2)'}}>
               {savedPlaces.length}{superCount > 0 ? ` · ⭐ ${superCount} must-do` : ''}
             </span>
           )}
@@ -317,11 +317,11 @@ export default function Profile() {
         {savedPlaces.length === 0 ? (
           <div style={{background:'rgba(255,255,255,.04)',border:'1px solid rgba(255,255,255,.08)',borderRadius:14,padding:20,textAlign:'center'}}>
             <div style={{fontSize:32,marginBottom:8}}>💫</div>
-            <div style={{color:'rgba(255,255,255,.8)',marginBottom:12}}>No saves yet</div>
+            <div style={{color:'var(--text2)',marginBottom:12}}>No saves yet</div>
             <button className="btn-primary" onClick={() => navigate('/home')} style={{padding:'10px 18px'}}>Start Swiping</button>
           </div>
         ) : filteredSaves.length === 0 ? (
-          <div style={{background:'rgba(255,255,255,.04)',border:'1px solid rgba(255,255,255,.08)',borderRadius:14,padding:20,textAlign:'center',color:'rgba(255,255,255,.6)',fontSize:13}}>
+          <div style={{background:'rgba(255,255,255,.04)',border:'1px solid rgba(255,255,255,.08)',borderRadius:14,padding:20,textAlign:'center',color:'var(--text2)',fontSize:13}}>
             Nothing in this category yet.
           </div>
         ) : (
@@ -335,9 +335,9 @@ export default function Profile() {
                   <img src={p.hero_image_url} alt="" style={{width:64,height:64,borderRadius:10,objectFit:'cover',flexShrink:0,cursor:'pointer'}} onClick={() => navigate(`/business/${p.slug}`)} />
                 )}
                 <div style={{flex:1,minWidth:0,cursor:'pointer'}} onClick={() => navigate(`/business/${p.slug}`)}>
-                  <div style={{fontWeight:700,color:'#fff',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{p.name}</div>
-                  {p.subtitle && <div style={{fontSize:12,color:'rgba(255,255,255,.6)',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{p.subtitle}</div>}
-                  <div style={{fontSize:11,color:'rgba(255,255,255,.45)',marginTop:2}}>
+                  <div style={{fontWeight:700,color:'var(--text)',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{p.name}</div>
+                  {p.subtitle && <div style={{fontSize:12,color:'var(--text2)',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{p.subtitle}</div>}
+                  <div style={{fontSize:11,color:'var(--text3)',marginTop:2}}>
                     {p.rating ? `⭐ ${p.rating}` : ''}
                     {p.rating && p.price_range ? ' · ' : ''}
                     {p.price_range || ''}
@@ -346,7 +346,7 @@ export default function Profile() {
                 </div>
                 <button
                   onClick={() => removeSavedPlace(p.id)}
-                  style={{background:'none',border:'none',color:'rgba(255,255,255,.5)',fontSize:18,cursor:'pointer',padding:8}}
+                  style={{background:'none',border:'none',color:'var(--text3)',fontSize:18,cursor:'pointer',padding:8}}
                   aria-label="Remove"
                 >✕</button>
               </div>
@@ -359,13 +359,13 @@ export default function Profile() {
         <div style={{margin:'20px 0'}}>
           <h3 style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:12}}>
             <span>My Photos</span>
-            {myPhotos.length > 0 && <span style={{fontSize:13,color:'rgba(255,255,255,.6)'}}>{myPhotos.length} submitted</span>}
+            {myPhotos.length > 0 && <span style={{fontSize:13,color:'var(--text2)'}}>{myPhotos.length} submitted</span>}
           </h3>
           {myPhotos.length === 0 ? (
             <div style={{background:'rgba(255,255,255,.04)',border:'1px solid rgba(255,255,255,.08)',borderRadius:14,padding:20,textAlign:'center'}}>
               <div style={{fontSize:32,marginBottom:8}}>📸</div>
-              <div style={{color:'rgba(255,255,255,.7)',fontSize:14}}>No photos yet</div>
-              <div style={{color:'rgba(255,255,255,.4)',fontSize:12,marginTop:4}}>Photos you share after visiting places will appear here</div>
+              <div style={{color:'var(--text2)',fontSize:14}}>No photos yet</div>
+              <div style={{color:'var(--text3)',fontSize:12,marginTop:4}}>Photos you share after visiting places will appear here</div>
             </div>
           ) : (
             <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:6}}>
@@ -389,18 +389,18 @@ export default function Profile() {
       <div style={{background:'var(--bg2)',border:'1px solid var(--border)',borderRadius:20,overflow:'hidden'}}>
         <button
           onClick={() => setAccountOpen(o => !o)}
-          style={{width:'100%',display:'flex',alignItems:'center',gap:12,padding:16,fontSize:15,fontWeight:600,color:'#fff',background:'transparent',textAlign:'left',border:'none'}}
+          style={{width:'100%',display:'flex',alignItems:'center',gap:12,padding:16,fontSize:15,fontWeight:600,color:'var(--text)',background:'transparent',textAlign:'left',border:'none'}}
         >
           <span style={{fontSize:18}}>👤</span>
           <span>Account</span>
-          <span style={{marginLeft:'auto',color:'rgba(255,255,255,.5)',fontSize:18,transform:accountOpen?'rotate(90deg)':'none',transition:'transform 0.15s'}}>›</span>
+          <span style={{marginLeft:'auto',color:'var(--text3)',fontSize:18,transform:accountOpen?'rotate(90deg)':'none',transition:'transform 0.15s'}}>›</span>
         </button>
         {accountOpen && (
           <div style={{padding:'4px 16px 16px',display:'flex',flexDirection:'column',gap:0,borderTop:'1px solid var(--border)'}}>
             {phoneFormatted && (
               <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'12px 0'}}>
                 <div>
-                  <div style={{fontSize:12,color:'rgba(255,255,255,.55)',marginBottom:2}}>Phone</div>
+                  <div style={{fontSize:12,color:'var(--text3)',marginBottom:2}}>Phone</div>
                   <div style={{fontWeight:600}}>📱 {phoneFormatted}</div>
                 </div>
                 <span style={{fontSize:11,fontWeight:700,padding:'3px 8px',borderRadius:10,background:'rgba(34,197,94,.15)',color:'#86efac'}}>VERIFIED</span>
@@ -409,9 +409,9 @@ export default function Profile() {
 
             <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'12px 0',borderTop:phoneFormatted?'1px solid var(--border)':'none'}}>
               <div style={{minWidth:0,flex:1}}>
-                <div style={{fontSize:12,color:'rgba(255,255,255,.55)',marginBottom:2}}>Email</div>
+                <div style={{fontSize:12,color:'var(--text3)',marginBottom:2}}>Email</div>
                 <div style={{fontWeight:600,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>
-                  {realEmail ? `✉️ ${realEmail}` : <span style={{color:'rgba(255,255,255,.55)'}}>Not set</span>}
+                  {realEmail ? `✉️ ${realEmail}` : <span style={{color:'var(--text3)'}}>Not set</span>}
                 </div>
               </div>
               {!realEmail && !addEmailOpen && (
@@ -424,7 +424,7 @@ export default function Profile() {
                 {addEmailStep === 'input' ? (
                   <>
                     <div style={{fontWeight:700,marginBottom:6,fontSize:14}}>Add email + password</div>
-                    <div style={{fontSize:12,color:'rgba(255,255,255,.6)',marginBottom:10}}>So you can also sign in by email and recover your account if you lose your phone.</div>
+                    <div style={{fontSize:12,color:'var(--text2)',marginBottom:10}}>So you can also sign in by email and recover your account if you lose your phone.</div>
                     <input
                       type="email" placeholder="you@email.com" value={newEmail}
                       onChange={e => setNewEmail(e.target.value)}
@@ -441,12 +441,12 @@ export default function Profile() {
                       <button className="btn-primary" onClick={sendAddEmailCode} disabled={emailBusy || !newEmail || newPassword.length < 6} style={{flex:1}}>
                         {emailBusy ? 'Sending…' : 'Send code →'}
                       </button>
-                      <button onClick={() => { setAddEmailOpen(false); setEmailErr(''); setEmailInfo('') }} style={{background:'transparent',border:'1px solid rgba(255,255,255,.2)',color:'#fff',borderRadius:10,padding:'10px 14px'}}>Cancel</button>
+                      <button onClick={() => { setAddEmailOpen(false); setEmailErr(''); setEmailInfo('') }} style={{background:'transparent',border:'1px solid rgba(255,255,255,.2)',color:'var(--text)',borderRadius:10,padding:'10px 14px'}}>Cancel</button>
                     </div>
                   </>
                 ) : (
                   <>
-                    <div style={{fontWeight:700,marginBottom:8,fontSize:14}}>Enter the 6-digit code we emailed to <span style={{color:'#fff'}}>{newEmail}</span></div>
+                    <div style={{fontWeight:700,marginBottom:8,fontSize:14}}>Enter the 6-digit code we emailed to <span style={{color:'var(--text)'}}>{newEmail}</span></div>
                     <input
                       type="text" inputMode="numeric" maxLength={6} placeholder="6-digit code" value={emailCode}
                       onChange={e => setEmailCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
@@ -458,7 +458,7 @@ export default function Profile() {
                       <button className="btn-primary" onClick={confirmAddEmail} disabled={emailBusy || emailCode.length < 6} style={{flex:1}}>
                         {emailBusy ? 'Confirming…' : 'Confirm →'}
                       </button>
-                      <button onClick={() => setAddEmailStep('input')} style={{background:'transparent',border:'1px solid rgba(255,255,255,.2)',color:'#fff',borderRadius:10,padding:'10px 14px'}}>Back</button>
+                      <button onClick={() => setAddEmailStep('input')} style={{background:'transparent',border:'1px solid rgba(255,255,255,.2)',color:'var(--text)',borderRadius:10,padding:'10px 14px'}}>Back</button>
                     </div>
                   </>
                 )}
