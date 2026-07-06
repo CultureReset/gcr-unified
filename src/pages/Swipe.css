@@ -264,6 +264,54 @@
   color: white;
 }
 
+.trip-edit-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 10px;
+  color: white;
+  font-size: 14px;
+}
+
+.trip-edit-autocomplete {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: #1a1c28;
+  border: 1px solid rgba(255,255,255,0.15);
+  border-top: none;
+  border-radius: 0 0 10px 10px;
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 10;
+}
+
+.trip-edit-autocomplete-item {
+  display: block;
+  width: 100%;
+  padding: 10px 12px;
+  background: none;
+  border: none;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  text-align: left;
+  cursor: pointer;
+}
+
+.trip-edit-autocomplete-item .ac-name {
+  color: white;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.trip-edit-autocomplete-item .ac-meta {
+  color: rgba(255,255,255,0.5);
+  font-size: 12px;
+  margin-top: 2px;
+}
+
 .trip-edit-actions {
   display: flex;
   gap: 10px;

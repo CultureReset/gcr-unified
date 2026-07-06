@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import TinderCard from 'react-tinder-card'
 import { useApp } from '../context/AppContext'
 import { CATEGORIES } from '../data/categories'
-import { fetchBusinesses, calcDistance, formatDistance, fetchPreferences, personalizeAndSort } from '../services/gcrApi'
+import { fetchBusinesses, calcDistance, formatDistance, fetchPreferences, personalizeAndSort, searchProperties } from '../services/gcrApi'
 import { API_BASE } from '../config'
 import './Swipe.css'
 
@@ -52,6 +52,56 @@ const GROUP_TYPES = [
   { value: 'family',  label: 'Family',  emoji: '👨‍👩‍👧' },
   { value: 'friends', label: 'Friends', emoji: '👯' },
 ]
+
+// Same live property search Setup.jsx already uses for "where are you
+// staying" — reused here so returning tourists can set/update it too,
+// not just at initial signup.
+function PropertyAutocomplete({ value, onChange, placeholder }) {
+  const [suggestions, setSuggestions] = useState([])
+  const [open, setOpen] = useState(false)
+
+  const handleChange = async (e) => {
+    const text = e.target.value
+    onChange(text)
+    if (text.length > 0) {
+      const results = await searchProperties(text)
+      setSuggestions(results)
+      setOpen(true)
+    } else {
+      setSuggestions([])
+      setOpen(false)
+    }
+  }
+
+  const select = (s) => {
+    onChange(s.name)
+    setSuggestions([])
+    setOpen(false)
+  }
+
+  return (
+    <div style={{ position: 'relative' }}>
+      <input
+        className="trip-edit-input"
+        type="text"
+        placeholder={placeholder}
+        value={value || ''}
+        onChange={handleChange}
+        onFocus={() => { if (suggestions.length > 0) setOpen(true) }}
+      />
+      {open && suggestions.length > 0 && (
+        <div className="trip-edit-autocomplete">
+          {suggestions.map(s => (
+            <button key={s.id} type="button" className="trip-edit-autocomplete-item" onClick={() => select(s)}>
+              <div className="ac-name">{s.name}</div>
+              <div className="ac-meta">{s.type} · {s.city}</div>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
 
 const DECK_SIZE = 15
 
@@ -178,6 +228,7 @@ export default function Swipe() {
   const [editArrival, setEditArrival] = useState('')
   const [editDeparture, setEditDeparture] = useState('')
   const [editGroupType, setEditGroupType] = useState('')
+  const [editHotelName, setEditHotelName] = useState('')
   const [savingTrip, setSavingTrip] = useState(false)
 
   const catInfo = CATEGORIES.find(c => c.id === category) || CATEGORIES[5]
@@ -539,6 +590,7 @@ export default function Swipe() {
     setEditArrival(tourist?.arrival || '')
     setEditDeparture(tourist?.departure || '')
     setEditGroupType(tourist?.group_type || '')
+    setEditHotelName(tourist?.hotel_name || '')
     setShowTripEdit(true)
   }
 
@@ -554,6 +606,7 @@ export default function Swipe() {
         arrival: editArrival || null,
         departure: editDeparture || null,
         group_type: editGroupType || null,
+        hotel_name: editHotelName || null,
         trip_days,
       })
       setShowTripEdit(false)
@@ -658,6 +711,14 @@ export default function Swipe() {
                   <span>{g.emoji}</span><span>{g.label}</span>
                 </button>
               ))}
+            </div>
+            <label className="trip-edit-label">Where are you staying?</label>
+            <div style={{ marginBottom: 24 }}>
+              <PropertyAutocomplete
+                value={editHotelName}
+                onChange={setEditHotelName}
+                placeholder="Search condos, hotels…"
+              />
             </div>
             <div className="trip-edit-actions">
               <button className="trip-edit-cancel" onClick={() => setShowTripEdit(false)} disabled={savingTrip}>Cancel</button>
