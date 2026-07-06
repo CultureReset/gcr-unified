@@ -236,6 +236,16 @@ export function AppProvider({ children }) {
     }
   }
 
+  // Best-effort undo: if the swipe hasn't been flushed to the server yet,
+  // pull it back out of the queue so an undone action doesn't still count
+  // toward preference scoring. If it already flushed (the 5s/10-event
+  // window passed), there's nothing left to retract — a rare, low-impact
+  // edge case since undo is almost always pressed right after the swipe.
+  function retractLastSwipe(slug) {
+    const idx = swipeQueue.current.map(e => e.slug).lastIndexOf(slug)
+    if (idx !== -1) swipeQueue.current.splice(idx, 1)
+  }
+
   async function flushSeen() {
     const toFlush = seenQueue.current
     if (!toFlush.length || !getToken()) return
@@ -476,7 +486,7 @@ export function AppProvider({ children }) {
       savedPlaces, addSavedPlace, removeSavedPlace,
       superLikedPlaces, addSuperLike, removeSuperLike,
       itinerary, saveItinerary,
-      seenSlugs, recordSwipe, resetSeenSlugs, setSeenSlugs,
+      seenSlugs, recordSwipe, retractLastSwipe, resetSeenSlugs, setSeenSlugs,
       userLocation, requestLocation, geocodeStay,
       locationSharingEnabled, enableLocationSharing, disableLocationSharing,
       userId, logout,

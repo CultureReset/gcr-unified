@@ -196,7 +196,7 @@ function saveQueuedDeck(category, ids) {
 export default function Swipe() {
   const { category } = useParams()
   const navigate = useNavigate()
-  const { addSavedPlace, removeSavedPlace, savedPlaces, addSuperLike, tourist, seenSlugs, setSeenSlugs, recordSwipe, resetSeenSlugs, userLocation, requestLocation, geocodeStay, saveTourist } = useApp()
+  const { addSavedPlace, removeSavedPlace, savedPlaces, addSuperLike, tourist, seenSlugs, setSeenSlugs, recordSwipe, retractLastSwipe, resetSeenSlugs, userLocation, requestLocation, geocodeStay, saveTourist } = useApp()
 
   const [allBusinesses, setAllBusinesses] = useState([])
   const [pool, setPool] = useState([])
@@ -563,6 +563,9 @@ export default function Swipe() {
       removeSavedPlace(last.business.id)
       setLikedCount(p => Math.max(0, p - 1))
     }
+    // Best-effort: pull the swipe back out of the not-yet-sent queue so an
+    // undone action doesn't still get counted toward preference scoring.
+    retractLastSwipe(last.business._sponsorSlug || last.business.slug)
     // Put the card back on top of the deck
     setCards(prev => {
       const without = prev.filter(b => b.id !== last.business.id)
