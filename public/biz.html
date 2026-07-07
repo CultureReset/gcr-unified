@@ -97,10 +97,12 @@ function render(){
     var imgs = recs.filter(function(r){ return r.url && /^https?:/i.test(r.url); }).slice(0,3);
     if(imgs.length) thumbs = '<div class="thumbs">'+imgs.map(function(r){
       return '<div style="background-image:url(\''+esc(r.url)+'\')"></div>'; }).join('')+'</div>';
+    var fromP = fromPrice(bl);
     return '<button class="lk" onclick="openBlock('+i+')">'+
       '<div class="i">'+esc(bl.icon)+'</div>'+
       '<div><b>'+esc(bl.title)+'</b><span>'+esc(bl.sub)+'</span></div>'+
-      '<span class="ar">›</span></button>'+thumbs;
+      (fromP?'<span style="margin-left:auto;font-size:12px;font-weight:900;color:'+accent()+';white-space:nowrap">from $'+fromP+'</span><span class="ar" style="margin-left:8px">›</span>':'<span class="ar">›</span>')+
+      '</button>'+thumbs;
   }).join('');
 
   var primary = (PAGE.blocks||[])[0];
@@ -191,6 +193,20 @@ function submitBlock(i){
     var er = document.getElementById('pf-err');
     er.style.display = 'block'; er.textContent = e.message || 'Something went wrong — try again.';
   });
+}
+
+/* lowest visible price for a checkout block — shoppers see cost before they tap */
+function fromPrice(bl){
+  if(!bl.checkout) return null;
+  var prices = [];
+  (bl.resources||[]).forEach(function(r){ [r.rate_hourly, r.rate_full, r.rate_night].forEach(function(x){ if(x>0) prices.push(x); }); });
+  ((PAGE.data&&PAGE.data.services)||[]).forEach(function(s){ var p=parseFloat(s.price); if(p>0) prices.push(p); });
+  (bl.fields||[]).forEach(function(f){
+    if(f.priced && f.options) f.options.forEach(function(o){ var m=String(o).match(/\$?\s*(\d+(?:\.\d{1,2})?)/); if(m) prices.push(parseFloat(m[1])); });
+  });
+  if(!prices.length) return null;
+  var min = Math.min.apply(null, prices);
+  return min % 1 === 0 ? String(min) : min.toFixed(2);
 }
 
 function checkoutUrl(appId){
