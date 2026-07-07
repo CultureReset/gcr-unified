@@ -341,6 +341,7 @@ export default function Swipe() {
       ? allBusinesses.filter(b => !b._isPromo || b.category === 'all')
       : allBusinesses.filter(b => b.category === category))
       .filter(b => isGuest ? true : !seenSlugs.includes(b.slug))
+      .filter(b => b.hero_image_url) // Only show cards with images — no blank gradient placeholders
     setPool(visible)
 
     // Resume exactly where they left off: restore whichever still-unseen
@@ -380,6 +381,7 @@ export default function Swipe() {
     const visible = (category === 'all'
       ? allBusinesses.filter(b => !b._isPromo || b.category === 'all')
       : allBusinesses.filter(b => b.category === category))
+      .filter(b => b.hero_image_url) // Only show cards with images — no blank gradient placeholders
     setPool(visible)
     const sorted = Object.keys(prefMap).length
       ? personalizeAndSort(visible, prefMap)
