@@ -127,9 +127,11 @@ function openBlock(i){
   if(bl.checkout){
     if(bl.url){ window.open(bl.url, '_blank'); return; } // business uses an external booking link
     var slug = slugFromUrl();
-    location.href = location.pathname.indexOf('/p/')===0
+    var ref = new URLSearchParams(location.search).get('ref');
+    var refQ = ref ? (location.pathname.indexOf('/p/')===0 ? '?ref=' : '&ref=')+encodeURIComponent(ref) : '';
+    location.href = (location.pathname.indexOf('/p/')===0
       ? '/book/'+encodeURIComponent(slug)+'/'+encodeURIComponent(bl.id)
-      : 'book.html?b='+encodeURIComponent(slug)+'&app='+encodeURIComponent(bl.id);
+      : 'book.html?b='+encodeURIComponent(slug)+'&app='+encodeURIComponent(bl.id)) + refQ;
     return;
   }
 
