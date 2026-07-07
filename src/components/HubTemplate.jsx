@@ -119,6 +119,19 @@ export default function HubTemplate({ business, slug }) {
           </section>
         ))}
 
+      {/* Amenities — the complex as a whole (pools, tennis, fitness, beach access) */}
+      {(() => {
+        const amens = (business.tags || []).filter(t => t.tag_category === 'amenity').map(t => t.tag_name)
+        return amens.length > 0 && (
+          <section className="hub-section">
+            <h2>✨ Amenities</h2>
+            <div className="hub-amenity-grid">
+              {amens.map((a, i) => <span key={i} className="hub-amenity">✓ {String(a).replace(/_/g, ' ')}</span>)}
+            </div>
+          </section>
+        )
+      })()}
+
       {/* Categorized directory of children */}
       {loading ? (
         <section className="hub-section"><p className="hub-loading">Loading businesses…</p></section>

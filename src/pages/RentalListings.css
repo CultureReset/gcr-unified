@@ -115,3 +115,11 @@
 }
 
 .stay-amenity-chip.more { background: #fff5f0; }
+
+/* Complex description snippet on listing cards */
+.stay-card-desc {
+  margin: 6px 0 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: #5c6b81;
+}

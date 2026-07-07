@@ -74,6 +74,18 @@ function StayCard({ entity, navigate, savedSlugs, onSave, unitsInfo }) {
             <span className="stay-units-avail"> · {unitsInfo.available_units} available</span>
           </div>
         )}
+        {/* The complex as a whole: description + amenity chips */}
+        {entity.description && (
+          <p className="stay-card-desc">{entity.description.length > 150 ? entity.description.slice(0, 150).trimEnd() + '…' : entity.description}</p>
+        )}
+        {unitsInfo?.amenities?.length > 0 && (
+          <div className="stay-amenity-chips">
+            {unitsInfo.amenities.slice(0, 6).map((a, i) => (
+              <span key={i} className="stay-amenity-chip">{String(a).replace(/_/g, ' ')}</span>
+            ))}
+            {unitsInfo.amenities.length > 6 && <span className="stay-amenity-chip more">+{unitsInfo.amenities.length - 6}</span>}
+          </div>
+        )}
         {rating && (
           <div className="stay-card-rating">
             ⭐ {rating}
