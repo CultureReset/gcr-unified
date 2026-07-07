@@ -67,8 +67,12 @@ function formatHappyHour(e) {
 }
 
 function toCard(entity, photos = []) {
+  // tag_name is the field the API actually returns (GCRCard.jsx reads it too);
+  // label/name/tag are legacy fallbacks. Without tag_name here, every tag
+  // silently dropped out of the swipe cards — the tag row rendered empty on
+  // real data even though the entities had tags.
   const tags = Array.isArray(entity.tags)
-    ? entity.tags.map(t => typeof t === 'string' ? t : t.label || t.name || t.tag).filter(Boolean)
+    ? entity.tags.map(t => typeof t === 'string' ? t : t.tag_name || t.label || t.name || t.tag).filter(Boolean)
     : []
   const fixUrl = u => {
     if (!u) return null
@@ -113,7 +117,7 @@ function toCard(entity, photos = []) {
     verified: !!entity.featured,
     duration: entity.duration_text || null,
     price_per_person: (entity.price_from && entity.price_unit)
-      ? `$${entity.price_from}${entity.price_to && entity.price_to !== entity.price_from ? `-$${entity.price_to}` : ''} ${entity.price_unit}`
+      ? `$${entity.price_from}${entity.price_to && entity.price_to !== entity.price_from ? `-$${entity.price_to}` : ''}/${entity.price_unit}`
       : null,
     social: {
       instagram: entity.social_instagram || '',

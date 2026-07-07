@@ -731,7 +731,10 @@ export default function Swipe() {
         <button className="swipe-change-btn" onClick={openTripEdit}>Change</button>
         {view === 'swipe' && (
           <span className="swipe-progress">
-            {businesses.length - cards.length}/{businesses.length}
+            {/* clamp: refillDeck recycles cards from the pool, so the live
+                deck can briefly hold more entries than the de-duplicated
+                `businesses` count — without clamping, "seen" went negative. */}
+            {Math.min(businesses.length, Math.max(0, businesses.length - cards.length))}/{businesses.length}
           </span>
         )}
         {view === 'list' && (
