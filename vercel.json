@@ -37,6 +37,10 @@
       "destination": "/waiver.html"
     },
     {
+      "source": "/developers/reviews",
+      "destination": "/reviews-api.html"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
