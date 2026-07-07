@@ -84,6 +84,41 @@ export default function HubTemplate({ business, slug }) {
         </section>
       )}
 
+      {/* Offerings & marina facts — hubs with their own bookable trips,
+          rentals or dock services show them here (template: price table) */}
+      {(business.sections || [])
+        .filter(s => s.section_type === 'offerings' || s.section_type === 'marina')
+        .map(sec => (
+          <section className="hub-section" key={sec.id}>
+            <h2>{sec.section_type === 'marina' ? '⚓' : '🎟️'} {sec.section_name}</h2>
+            <div className="hub-offer-list">
+              {(sec.items || []).map(it => (
+                <div className="hub-offer-row" key={it.id}>
+                  <div className="hub-offer-head">
+                    <strong>{it.item_name}</strong>
+                    {it.price_from != null && (
+                      <span className="hub-offer-price">from ${Number(it.price_from).toLocaleString()}</span>
+                    )}
+                  </div>
+                  {(it.duration || it.price_label) && (
+                    <div className="hub-offer-meta">{[it.duration, it.price_label].filter(Boolean).join(' · ')}</div>
+                  )}
+                  {it.description && <p className="hub-offer-desc">{it.description}</p>}
+                  {it.tiers?.length > 0 && (
+                    <div className="hub-offer-tiers">
+                      {it.tiers.map(t => (
+                        <span key={t.id} className="hub-tier">
+                          {t.label}{t.price != null ? ` — $${Number(t.price).toLocaleString()}` : ''}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </section>
+        ))}
+
       {/* Categorized directory of children */}
       {loading ? (
         <section className="hub-section"><p className="hub-loading">Loading businesses…</p></section>
@@ -132,6 +167,21 @@ export default function HubTemplate({ business, slug }) {
               <details className="hub-faq-item" key={f.id}>
                 <summary>{f.question}</summary>
                 <p>{f.answer}</p>
+              </details>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Rules & visitor info (template: visitor rules / policies) */}
+      {business.policies?.length > 0 && (
+        <section className="hub-section">
+          <h2>📋 Rules & Visitor Info</h2>
+          <div className="hub-faq-list">
+            {business.policies.map(p => (
+              <details className="hub-faq-item" key={p.id}>
+                <summary>{p.title || String(p.policy_type || 'Policy').replace(/_/g, ' ')}</summary>
+                <p>{p.body || p.content}</p>
               </details>
             ))}
           </div>

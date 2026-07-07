@@ -203,3 +203,59 @@
   justify-content: center;
   flex-wrap: wrap;
 }
+
+/* Offerings / marina facts (template price-table look) */
+.hub-offer-list {
+  display: grid;
+  gap: 10px;
+}
+
+.hub-offer-row {
+  background: #fff;
+  border: 1px solid var(--border, #e6ecf3);
+  border-radius: 14px;
+  padding: 12px 14px;
+  box-shadow: 0 2px 8px rgba(0,0,0,.05);
+}
+
+.hub-offer-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.hub-offer-price {
+  color: #0f9d75;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.hub-offer-meta {
+  font-size: 12px;
+  color: var(--muted, #5c6b81);
+  margin-top: 2px;
+  text-transform: capitalize;
+}
+
+.hub-offer-desc {
+  font-size: 13px;
+  color: var(--muted, #5c6b81);
+  margin: 6px 0 0;
+}
+
+.hub-offer-tiers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.hub-tier {
+  font-size: 12px;
+  font-weight: 600;
+  background: #f2f7fb;
+  border: 1px solid var(--border, #e6ecf3);
+  border-radius: 999px;
+  padding: 4px 10px;
+}
