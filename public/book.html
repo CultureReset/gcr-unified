@@ -69,7 +69,13 @@
 'use strict';
 var API = window.CC_API_BASE || 'https://gcr-api-clean.vercel.app';
 var PAGE=null, BLOCK=null, AVAIL={blocked:[],full:[]};
-var step=0, sel={ service:null, date:null, values:{} };
+var step=0, sel={ service:null, resource:null, date:null, endDate:null, time:null, values:{} };
+/* universal handoff: any page can stage a cart/prefill for this checkout
+   (sessionStorage cc_prefill:<slug>:<app> = {values:{...}, price:N, lines:[...]}) */
+var PREFILL=null;
+var SLOTS=null; // per-date slot availability (slots mode)
+function bmode(){ return (BLOCK && BLOCK.booking && BLOCK.booking.mode) || 'date'; }
+function hasResources(){ return !!(BLOCK && BLOCK.resources && BLOCK.resources.length); }
 var stripe=null, elements=null, paymentIntentId=null;
 
 function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
@@ -90,15 +96,25 @@ function serviceField(){
   return null;
 }
 function services(){ return (PAGE.data && PAGE.data.services) || []; }
-function hasServiceStep(){ return serviceField() && services().length > 0; }
-function hasDateStep(){ return (BLOCK.fields||[]).some(function(f){ return f.key==='date'; }); }
+function hasServiceStep(){ return !hasResources() && serviceField() && services().length > 0; }
+function hasDateStep(){
+  if(bmode()==='none') return false; // gift cards, memberships, pickup orders
+  return (BLOCK.fields||[]).some(function(f){ return f.key==='date'; }) || bmode()!=='date';
+}
 function detailFields(){
-  var skip = { date:1 };
+  var skip = {};
+  if(hasDateStep()){
+    skip.date=1;                       // picked on the calendar step
+    if(bmode()==='range') skip.end_date=1;
+    if(bmode()==='slots') skip.time=1; // picked with the date
+  }
   var sf = serviceField(); if(sf && hasServiceStep()) skip[sf]=1;
+  if(PREFILL) Object.keys(PREFILL.values||{}).forEach(function(k){ skip[k]=1; }); // cart already filled these
   return (BLOCK.fields||[]).filter(function(f){ return !skip[f.key]; });
 }
 function stepList(){
   var l = [];
+  if(hasResources()) l.push('resource');
   if(hasServiceStep()) l.push('service');
   if(hasDateStep()) l.push('date');
   l.push('details','confirm');
@@ -106,9 +122,28 @@ function stepList(){
 }
 
 /* ── pricing ── */
+function nights(){
+  if(bmode()!=='range' || !sel.date || !sel.endDate) return 1;
+  var a=new Date(sel.date+'T00:00:00Z'), b=new Date(sel.endDate+'T00:00:00Z');
+  return Math.max(1, Math.round((b-a)/86400000));
+}
 function price(){
+  if(PREFILL && PREFILL.price) return parseFloat(PREFILL.price)||0; // cart handoff
+  if(sel.resource){
+    var r = sel.resource;
+    if(bmode()==='range') return (r.rate_night||r.rate_full||0) * nights();
+    return r.rate_full || r.rate_hourly || 0;
+  }
   if(sel.service && sel.service.price) return parseFloat(sel.service.price)||0;
-  return 0;
+  // priced fields: the chosen option carries its own price
+  // ("100" or "Monthly Unlimited $89" both work)
+  var p = 0;
+  (BLOCK.fields||[]).forEach(function(f){
+    if(!f.priced || !sel.values[f.key]) return;
+    var m = String(sel.values[f.key]).match(/\$?\s*(\d+(?:\.\d{1,2})?)(?!.*\d)/);
+    if(m) p += parseFloat(m[1]);
+  });
+  return p;
 }
 function dueNow(){
   var p = price(); if(!p || !PAGE.payment) return 0;
@@ -125,7 +160,19 @@ function render(){
   host.className='';
 
   var inner = '';
-  if(cur==='service'){
+  if(cur==='resource'){
+    inner = '<h2>Choose yours</h2>'+
+      BLOCK.resources.map(function(r,i){
+        var isSel = sel.resource && sel.resource.id===r.id;
+        var rate = r.rate_night ? '$'+r.rate_night+'/night' : r.rate_full ? '$'+r.rate_full+'/day' : r.rate_hourly ? '$'+r.rate_hourly+'/hr' : '';
+        return '<div class="svc'+(isSel?' sel':'')+'" onclick="pickResource('+i+')">'+
+          (r.url?'<div style="width:64px;height:48px;border-radius:10px;background:url(\''+esc(r.url)+'\') center/cover;flex-shrink:0"></div>':'')+
+          '<div style="flex:1"><b>'+esc(r.name)+'</b><small>'+esc(r.desc||'')+'</small></div>'+
+          (rate?'<span class="pr">'+esc(rate)+'</span>':'')+'</div>';
+      }).join('')+
+      btnRow(false, sel.resource ? 'Continue →' : 'Pick one to continue');
+  }
+  else if(cur==='service'){
     inner = '<h2>Choose your '+esc(serviceField())+'</h2>'+
       services().map(function(s,i){
         var isSel = sel.service && sel.service.name===s.name;
@@ -137,18 +184,23 @@ function render(){
       btnRow(false, sel.service ? 'Continue →' : 'Pick one to continue');
   }
   else if(cur==='date'){
-    inner = '<h2>Pick a date</h2><div id="cal"></div>'+
-      '<div class="legend"><span>⬜ available</span><span><s>x</s> unavailable</span></div>'+
-      btnRow(true, sel.date ? 'Continue →' : 'Pick a date');
+    var heading = bmode()==='range' ? 'Pick your dates' : 'Pick a date';
+    var hint = bmode()==='range' ? (sel.date && !sel.endDate ? 'Now tap your check-out date' : 'Tap check-in, then check-out') : '';
+    var ready = bmode()==='range' ? (sel.date && sel.endDate) : (bmode()==='slots' ? (sel.date && sel.time) : !!sel.date);
+    inner = '<h2>'+heading+'</h2>'+(hint?'<div class="star-label">'+hint+'</div>':'')+'<div id="cal"></div>'+
+      '<div id="slot-host"></div>'+
+      '<div class="legend"><span>⬜ available</span><span><s>x</s> unavailable</span>'+
+      (bmode()==='range'&&sel.date&&sel.endDate?'<span><b>'+nights()+' night'+(nights()>1?'s':'')+'</b></span>':'')+'</div>'+
+      btnRow(true, ready ? 'Continue →' : (bmode()==='slots'&&sel.date?'Pick a time':'Pick a date'));
   }
   else if(cur==='details'){
     inner = '<h2>Your details</h2>'+
       detailFields().map(function(f){
         var v = sel.values[f.key]||'';
         var id='df-'+f.key;
-        if(f.type==='select'&&f.options) return '<label>'+esc(f.label||f.key)+'</label><select id="'+id+'" onchange="sel.values[\''+f.key+'\']=this.value">'+f.options.map(function(o){return '<option'+(v===o?' selected':'')+'>'+esc(o)+'</option>';}).join('')+'</select>';
+        if(f.type==='select'&&f.options) return '<label>'+esc(f.label||f.key)+'</label><select id="'+id+'" onchange="sel.values[\''+f.key+'\']=this.value"><option value="">Choose…</option>'+f.options.map(function(o){return '<option'+(v===o?' selected':'')+'>'+esc(o)+'</option>';}).join('')+'</select>';
         if(f.type==='textarea') return '<label>'+esc(f.label||f.key)+'</label><textarea id="'+id+'" rows="2" oninput="sel.values[\''+f.key+'\']=this.value">'+esc(v)+'</textarea>';
-        var t = f.type==='number'?'number':f.key==='phone'?'tel':'text';
+        var t = f.type==='number'?'number':f.type==='date'?'date':f.key==='phone'?'tel':'text';
         return '<label>'+esc(f.label||f.key)+'</label><input id="'+id+'" type="'+t+'" value="'+esc(v)+'" oninput="sel.values[\''+f.key+'\']=this.value">';
       }).join('')+
       btnRow(true, 'Review →');
@@ -156,11 +208,15 @@ function render(){
   else if(cur==='confirm'){
     var due = dueNow();
     var rows = '';
+    if(sel.resource) rows += sumRow('Selection', sel.resource.name);
     if(sel.service) rows += sumRow(serviceField(), sel.service.name);
-    if(sel.date) rows += sumRow('Date', sel.date);
+    if(sel.date) rows += sumRow(bmode()==='range'?'Check-in':'Date', sel.date);
+    if(sel.endDate) rows += sumRow('Check-out', sel.endDate) + sumRow('Nights', String(nights()));
+    if(sel.time) rows += sumRow('Time', sel.time);
+    if(PREFILL && PREFILL.lines) PREFILL.lines.forEach(function(l){ rows += sumRow(l.qty>1?l.qty+'× '+l.name:l.name, '$'+(l.qty*(parseFloat(l.price)||0)).toFixed(2)); });
     detailFields().forEach(function(f){ if(sel.values[f.key]) rows += sumRow(f.label||f.key, sel.values[f.key]); });
     if(price()) rows += '<div class="r tot"><b>'+(due && due<price() ? 'Deposit due now' : 'Total')+'</b><b>$'+(due||price()).toFixed(2)+'</b></div>';
-    inner = '<h2>Confirm your booking</h2><div class="sum">'+rows+'</div>'+
+    inner = '<h2>'+(bmode()==='none'?'Confirm your order':'Confirm your booking')+'</h2><div class="sum">'+rows+'</div>'+
       (due>0 ? '<div id="pay-el"></div><div class="paynote">🔒 Secure payment — processed by Stripe, paid directly to '+esc(b.name||'the business')+'.</div>' : '')+
       '<div class="err" id="cf-err"></div>'+
       btnRow(true, due>0 ? 'Pay $'+due.toFixed(2)+' & Book →' : 'Confirm Booking →', 'doSubmit()');
@@ -190,10 +246,15 @@ window.go = function(d){
   var steps = stepList();
   var cur = steps[step];
   if(d>0){
+    if(cur==='resource' && !sel.resource) return;
     if(cur==='service' && !sel.service) return;
-    if(cur==='date' && !sel.date) return;
+    if(cur==='date'){
+      if(!sel.date) return;
+      if(bmode()==='range' && !sel.endDate) return;
+      if(bmode()==='slots' && !sel.time) return;
+    }
     if(cur==='details'){
-      var missing = detailFields().filter(function(f){ return (f.key==='name'||f.key==='customer'||f.key==='phone') && !sel.values[f.key]; });
+      var missing = detailFields().filter(function(f){ return (f.key==='name'||f.key==='customer'||f.key==='phone'||f.priced) && !sel.values[f.key]; });
       if(missing.length){ alert('Please fill in: '+missing.map(function(f){return f.label||f.key;}).join(', ')); return; }
     }
   }
@@ -201,6 +262,12 @@ window.go = function(d){
   render();
 };
 window.pickService = function(i){ sel.service = services()[i]; render(); };
+window.pickResource = function(i){
+  sel.resource = BLOCK.resources[i];
+  sel.date=null; sel.endDate=null; sel.time=null; SLOTS=null;
+  loadAvailability().then(function(){ render(); }); // this resource's busy dates grey out
+  render();
+};
 
 /* ── calendar ── */
 var now = new Date(), _calY = now.getFullYear(), _calM = now.getMonth();
@@ -217,14 +284,45 @@ function renderCal(y,m){
     var ds = fmt(y,m,d);
     var dt = new Date(y,m,d); dt.setHours(0,0,0,0);
     var off = dt<today || AVAIL.blocked.indexOf(ds)!==-1 || AVAIL.full.indexOf(ds)!==-1;
-    var cls = 'day'+(off?' off':'')+(sel.date===ds?' sel':'');
+    var inRange = sel.date && sel.endDate && ds>sel.date && ds<sel.endDate;
+    var cls = 'day'+(off?' off':'')+((sel.date===ds||sel.endDate===ds)?' sel':'')+(inRange?' sel':'');
     html += '<div class="'+cls+'"'+(off?'':' onclick="pickDate(\''+ds+'\')"')+'>'+d+'</div>';
   }
   html += '</div>';
   document.getElementById('cal').innerHTML = html;
+  renderSlots();
 }
 window.calNav = function(d){ var m=_calM+d, y=_calY; if(m<0){m=11;y--;} if(m>11){m=0;y++;} renderCal(y,m); };
-window.pickDate = function(ds){ sel.date=ds; render(); };
+window.pickDate = function(ds){
+  if(bmode()==='range'){
+    if(!sel.date || sel.endDate || ds < sel.date){ sel.date=ds; sel.endDate=null; }
+    else if(ds >= sel.date){ sel.endDate=ds; }
+  } else {
+    sel.date=ds; sel.time=null; SLOTS=null;
+    if(bmode()==='slots') loadSlots(ds);
+  }
+  render();
+};
+window.pickSlot = function(t){ sel.time=t; render(); };
+function loadSlots(ds){
+  var q = '?app='+encodeURIComponent(P.app)+'&date='+encodeURIComponent(ds)+(sel.resource?'&resource='+encodeURIComponent(sel.resource.id):'');
+  fetch(API+'/api/platform/page/'+encodeURIComponent(P.slug)+'/availability'+q)
+    .then(function(r){return r.json();})
+    .then(function(a){ SLOTS = a.slots||[]; renderSlots(); })
+    .catch(function(){ SLOTS=[]; renderSlots(); });
+}
+function renderSlots(){
+  var host = document.getElementById('slot-host'); if(!host) return;
+  if(bmode()!=='slots' || !sel.date){ host.innerHTML=''; return; }
+  if(SLOTS===null){ host.innerHTML='<div class="star-label">Checking times…</div>'; return; }
+  host.innerHTML = '<label style="margin-top:14px">Pick a time — '+esc(sel.date)+'</label>'+
+    '<div style="display:flex;gap:8px;flex-wrap:wrap">'+
+    SLOTS.map(function(sl){
+      var off = sl.remaining<=0;
+      var on = sel.time===sl.time;
+      return '<button type="button" '+(off?'disabled':'')+' onclick="pickSlot(\''+esc(sl.time)+'\')" style="padding:10px 14px;border-radius:11px;border:1.5px solid '+(on?'var(--accent)':'var(--line)')+';background:'+(on?'var(--accent)':off?'#f0ece5':'#fff')+';color:'+(on?'#fff':off?'#b3aca0':'inherit')+';font-weight:800;font-size:13px;cursor:'+(off?'not-allowed':'pointer')+'">'+esc(sl.time)+(off?' · full':'')+'</button>';
+    }).join('')+'</div>';
+}
 
 /* ── payment (Stripe, only when the business configured it) ── */
 var stripeCfg = null;
@@ -272,6 +370,9 @@ window.doSubmit = function(){
   var ref = new URLSearchParams(location.search).get('ref');
   if(ref) payload.ref = ref; // referral attribution — validated server-side
   if(sel.date) payload.date = sel.date;
+  if(sel.endDate) payload.end_date = sel.endDate;
+  if(sel.time) payload.time = sel.time;
+  if(sel.resource) payload.resource_id = sel.resource.id;
   var sf = serviceField();
   if(sf && sel.service) payload[sf] = sel.service.name;
 
@@ -289,8 +390,9 @@ window.doSubmit = function(){
     });
   }
   flow.then(sendBooking).then(function(){
+    try{ sessionStorage.removeItem('cc_prefill:'+P.slug+':'+P.app); }catch(e){}
     document.getElementById('root').innerHTML = '<div class="shell"><div class="body ok">'+
-      '<div class="big">✅</div><h2>You\'re booked in!</h2>'+
+      '<div class="big">✅</div><h2>'+(bmode()==='none'?'Order received!':'You\'re booked in!')+'</h2>'+
       '<p style="color:var(--muted);font-size:14px">'+(paymentIntentId?'Payment received. ':'')+
       'You\'ll get a text'+(sel.values.phone?' at '+esc(sel.values.phone):'')+' as soon as '+esc(PAGE.business.name||'the business')+' confirms.</p>'+
       '<a class="btn next" style="background:'+accent()+';display:flex;align-items:center;justify-content:center;text-decoration:none;color:#fff;margin-top:16px" href="'+pageUrl()+'">← Back to '+esc(PAGE.business.name||'page')+'</a>'+
@@ -307,7 +409,8 @@ window.doSubmit = function(){
 };
 
 function loadAvailability(){
-  return fetch(API+'/api/platform/page/'+encodeURIComponent(P.slug)+'/availability?app='+encodeURIComponent(P.app))
+  var q = '?app='+encodeURIComponent(P.app)+(sel.resource?'&resource='+encodeURIComponent(sel.resource.id):'');
+  return fetch(API+'/api/platform/page/'+encodeURIComponent(P.slug)+'/availability'+q)
     .then(function(r){return r.json();})
     .then(function(a){ AVAIL = { blocked:a.blocked||[], full:a.full||[] }; })
     .catch(function(){ AVAIL={blocked:[],full:[]}; });
@@ -315,6 +418,10 @@ function loadAvailability(){
 
 (function(){
   if(!P.slug || !P.app){ document.getElementById('root').textContent='Missing booking link.'; return; }
+  try{
+    var _pf = sessionStorage.getItem('cc_prefill:'+P.slug+':'+P.app);
+    if(_pf){ PREFILL = JSON.parse(_pf); Object.keys(PREFILL.values||{}).forEach(function(k){ sel.values[k]=PREFILL.values[k]; }); }
+  }catch(e){ PREFILL=null; }
   Promise.all([
     fetch(API+'/api/platform/page/'+encodeURIComponent(P.slug)).then(function(r){ if(!r.ok) throw new Error('Page not found'); return r.json(); }),
     null
