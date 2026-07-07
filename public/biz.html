@@ -124,7 +124,7 @@ function accent(){ return (PAGE && PAGE.business && PAGE.business.accent) || '#2
 
 function render(){
   var b = PAGE.business || {};
-  document.title = b.name || 'Business Page';
+  if(!(PAGE.seo && PAGE.seo.title)) document.title = b.name || 'Business Page';  // SEO app owns the title when present
   var heroStyle = b.hero && /^https?:/i.test(b.hero)
     ? 'background:linear-gradient(180deg,rgba(8,12,20,.28),rgba(8,12,20,.7)),url(\''+esc(b.hero)+'\') center/cover'
     : 'background:linear-gradient(160deg,'+accent()+',#1c2b40)';
@@ -447,9 +447,86 @@ function closePop(){ document.getElementById('pop').classList.remove('open'); }
   if(!slug){ document.getElementById('root').textContent = 'No page specified.'; return; }
   fetch(API+'/api/platform/page/'+encodeURIComponent(slug))
     .then(function(r){ if(!r.ok) throw new Error(r.status===404?'Page not found':'Could not load page'); return r.json(); })
-    .then(function(d){ PAGE = d; render(); })
+    .then(function(d){ PAGE = d; applySeo(); render(); })
     .catch(function(e){ document.getElementById('root').textContent = e.message; });
 })();
+
+/* ── SEO: meta tags + JSON-LD structured data, built from the SEO app's
+   config + the business + live data. Universal — the schema type is
+   chosen by the business (cleaning service, salon, restaurant, …). ── */
+function applySeo(){
+  var b = PAGE.business||{}, s = PAGE.seo||{}, data = PAGE.data||{};
+  var pageUrl = location.origin + '/p/' + encodeURIComponent(slugFromUrl());
+  var title = s.title || (b.name ? b.name + (b.tagline ? ' — ' + b.tagline : '') : 'Book online');
+  var desc = s.description || b.tagline || ('Book ' + (b.name||'us') + ' online.');
+  var img = (s.og_image && /^https?:/i.test(s.og_image)) ? s.og_image
+    : (b.hero && /^https?:/i.test(b.hero)) ? b.hero
+    : (b.logo && /^https?:/i.test(b.logo)) ? b.logo : '';
+
+  document.title = title;
+  function meta(sel, attr, key, val){
+    if(val==null||val==='') return;
+    var el = document.head.querySelector(sel);
+    if(!el){ el=document.createElement('meta'); el.setAttribute(attr, key); document.head.appendChild(el); }
+    el.setAttribute('content', val);
+  }
+  meta('meta[name="description"]','name','description', desc);
+  if(s.keywords) meta('meta[name="keywords"]','name','keywords', s.keywords);
+  // Open Graph + Twitter (link previews on iMessage, FB, X, etc.)
+  meta('meta[property="og:title"]','property','og:title', title);
+  meta('meta[property="og:description"]','property','og:description', desc);
+  meta('meta[property="og:type"]','property','og:type', 'website');
+  meta('meta[property="og:url"]','property','og:url', pageUrl);
+  if(img) meta('meta[property="og:image"]','property','og:image', img);
+  meta('meta[name="twitter:card"]','name','twitter:card', img ? 'summary_large_image' : 'summary');
+  meta('meta[name="twitter:title"]','name','twitter:title', title);
+  meta('meta[name="twitter:description"]','name','twitter:description', desc);
+  if(img) meta('meta[name="twitter:image"]','name','twitter:image', img);
+  // canonical
+  var can = document.head.querySelector('link[rel="canonical"]');
+  if(!can){ can=document.createElement('link'); can.rel='canonical'; document.head.appendChild(can); }
+  can.href = pageUrl;
+
+  // JSON-LD structured data → local search & Google maps. Friendly business
+  // type maps to a schema.org @type; nothing here is industry-specific.
+  var TYPE = {
+    'Local Business (general)':'LocalBusiness',
+    'Home & Cleaning Services':'HomeAndConstructionBusiness',
+    'Professional / Consulting Services':'ProfessionalService',
+    'Health, Beauty & Wellness':'HealthAndBeautyBusiness',
+    'Restaurant / Food & Drink':'Restaurant',
+    'Lodging / Vacation Rental':'LodgingBusiness',
+    'Tours, Activities & Recreation':'TouristAttraction',
+    'Automotive / Repair':'AutomotiveBusiness',
+    'Retail / Store':'Store',
+    'Events & Entertainment':'EntertainmentBusiness'
+  };
+  var ld = { '@context':'https://schema.org', '@type': TYPE[s.biz_type] || 'LocalBusiness', name: b.name||'', url: pageUrl };
+  if(desc) ld.description = desc;
+  if(img) ld.image = img;
+  if(b.phone) ld.telephone = b.phone;
+  if(s.price_range) ld.priceRange = s.price_range;
+  if(s.area_served) ld.areaServed = s.area_served.split(',').map(function(x){return x.trim();}).filter(Boolean);
+  if(s.address || b.address){ ld.address = { '@type':'PostalAddress', streetAddress: s.address || b.address }; }
+  // socials → sameAs
+  var same = [b.instagram, b.facebook, b.tiktok, b.youtube, b.website].filter(function(u){ return u && /^https?:/i.test(u); });
+  if(same.length) ld.sameAs = same;
+  // aggregate rating from real reviews, if any
+  var revs = (data.reviews||[]).filter(function(r){ return parseFloat(r.stars)>0; });
+  if(revs.length){
+    var avg = revs.reduce(function(a,r){ return a+parseFloat(r.stars); },0)/revs.length;
+    ld.aggregateRating = { '@type':'AggregateRating', ratingValue: Math.round(avg*10)/10, reviewCount: revs.length };
+  }
+  // services / rates as an offer catalog
+  var svc = (data.services||[]).filter(function(x){ return x.name; });
+  if(svc.length){
+    ld.hasOfferCatalog = { '@type':'OfferCatalog', name:'Services', itemListElement: svc.slice(0,20).map(function(x){
+      return { '@type':'Offer', name:x.name, price: x.price!=null?String(x.price):undefined, priceCurrency: x.price!=null?'USD':undefined }; }) };
+  }
+  var tag = document.getElementById('cc-ld');
+  if(!tag){ tag=document.createElement('script'); tag.type='application/ld+json'; tag.id='cc-ld'; document.head.appendChild(tag); }
+  tag.textContent = JSON.stringify(ld);
+}
 </script>
 </body>
 </html>
