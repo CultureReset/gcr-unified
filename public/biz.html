@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Loading…</title>
+<!--
+  PUBLIC SMART PAGE — one URL per business (/p/<slug>, rewritten to
+  this file; also works as biz.html?b=<slug>).
+  Rendered entirely from the business's installed blocks via
+  GET /api/platform/page/:slug. Tap a block → popup opens —
+  the customer never leaves the page.
+  Nothing here is specific to any business, tool, or industry.
+-->
+<style>
+  :root{ --accent:#22c3a6; --text:#1d2329; --muted:#66758a; --soft:#f6f4f0; --line:#e6e0d8; }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;background:#efece7;color:var(--text);min-height:100vh;padding:18px 12px}
+  .shell{max-width:560px;margin:0 auto;background:#f9f7f4;border-radius:28px;overflow:hidden;border:1px solid var(--line);box-shadow:0 18px 50px rgba(35,28,22,.14)}
+  .hero{padding:30px 22px 22px;color:#fff;position:relative}
+  .avatar{width:78px;height:78px;border-radius:50%;background:#fff;display:grid;place-items:center;font-size:34px;border:3px solid rgba(255,255,255,.72);box-shadow:0 8px 22px rgba(0,0,0,.25);background-size:cover;background-position:center}
+  .hero h1{margin:12px 0 4px;font-size:30px;line-height:1;letter-spacing:-.04em}
+  .hero p{margin:0;font-size:14px;opacity:.94}
+  .cta-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:16px 18px 6px}
+  .cta{min-height:50px;border-radius:15px;display:flex;align-items:center;justify-content:center;gap:8px;font-weight:800;font-size:14px;color:#fff;border:none;cursor:pointer;text-decoration:none}
+  .cta.call{background:linear-gradient(135deg,#26c576,#17995d)}
+  .links{padding:12px 18px 26px;display:flex;flex-direction:column;gap:11px}
+  .lk{display:flex;align-items:center;gap:13px;background:#fff;border:1px solid var(--line);border-radius:16px;padding:15px 14px;cursor:pointer;text-align:left;width:100%;font:inherit;transition:transform .15s}
+  .lk:hover{transform:translateY(-2px)}
+  .lk .i{width:46px;height:46px;border-radius:13px;background:var(--soft);display:grid;place-items:center;font-size:21px;flex-shrink:0}
+  .lk b{font-size:15px;display:block}
+  .lk span{font-size:12px;color:var(--muted);display:block;margin-top:2px}
+  .lk .ar{margin-left:auto;color:#a0a8b5;font-size:19px}
+  .thumbs{display:flex;gap:7px;margin-top:-3px}
+  .thumbs div{flex:1;height:64px;border-radius:10px;background-size:cover;background-position:center}
+  .foot{text-align:center;color:#9a8f83;font-size:11.5px;padding:0 18px 22px}
+  .foot a{color:inherit}
+
+  /* popup */
+  .pop{position:fixed;inset:0;background:rgba(15,12,8,.55);display:none;align-items:flex-end;justify-content:center;z-index:50;backdrop-filter:blur(3px)}
+  .pop.open{display:flex}
+  .pop-box{background:#fff;width:100%;max-width:560px;max-height:86vh;overflow-y:auto;border-radius:24px 24px 0 0;padding:20px}
+  @media(min-width:600px){ .pop{align-items:center;padding:20px} .pop-box{border-radius:24px} }
+  .pop-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+  .pop-head h2{margin:0;font-size:19px}
+  .pop-x{background:var(--soft);border:none;border-radius:50%;width:34px;height:34px;font-size:15px;cursor:pointer}
+  .item{display:flex;justify-content:space-between;gap:12px;padding:11px 0;border-bottom:1px solid #f0ebe4;font-size:14px}
+  .item:last-child{border-bottom:none}
+  .item b{font-weight:700}
+  .item .pr{font-weight:800;white-space:nowrap}
+  .item small{display:block;color:var(--muted);margin-top:2px;font-weight:400}
+  label{font-size:11.5px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;display:block;margin:12px 0 5px}
+  input,textarea,select{width:100%;padding:12px;border:1px solid var(--line);border-radius:11px;font:inherit;background:#fbfaf8}
+  .submit{width:100%;min-height:50px;border:none;border-radius:14px;color:#fff;font-weight:900;font-size:15px;margin-top:16px;cursor:pointer}
+  .ok{text-align:center;padding:30px 10px}
+  .ok .big{font-size:46px}
+  .err{background:#fdecec;color:#b03030;border-radius:10px;padding:10px 12px;font-size:13px;margin-top:10px;display:none}
+  .center{min-height:70vh;display:grid;place-items:center;color:#8a8074;font-weight:700}
+</style>
+</head>
+<body>
+<div id="root" class="center">Loading…</div>
+
+<div class="pop" id="pop" onclick="if(event.target===this)closePop()">
+  <div class="pop-box">
+    <div class="pop-head"><h2 id="pop-title"></h2><button class="pop-x" onclick="closePop()">✕</button></div>
+    <div id="pop-body"></div>
+  </div>
+</div>
+
+<script>
+'use strict';
+var API = window.CC_API_BASE || 'https://gcr-api-clean.vercel.app';
+var PAGE = null;
+
+function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function slugFromUrl(){
+  var m = location.pathname.match(/\/p\/([a-z0-9-]+)/i);
+  if(m) return m[1];
+  return new URLSearchParams(location.search).get('b');
+}
+function accent(){ return (PAGE && PAGE.business && PAGE.business.accent) || '#22c3a6'; }
+
+function render(){
+  var b = PAGE.business || {};
+  document.title = b.name || 'Business Page';
+  var heroStyle = b.hero && /^https?:/i.test(b.hero)
+    ? 'background:linear-gradient(180deg,rgba(8,12,20,.28),rgba(8,12,20,.7)),url(\''+esc(b.hero)+'\') center/cover'
+    : 'background:linear-gradient(160deg,'+accent()+',#1c2b40)';
+  var avatar = b.logo && /^https?:/i.test(b.logo)
+    ? '<div class="avatar" style="background-image:url(\''+esc(b.logo)+'\')"></div>'
+    : '<div class="avatar">'+(b.emoji||'🏪')+'</div>';
+
+  var rows = (PAGE.blocks||[]).map(function(bl, i){
+    var thumbs = '';
+    var recs = (PAGE.data && PAGE.data[bl.dataKey]) || [];
+    var imgs = recs.filter(function(r){ return r.url && /^https?:/i.test(r.url); }).slice(0,3);
+    if(imgs.length) thumbs = '<div class="thumbs">'+imgs.map(function(r){
+      return '<div style="background-image:url(\''+esc(r.url)+'\')"></div>'; }).join('')+'</div>';
+    return '<button class="lk" onclick="openBlock('+i+')">'+
+      '<div class="i">'+esc(bl.icon)+'</div>'+
+      '<div><b>'+esc(bl.title)+'</b><span>'+esc(bl.sub)+'</span></div>'+
+      '<span class="ar">›</span></button>'+thumbs;
+  }).join('');
+
+  var primary = (PAGE.blocks||[])[0];
+  document.getElementById('root').className = '';
+  document.getElementById('root').innerHTML =
+    '<div class="shell">'+
+      '<div class="hero" style="'+heroStyle+'">'+avatar+
+        '<h1>'+esc(b.name||'')+'</h1><p>'+esc(b.tagline||'')+'</p></div>'+
+      '<div class="cta-row">'+
+        (b.phone ? '<a class="cta call" href="tel:'+esc(b.phone)+'">📞 Call Now</a>' : '')+
+        (primary ? '<button class="cta" style="background:'+accent()+'" onclick="openBlock(0)">'+esc(primary.title)+'</button>' : '')+
+      '</div>'+
+      '<div class="links">'+(rows||'<div style="text-align:center;color:#9a8f83;padding:16px">Nothing here yet.</div>')+'</div>'+
+      '<div class="foot">Powered by <b>CyberCheck</b> — one QR code, your whole business.</div>'+
+    '</div>';
+}
+
+function openBlock(i){
+  var bl = PAGE.blocks[i];
+  document.getElementById('pop-title').textContent = bl.title;
+  var body = document.getElementById('pop-body');
+
+  // 0. Booking block → its own standalone checkout page
+  if(bl.checkout){
+    if(bl.url){ window.open(bl.url, '_blank'); return; } // business uses an external booking link
+    var slug = slugFromUrl();
+    location.href = location.pathname.indexOf('/p/')===0
+      ? '/book/'+encodeURIComponent(slug)+'/'+encodeURIComponent(bl.id)
+      : 'book.html?b='+encodeURIComponent(slug)+'&app='+encodeURIComponent(bl.id);
+    return;
+  }
+
+  // 1. Link block → just go
+  if(bl.url && !bl.dataKey){ window.open(bl.url, '_blank'); return; }
+
+  // 2. Public data block → list the records right here (menu, specials, events…)
+  var recs = (PAGE.data && PAGE.data[bl.dataKey]) || [];
+  if(bl.publicData){
+    body.innerHTML = recs.length ? recs.map(function(r){
+      var name = r.name || r.title || r.q || '';
+      var detail = r.desc || r.detail || r.a || [r.date, r.time, r.days, r.duration].filter(Boolean).join(' · ');
+      var price = r.price != null && r.price !== '' ? '$'+r.price : '';
+      var img = r.url && /^https?:/i.test(r.url) ? '<div style="height:130px;border-radius:12px;background:url(\''+esc(r.url)+'\') center/cover;margin-bottom:6px"></div>' : '';
+      return img + '<div class="item"><div><b>'+esc(name)+'</b>'+(detail?'<small>'+esc(detail)+'</small>':'')+'</div>'+(price?'<span class="pr">'+esc(price)+'</span>':'')+'</div>';
+    }).join('') : '<div class="ok">Nothing posted yet — check back soon!</div>';
+    openPop(); return;
+  }
+
+  // 3. Form block → capture a submission (booking, request, lead…)
+  if(bl.dataKey && bl.fields && bl.fields.length){
+    body.innerHTML = bl.fields.map(function(f){
+      var id = 'pf-'+f.key;
+      if(f.type==='select' && f.options) return '<label>'+esc(f.label||f.key)+'</label><select id="'+id+'">'+f.options.map(function(o){return '<option>'+esc(o)+'</option>';}).join('')+'</select>';
+      if(f.type==='textarea') return '<label>'+esc(f.label||f.key)+'</label><textarea id="'+id+'" rows="3"></textarea>';
+      var t = f.type==='number'?'number':f.type==='date'?'date':f.key==='phone'?'tel':'text';
+      return '<label>'+esc(f.label||f.key)+'</label><input id="'+id+'" type="'+t+'">';
+    }).join('')+
+    '<div class="err" id="pf-err"></div>'+
+    '<button class="submit" style="background:'+accent()+'" onclick="submitBlock('+i+')">Send →</button>';
+    openPop(); return;
+  }
+
+  // 4. Info-only block
+  body.innerHTML = '<div class="ok"><div class="big">'+esc(bl.icon)+'</div><p>'+esc(bl.sub||bl.title)+'</p>'+(bl.url?'<a class="submit" style="background:'+accent()+';display:flex;align-items:center;justify-content:center;text-decoration:none" href="'+esc(bl.url)+'" target="_blank">Open →</a>':'')+'</div>';
+  openPop();
+}
+
+function submitBlock(i){
+  var bl = PAGE.blocks[i];
+  var payload = {};
+  bl.fields.forEach(function(f){
+    var el = document.getElementById('pf-'+f.key);
+    if(el && el.value) payload[f.key] = el.value;
+  });
+  var btn = document.querySelector('#pop-body .submit');
+  btn.textContent = 'Sending…'; btn.disabled = true;
+  fetch(API+'/api/platform/page/'+encodeURIComponent(slugFromUrl())+'/submit/'+encodeURIComponent(bl.id), {
+    method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)
+  }).then(function(r){ return r.json(); }).then(function(d){
+    if(d.error) throw new Error(d.error);
+    document.getElementById('pop-body').innerHTML =
+      '<div class="ok"><div class="big">✅</div><h3 style="margin:8px 0 6px">Sent!</h3>'+
+      '<p style="color:#66758a;font-size:14px">You\'ll hear back shortly'+(payload.phone?' by text':'')+'. Thanks!</p></div>';
+  }).catch(function(e){
+    btn.textContent = 'Send →'; btn.disabled = false;
+    var er = document.getElementById('pf-err');
+    er.style.display = 'block'; er.textContent = e.message || 'Something went wrong — try again.';
+  });
+}
+
+function openPop(){ document.getElementById('pop').classList.add('open'); }
+function closePop(){ document.getElementById('pop').classList.remove('open'); }
+
+(function(){
+  var slug = slugFromUrl();
+  if(!slug){ document.getElementById('root').textContent = 'No page specified.'; return; }
+  fetch(API+'/api/platform/page/'+encodeURIComponent(slug))
+    .then(function(r){ if(!r.ok) throw new Error(r.status===404?'Page not found':'Could not load page'); return r.json(); })
+    .then(function(d){ PAGE = d; render(); })
+    .catch(function(e){ document.getElementById('root').textContent = e.message; });
+})();
+</script>
+</body>
+</html>
