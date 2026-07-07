@@ -582,9 +582,15 @@
   font-weight: 700;
 }
 
+/* All current .cta-detail consumers (PromoCard/SponsoredCard/DealSwipeCard)
+   render it inside .card-body — a light footer (var(--card) background,
+   inherited, no dark scrim behind it) — so this needs light-theme-correct
+   colors, not the white-on-photo-overlay assumption BusinessCard used to
+   need before it moved its own CTAs onto the dark info panel. */
 .cta-detail {
-  background: rgba(255,255,255,0.08);
-  color: white;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
   padding: 12px 16px;
   border-radius: 14px;
   font-size: 14px;
@@ -609,10 +615,22 @@
   font-weight: 700;
   padding: 6px 12px;
   border-radius: 20px;
+  /* business.type can be an arbitrary raw subtype string from the DB —
+     cap + truncate so a long one can't run into the save button at the
+     top-right corner. */
+  max-width: 65%;
+  box-sizing: border-box;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.card-badge-stacked {
-  top: 48px !important;
+/* Compound selectors (not !important) so this reliably wins over
+   .card-featured-badge/.card-match-badge's own `top` regardless of
+   which rule happens to appear later in the file. */
+.card-featured-badge.card-badge-stacked,
+.card-match-badge.card-badge-stacked {
+  top: 48px;
 }
 
 .card-save-btn {
@@ -636,9 +654,14 @@
 
 .card-save-btn:active { transform: scale(0.88); }
 
-.card-photo-counter-stacked {
-  top: 56px !important;
-  right: 12px !important;
+.card-save-btn.saved {
+  background: rgba(239,68,68,0.35);
+  box-shadow: 0 2px 10px rgba(239,68,68,0.35);
+}
+
+.card-photo-counter.card-photo-counter-stacked {
+  top: 56px;
+  right: 12px;
 }
 
 .card-info-panel {

@@ -843,11 +843,11 @@ export default function Swipe() {
       {smsPrompt && !smsDone && (
         <div style={{position:'fixed',inset:0,zIndex:9000,display:'flex',alignItems:'flex-end',background:'rgba(0,0,0,.5)'}}
              onClick={e => { if(e.target===e.currentTarget) setSmsPrompt(false) }}>
-          <div style={{width:'100%',background:'#0f172a',borderRadius:'20px 20px 0 0',padding:'28px 24px 40px',boxShadow:'0 -8px 40px rgba(0,0,0,.5)'}}>
-            <div style={{width:40,height:4,background:'#0ea5e9',borderRadius:999,margin:'0 auto 20px',opacity:0.5}}></div>
+          <div style={{width:'100%',background:'var(--card)',borderRadius:'20px 20px 0 0',padding:'28px 24px 40px',boxShadow:'0 -8px 40px rgba(0,0,0,.25)'}}>
+            <div style={{width:40,height:4,background:'var(--primary)',borderRadius:999,margin:'0 auto 20px',opacity:0.5}}></div>
             <div style={{fontSize:24,textAlign:'center',marginBottom:8}}>📲</div>
-            <h3 style={{textAlign:'center',color:'#fff',fontSize:18,fontWeight:900,margin:'0 0 6px'}}>Save your picks + get local deals</h3>
-            <p style={{textAlign:'center',color:'rgba(255,255,255,.6)',fontSize:14,margin:'0 0 20px',lineHeight:1.5}}>
+            <h3 style={{textAlign:'center',color:'var(--text)',fontSize:18,fontWeight:900,margin:'0 0 6px'}}>Save your picks + get local deals</h3>
+            <p style={{textAlign:'center',color:'var(--text2)',fontSize:14,margin:'0 0 20px',lineHeight:1.5}}>
               Drop your number to save your likes and get same-day specials texted to you while you're here.
             </p>
             <input
@@ -855,7 +855,7 @@ export default function Swipe() {
               placeholder="+1 (555) 000-0000"
               value={smsPhone}
               onChange={e => setSmsPhone(e.target.value)}
-              style={{width:'100%',boxSizing:'border-box',background:'#1e293b',border:'1px solid #334155',borderRadius:10,padding:'14px 16px',fontSize:16,color:'#fff',marginBottom:12}}
+              style={{width:'100%',boxSizing:'border-box',background:'var(--bg)',border:'1px solid var(--border)',borderRadius:10,padding:'14px 16px',fontSize:16,color:'var(--text)',marginBottom:12}}
             />
             <button
               onClick={async () => {
@@ -875,13 +875,13 @@ export default function Swipe() {
                 setSmsSubmitting(false)
               }}
               disabled={smsSubmitting}
-              style={{width:'100%',background:'linear-gradient(135deg,#0ea5e9,#0369a1)',color:'#fff',border:'none',borderRadius:10,padding:'14px',fontSize:16,fontWeight:800,cursor:'pointer',marginBottom:10}}
+              style={{width:'100%',background:'linear-gradient(135deg, var(--primary), var(--primary-dark))',color:'#fff',border:'none',borderRadius:10,padding:'14px',fontSize:16,fontWeight:800,cursor:'pointer',marginBottom:10}}
             >
               {smsSubmitting ? 'Saving…' : 'Yes, text me deals 🎉'}
             </button>
             <button
               onClick={() => { setSmsPrompt(false); localStorage.setItem('gcr_sms_opted','skip') ; setSmsDone(true) }}
-              style={{width:'100%',background:'none',color:'rgba(255,255,255,.4)',border:'none',fontSize:13,cursor:'pointer',padding:'8px'}}
+              style={{width:'100%',background:'none',color:'var(--text3)',border:'none',fontSize:13,cursor:'pointer',padding:'8px'}}
             >
               No thanks
             </button>
