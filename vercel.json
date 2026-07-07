@@ -21,6 +21,14 @@
       "destination": "/user.html"
     },
     {
+      "source": "/r/:slug",
+      "destination": "/verified-review.html"
+    },
+    {
+      "source": "/reviews/:slug",
+      "destination": "/review-wall.html"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
