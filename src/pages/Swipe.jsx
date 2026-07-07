@@ -784,25 +784,30 @@ export default function Swipe() {
                 </TinderCard>
               ))
             )}
-          </div>
 
-          {!allGone && (
-            <div className="swipe-actions">
-              <div className="swipe-actions-row secondary">
-                <button className="action-btn maybe" onClick={pressMaybe}>
-                  <span>🤔</span>
-                  <span>MAYBE</span>
-                </button>
+            {/* Maybe/Undo float on the card itself instead of a second full-width
+                row below the deck — they're secondary actions, not worth the
+                same screen real estate as Nope/Must Do/Like, and the card
+                (the actual thing being decided on) should get that space instead. */}
+            {!allGone && (
+              <>
                 <button
-                  className={`action-btn undo ${undoStack.length === 0 ? 'disabled' : ''}`}
+                  className={`card-float-btn undo-float ${undoStack.length === 0 ? 'disabled' : ''}`}
                   onClick={pressUndo}
                   disabled={undoStack.length === 0}
                   aria-label="Undo last swipe"
                 >
-                  <span>↩</span>
-                  <span>UNDO</span>
+                  ↩
                 </button>
-              </div>
+                <button className="card-float-btn maybe-float" onClick={pressMaybe} aria-label="Maybe">
+                  🤔
+                </button>
+              </>
+            )}
+          </div>
+
+          {!allGone && (
+            <div className="swipe-actions">
               <div className="swipe-actions-row primary">
                 <button className="action-btn nope" onClick={pressNope}>
                   <span>✕</span>

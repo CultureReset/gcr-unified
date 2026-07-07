@@ -613,9 +613,6 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  /* Two rows instead of one — lets every button share one larger, uniform
-     size instead of shrinking to cram 5 circles into a single line. */
-  gap: clamp(10px, 3vw, 16px);
   padding: 10px 20px calc(20px + env(safe-area-inset-bottom));
 }
 
@@ -653,13 +650,6 @@
   border: 2.5px solid rgba(239,68,68,0.5);
   color: #fca5a5;
   box-shadow: 0 4px 20px rgba(239,68,68,0.15);
-}
-
-.action-btn.maybe {
-  background: rgba(148,163,184,0.1);
-  border: 2px solid rgba(148,163,184,0.4);
-  color: #cbd5e1;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
 }
 
 .swipe-flash.maybe {
@@ -1037,21 +1027,38 @@
   text-shadow: 0 2px 8px rgba(0,0,0,0.6);
 }
 
-/* ── Undo button ── */
-.action-btn.undo {
-  background: rgba(148, 163, 184, 0.1);
-  border: 2px solid rgba(148, 163, 184, 0.35);
-  color: #94a3b8;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+/* ── Maybe/Undo — float directly on the card (top corners, below the
+   featured/sponsored/photo-count badges) instead of a second button row,
+   so the card itself gets that vertical space. Fixed within
+   .cards-container (not the swiping card), so they stay put while the
+   top card drags/rotates underneath them. */
+.card-float-btn {
+  position: absolute;
+  top: 60px;
+  z-index: 20;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.45);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  color: white;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+  transition: transform 0.12s;
 }
 
-.action-btn.undo.disabled {
+.card-float-btn:active { transform: scale(0.88); }
+
+.card-float-btn.undo-float { left: 20px; }
+.card-float-btn.maybe-float { right: 20px; }
+
+.card-float-btn.disabled {
   opacity: 0.3;
   cursor: not-allowed;
-}
-
-.action-btn.undo:not(.disabled):active {
-  transform: scale(0.88);
 }
 
 
