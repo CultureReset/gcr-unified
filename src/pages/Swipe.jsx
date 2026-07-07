@@ -1111,10 +1111,12 @@ function BusinessCard({ business, isTop, onDetail, userLocation, swipingDir, sav
             </div>
           ) : null}
         </div>
-        {/* Price up top, large — the deciding factor for bookable activities
-            (parasailing, charters, tours) deserves more weight than a small
-            pill buried at the bottom next to the status pill. */}
-        {business.price_per_person && (
+        {/* Price up top, large — but only for a bookable activity/experience,
+            where price_per_person is one exact figure for the whole thing
+            (parasailing, charters, tours). A restaurant doesn't have a
+            single price — it has a menu — so it keeps the $$ range in the
+            meta row below instead of a fabricated "exact" number up top. */}
+        {business.price_per_person && business.category !== 'food' && (
           <div className="card-price-hero">💵 {business.price_per_person}</div>
         )}
         <div className="card-meta-row">
