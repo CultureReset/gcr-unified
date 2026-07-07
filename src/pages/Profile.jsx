@@ -62,6 +62,7 @@ export default function Profile() {
   const [myPhotos, setMyPhotos] = useState([])
   const [myReviews, setMyReviews] = useState([])
   const [points, setPoints] = useState(null)
+  const [myBookings, setMyBookings] = useState([])
   const [photosLoaded, setPhotosLoaded] = useState(false)
   const [togglingLocation, setTogglingLocation] = useState(false)
   const [filterCategory, setFilterCategory] = useState('all')
@@ -120,14 +121,19 @@ export default function Profile() {
     let cancelled = false
     ;(async () => {
       try {
-        const [groupsRes, photosRes, reviewsRes, pointsRes] = await Promise.all([
+        const [groupsRes, photosRes, reviewsRes, pointsRes, bookingsRes] = await Promise.all([
           authFetch('/api/tourist/groups'),
           authFetch('/api/tourist/photos'),
           authFetch('/api/tourist/reviews'),
           authFetch('/api/tourist/points'),
+          authFetch('/api/platform/my-bookings'),
         ])
         if (!cancelled && pointsRes?.ok) {
           setPoints(await pointsRes.json())
+        }
+        if (!cancelled && bookingsRes?.ok) {
+          const { bookings = [] } = await bookingsRes.json()
+          setMyBookings(bookings)
         }
         if (!cancelled && groupsRes?.ok) {
           const { groups = [] } = await groupsRes.json()
@@ -292,6 +298,43 @@ export default function Profile() {
               <div style={{fontSize:11,marginTop:4,opacity:.95}}>{Math.max(0, points.next.min - (points.balance || 0))} pts to {points.next.name}</div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* My Bookings — everything booked with this phone number, across all businesses */}
+      {myBookings.length > 0 && (
+        <div className="profile-trip-card">
+          <div className="trip-card-header">
+            <span>📅 My Bookings</span>
+          </div>
+          <div style={{display:'flex', flexDirection:'column', gap:10}}>
+            {myBookings.map(b => (
+              <div key={b.id} style={{display:'flex', justifyContent:'space-between', alignItems:'center', gap:10, background:'rgba(127,127,127,0.08)', borderRadius:12, padding:'10px 12px'}}>
+                <div style={{minWidth:0}}>
+                  <div style={{fontWeight:800, fontSize:14}}>{b.title}</div>
+                  <div style={{fontSize:12, opacity:.75}}>
+                    {b.business}
+                    {b.date ? ` · ${b.date}` : ''}
+                    {b.time ? ` · ${b.time}` : ''}
+                    {b.party ? ` · ${b.party} guests` : ''}
+                  </div>
+                </div>
+                <div style={{display:'flex', flexDirection:'column', alignItems:'flex-end', gap:6, flexShrink:0}}>
+                  {b.status && (
+                    <span style={{
+                      fontSize:10, fontWeight:800, textTransform:'uppercase', letterSpacing:.5,
+                      padding:'3px 8px', borderRadius:999,
+                      background: b.status === 'confirmed' ? '#d1fae5' : b.status === 'completed' ? '#e0e7ff' : b.status === 'pending' ? '#fef3c7' : '#fee2e2',
+                      color: b.status === 'confirmed' ? '#065f46' : b.status === 'completed' ? '#3730a3' : b.status === 'pending' ? '#92400e' : '#991b1b'
+                    }}>{b.status}</span>
+                  )}
+                  {b.status === 'completed' && b.slug && (
+                    <a href={`/p/${b.slug}`} style={{fontSize:11, fontWeight:700}}>Leave a review ★</a>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
