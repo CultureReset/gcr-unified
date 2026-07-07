@@ -3,6 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <!-- Many external photo CDNs (rental managers, booking platforms) refuse
+         hotlinked requests that carry a foreign Referer; sending none makes
+         image requests look like direct opens, which they allow. -->
+    <meta name="referrer" content="no-referrer" />
     <meta name="theme-color" content="#0a0a14" />
     <meta name="description" content="Discover restaurants, events, activities, and places to stay on the Gulf Coast. Plan your perfect trip with real-time recommendations." />
     <meta name="keywords" content="Gulf Coast, restaurants, events, travel, tourism, discovery" />
