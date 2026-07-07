@@ -17,6 +17,10 @@
       "destination": "/book.html"
     },
     {
+      "source": "/u/:code",
+      "destination": "/user.html"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }

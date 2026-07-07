@@ -269,6 +269,8 @@ window.doSubmit = function(){
 
   var payload = {};
   Object.keys(sel.values).forEach(function(k){ payload[k]=sel.values[k]; });
+  var ref = new URLSearchParams(location.search).get('ref');
+  if(ref) payload.ref = ref; // referral attribution — validated server-side
   if(sel.date) payload.date = sel.date;
   var sf = serviceField();
   if(sf && sel.service) payload[sf] = sel.service.name;

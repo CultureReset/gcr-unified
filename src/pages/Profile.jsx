@@ -63,6 +63,60 @@ export default function Profile() {
   const [myReviews, setMyReviews] = useState([])
   const [points, setPoints] = useState(null)
   const [myBookings, setMyBookings] = useState([])
+  const [share, setShare] = useState(null)
+  const [offersFor, setOffersFor] = useState(null)   // { slug, business, offers } | null
+  const [redeemedCode, setRedeemedCode] = useState(null)
+
+  const shareUrl = share?.ref_code ? `https://gulfcoastradar.com/u/${share.ref_code}` : null
+
+  async function toggleShare() {
+    if (!share) return
+    const next = !share.share_enabled
+    setShare({ ...share, share_enabled: next })
+    await authFetch('/api/platform/my-share', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ share_enabled: next }),
+    })
+  }
+
+  function copyShareLink() {
+    if (!shareUrl) return
+    navigator.clipboard?.writeText(shareUrl)
+    alert('Copied! Share it anywhere — you earn points when bookings come through it.\n' + shareUrl)
+  }
+
+  async function addVideo(booking) {
+    const url = window.prompt('Paste a link to your video or photo from this trip (TikTok, IG, YouTube, etc.)')
+    if (!url) return
+    const res = await authFetch('/api/platform/my/videos', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ booking_id: booking.id, url }),
+    })
+    const d = await res.json()
+    alert(res.ok ? 'Sent! You earn points when the business approves it. 🎥' : (d.error || 'Could not submit'))
+  }
+
+  async function openRewards(booking) {
+    setRedeemedCode(null)
+    const res = await fetch(`${API_BASE}/api/platform/rewards/${booking.slug}`)
+    if (!res.ok) { alert('No rewards posted by this business yet.'); return }
+    const d = await res.json()
+    if (!d.offers?.length) { alert('No rewards posted by this business yet.'); return }
+    setOffersFor({ slug: booking.slug, business: d.business, offers: d.offers })
+  }
+
+  async function redeemOffer(offer) {
+    const res = await authFetch('/api/platform/redeem', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ offer_id: offer.id }),
+    })
+    const d = await res.json()
+    if (!res.ok) { alert(d.error || 'Could not redeem'); return }
+    setRedeemedCode(d)
+  }
   const [photosLoaded, setPhotosLoaded] = useState(false)
   const [togglingLocation, setTogglingLocation] = useState(false)
   const [filterCategory, setFilterCategory] = useState('all')
@@ -121,12 +175,13 @@ export default function Profile() {
     let cancelled = false
     ;(async () => {
       try {
-        const [groupsRes, photosRes, reviewsRes, pointsRes, bookingsRes] = await Promise.all([
+        const [groupsRes, photosRes, reviewsRes, pointsRes, bookingsRes, shareRes] = await Promise.all([
           authFetch('/api/tourist/groups'),
           authFetch('/api/tourist/photos'),
           authFetch('/api/tourist/reviews'),
           authFetch('/api/tourist/points'),
           authFetch('/api/platform/my-bookings'),
+          authFetch('/api/platform/my-share'),
         ])
         if (!cancelled && pointsRes?.ok) {
           setPoints(await pointsRes.json())
@@ -134,6 +189,9 @@ export default function Profile() {
         if (!cancelled && bookingsRes?.ok) {
           const { bookings = [] } = await bookingsRes.json()
           setMyBookings(bookings)
+        }
+        if (!cancelled && shareRes?.ok) {
+          setShare(await shareRes.json())
         }
         if (!cancelled && groupsRes?.ok) {
           const { groups = [] } = await groupsRes.json()
@@ -329,12 +387,80 @@ export default function Profile() {
                     }}>{b.status}</span>
                   )}
                   {b.status === 'completed' && b.slug && (
-                    <a href={`/p/${b.slug}`} style={{fontSize:11, fontWeight:700}}>Leave a review ★</a>
+                    <div style={{display:'flex', gap:8, flexWrap:'wrap', justifyContent:'flex-end'}}>
+                      <a href={`/p/${b.slug}`} style={{fontSize:11, fontWeight:700}}>Review ★</a>
+                      <button onClick={() => addVideo(b)} style={{fontSize:11, fontWeight:700, background:'none', border:'none', color:'#0f9d84', cursor:'pointer', padding:0}}>Add video 🎥</button>
+                      <button onClick={() => openRewards(b)} style={{fontSize:11, fontWeight:700, background:'none', border:'none', color:'#d97706', cursor:'pointer', padding:0}}>Rewards 🎁</button>
+                    </div>
                   )}
                 </div>
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* Share & Earn — the referral side of the wallet */}
+      {share && (
+        <div className="profile-trip-card">
+          <div className="trip-card-header">
+            <span>🤝 Share &amp; Earn</span>
+          </div>
+          <div style={{fontSize:13, opacity:.8, marginBottom:10}}>
+            Share your link — when someone books through it and the trip happens, you earn points automatically.
+          </div>
+          <div style={{display:'flex', gap:8, flexWrap:'wrap', alignItems:'center'}}>
+            <button onClick={copyShareLink} style={{flex:'1 1 auto', minHeight:40, borderRadius:10, border:'none', background:'#0f9d84', color:'#fff', fontWeight:800, fontSize:13, cursor:'pointer'}}>
+              🔗 Copy my link
+            </button>
+            <button onClick={toggleShare} style={{minHeight:40, borderRadius:10, border:'1px solid rgba(127,127,127,.35)', background:'none', fontWeight:700, fontSize:12, cursor:'pointer', padding:'0 12px', color:'inherit'}}>
+              {share.share_enabled ? 'Public page: ON' : 'Public page: OFF'}
+            </button>
+          </div>
+          {share.share_enabled && shareUrl && (
+            <div style={{fontSize:12, marginTop:8, opacity:.75}}>Your page: <a href={shareUrl}>{shareUrl}</a></div>
+          )}
+          {share.earnings?.length > 0 && (
+            <div style={{marginTop:12, display:'flex', flexDirection:'column', gap:6}}>
+              {share.earnings.slice(0, 6).map((e, i) => (
+                <div key={i} style={{display:'flex', justifyContent:'space-between', fontSize:12, opacity:.85}}>
+                  <span>{e.reason === 'booking_completed' ? '📅 Trip completed' : e.reason === 'referral' ? '🤝 Referral converted' : e.reason === 'video' ? '🎥 Video approved' : e.reason === 'redeem' ? '🎁 Reward redeemed' : e.reason}{e.entity_slug ? ` · ${e.entity_slug}` : ''}</span>
+                  <b style={{color: e.delta > 0 ? '#0f9d84' : '#d97706'}}>{e.delta > 0 ? '+' : ''}{e.delta}</b>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Rewards redemption panel */}
+      {offersFor && (
+        <div className="profile-trip-card">
+          <div className="trip-card-header">
+            <span>🎁 Rewards at {offersFor.business}</span>
+            <button onClick={() => { setOffersFor(null); setRedeemedCode(null) }} style={{background:'none', border:'none', cursor:'pointer', fontSize:14, color:'inherit'}}>✕</button>
+          </div>
+          {redeemedCode ? (
+            <div style={{textAlign:'center', padding:'14px 0'}}>
+              <div style={{fontSize:13, opacity:.8}}>Show this code at {offersFor.business}:</div>
+              <div style={{fontSize:26, fontWeight:900, letterSpacing:1, margin:'8px 0'}}>{redeemedCode.code}</div>
+              <div style={{fontSize:13}}>{redeemedCode.offer} · {redeemedCode.points} pts</div>
+            </div>
+          ) : (
+            <div style={{display:'flex', flexDirection:'column', gap:8}}>
+              {offersFor.offers.map(o => (
+                <div key={o.id} style={{display:'flex', justifyContent:'space-between', alignItems:'center', gap:10, background:'rgba(127,127,127,0.08)', borderRadius:12, padding:'10px 12px'}}>
+                  <div>
+                    <div style={{fontWeight:800, fontSize:14}}>{o.title}</div>
+                    {o.detail && <div style={{fontSize:12, opacity:.7}}>{o.detail}</div>}
+                  </div>
+                  <button onClick={() => redeemOffer(o)} style={{flexShrink:0, minHeight:34, borderRadius:9, border:'none', background:'#d97706', color:'#fff', fontWeight:800, fontSize:12, cursor:'pointer', padding:'0 12px'}}>
+                    {o.points} pts
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
