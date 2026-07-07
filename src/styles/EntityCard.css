@@ -173,3 +173,18 @@
   font-size: 11px;
   color: #4b5563;
 }
+
+/* Rental/unit detail rows on listing cards */
+.rental-specs {
+  margin: 4px 0 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: #33415c;
+}
+
+.rental-price {
+  margin: 4px 0 0;
+  font-size: 14px;
+  font-weight: 800;
+  color: #0f9d75;
+}
