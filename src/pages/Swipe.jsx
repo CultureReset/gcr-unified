@@ -405,11 +405,16 @@ export default function Swipe() {
       </div>
       <div className="cards-container">
         <div className="swipe-card-wrapper" style={{position:'relative'}}>
-          <div className="business-card" style={{animation:'shimmer 1.4s infinite'}}>
-            <div className="card-image-wrap" style={{background:'rgba(0,0,0,0.06)'}} />
-            <div className="card-body">
-              <div style={{height:22,width:'60%',background:'rgba(0,0,0,0.08)',borderRadius:8,marginBottom:10}} />
-              <div style={{height:14,width:'40%',background:'rgba(0,0,0,0.05)',borderRadius:8}} />
+          {/* Mirrors the real card's proportions (big photo, dark info panel
+              below) instead of a generic thin-footer shape, so there's no
+              jarring resize/recolor jump once the real deck renders in. */}
+          <div className="business-card">
+            <div className="card-image-wrap skeleton-pulse" style={{background:'rgba(0,0,0,0.06)'}} />
+            <div className="card-info-panel">
+              <div className="skeleton-pulse" style={{height:22,width:'65%',background:'rgba(255,255,255,0.14)',borderRadius:8,marginBottom:10}} />
+              <div className="skeleton-pulse" style={{height:13,width:'40%',background:'rgba(255,255,255,0.08)',borderRadius:8,marginBottom:14}} />
+              <div className="skeleton-pulse" style={{height:13,width:'85%',background:'rgba(255,255,255,0.08)',borderRadius:8,marginBottom:6}} />
+              <div className="skeleton-pulse" style={{height:13,width:'55%',background:'rgba(255,255,255,0.08)',borderRadius:8}} />
             </div>
           </div>
         </div>

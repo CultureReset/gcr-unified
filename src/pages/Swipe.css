@@ -6,6 +6,17 @@
   overflow: hidden;
 }
 
+/* Loading-skeleton placeholder bars — previously referenced a `shimmer`
+   keyframe that was never defined anywhere, so the loading card just sat
+   static with no animation at all. */
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+.skeleton-pulse {
+  animation: skeleton-pulse 1.4s ease-in-out infinite;
+}
+
 .swipe-header-wrap {
   position: relative;
 }
@@ -794,6 +805,16 @@
 .all-done h3 { font-size: 24px; font-weight: 800; color: var(--text); }
 .all-done p { font-size: 15px; color: var(--text2); }
 .all-done .btn-primary { width: auto; padding: 14px 32px; }
+
+/* .btn-outline (index.css) is white-on-near-transparent-white — tuned for
+   a dark page, not this (light) screen. Scoped override here rather than
+   editing the shared global class, since it's also used on Itinerary.jsx
+   and that page's theme wasn't part of this pass. */
+.all-done .btn-outline {
+  background: var(--bg);
+  color: var(--text);
+  border-color: var(--border);
+}
 
 /* ── Featured badge ── */
 .card-featured-badge {
