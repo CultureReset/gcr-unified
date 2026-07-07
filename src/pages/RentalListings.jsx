@@ -109,6 +109,14 @@ function UnitCard({ unit, navigate }) {
           {r.capacity != null && <span>👥 Sleeps {r.capacity}</span>}
           {r.min_nights != null && <span>🌙 {r.min_nights}-night min</span>}
         </div>
+        {Array.isArray(r.amenities) && r.amenities.length > 0 && (
+          <div className="stay-amenity-chips">
+            {r.amenities.slice(0, 4).map((a, i) => (
+              <span key={i} className="stay-amenity-chip">{String(a).replace(/_/g, ' ')}</span>
+            ))}
+            {r.amenities.length > 4 && <span className="stay-amenity-chip more">+{r.amenities.length - 4}</span>}
+          </div>
+        )}
         <button className="stay-view-btn">View Unit →</button>
       </div>
     </article>

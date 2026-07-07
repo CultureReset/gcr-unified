@@ -360,6 +360,13 @@ export default function RestaurantDetail() {
   // Industry-specific data from API
   const roomTypes = business.room_types || []
   const amenities = business.amenities || []
+  // Two-level amenities (booking-platform style): the unit's own amenities
+  // (amenity tags + bookable_resources.amenities) and the complex's amenities
+  const ownAmenities = [...new Set([
+    ...(business.tags || []).filter(t => t.tag_category === 'amenity').map(t => t.tag_name),
+    ...((business.bookable_resources?.[0]?.amenities || []).filter(a => typeof a === 'string')),
+  ].filter(Boolean))]
+  const complexAmenities = (business.parent_amenities || []).filter(a => !ownAmenities.some(o => o.toLowerCase() === a.toLowerCase()))
   const propertyFees = business.property_fees || []
   const stayLinks = business.stay_links || []
   const propertyDetails = business.property_details || null
@@ -389,7 +396,7 @@ export default function RestaurantDetail() {
   const hasMeetingPoints = meetingPoints.length > 0
   const hasFishSpecies = fishSpecies.length > 0
   const hasActivityOptions = activityOptions.length > 0
-  const hasAmenities = amenities.length > 0
+  const hasAmenities = amenities.length > 0 || ownAmenities.length > 0 || complexAmenities.length > 0
 
   const sections = [
     // Data-driven — show if data exists regardless of type
@@ -1793,8 +1800,29 @@ export default function RestaurantDetail() {
           {hasAmenities && (
                       <section className="content-section" ref={el => { sectionRefs.current["amenities"] = el }} id="section-amenities">
               <h2>✨ Amenities</h2>
+              {/* Unit's own amenities + inherited complex amenities */}
+              {ownAmenities.length > 0 && (
+                <div className="amenity-group">
+                  {(complexAmenities.length > 0 || business.parent) && <h3>🚪 {business.parent ? 'In this unit' : 'On site'}</h3>}
+                  <div className="amenities-grid">
+                    {ownAmenities.map((a, i) => (
+                      <div key={`own-${i}`} className="amenity-item">✓ {String(a).replace(/_/g, ' ')}</div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {complexAmenities.length > 0 && business.parent && (
+                <div className="amenity-group">
+                  <h3>🏛 At {business.parent.name}</h3>
+                  <div className="amenities-grid">
+                    {complexAmenities.map((a, i) => (
+                      <div key={`cx-${i}`} className="amenity-item">✓ {String(a).replace(/_/g, ' ')}</div>
+                    ))}
+                  </div>
+                </div>
+              )}
               {amenities.length === 0 ? (
-                <p className="no-data">No amenities listed yet</p>
+                ownAmenities.length === 0 && complexAmenities.length === 0 ? <p className="no-data">No amenities listed yet</p> : null
               ) : (
                 <>
                   {/* Group by category */}
