@@ -4,7 +4,21 @@
   "framework": "vite",
   "outputDirectory": "dist",
   "rewrites": [
-    { "source": "/:slug/profile", "destination": "/song-request.html?slug=:slug" },
-    { "source": "/(.*)", "destination": "/index.html" }
+    {
+      "source": "/:slug/profile",
+      "destination": "/song-request.html?slug=:slug"
+    },
+    {
+      "source": "/p/:slug",
+      "destination": "/biz.html"
+    },
+    {
+      "source": "/book/:slug/:app",
+      "destination": "/book.html"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
   ]
 }

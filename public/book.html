@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Book — Loading…</title>
+<!--
+  STANDALONE CHECKOUT — /book/<slug>/<appId> (or book.html?b=&app=).
+  A full-page, industry-agnostic booking flow driven entirely by the
+  app's manifest: pick a service (if the business sells priced
+  services), pick a date (availability-checked), enter details, pay a
+  deposit (Stripe, if the business configured payments) or send the
+  request. Nothing here knows what a charter, salon, or condo is.
+-->
+<style>
+  :root{ --accent:#22c3a6; --text:#1d2329; --muted:#66758a; --soft:#f6f4f0; --line:#e6e0d8; }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;background:#efece7;color:var(--text);min-height:100vh;padding:18px 12px}
+  .shell{max-width:560px;margin:0 auto;background:#fff;border-radius:26px;overflow:hidden;border:1px solid var(--line);box-shadow:0 18px 50px rgba(35,28,22,.14)}
+  .top{padding:18px 20px;color:#fff;display:flex;align-items:center;gap:12px}
+  .top .av{width:44px;height:44px;border-radius:50%;background:#fff;display:grid;place-items:center;font-size:20px;background-size:cover;background-position:center;flex-shrink:0}
+  .top b{font-size:16px;display:block}
+  .top span{font-size:12px;opacity:.9}
+  .top a{margin-left:auto;color:#fff;text-decoration:none;font-size:13px;opacity:.9}
+  .steps{display:flex;gap:6px;padding:14px 20px 0}
+  .wstep{flex:1;height:4px;border-radius:99px;background:#e8e2d9}
+  .wstep.on{background:var(--accent)}
+  .body{padding:18px 20px 26px}
+  h2{margin:4px 0 14px;font-size:20px;letter-spacing:-.02em}
+  label{font-size:11.5px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;display:block;margin:12px 0 5px}
+  input,textarea,select{width:100%;padding:12px;border:1px solid var(--line);border-radius:11px;font:inherit;background:#fbfaf8}
+  .btnrow{display:flex;gap:10px;margin-top:20px}
+  .btn{flex:1;min-height:50px;border:none;border-radius:14px;font-weight:900;font-size:15px;cursor:pointer}
+  .btn.next{color:#fff;flex:2}
+  .btn.back{background:var(--soft);color:var(--text)}
+  .svc{display:flex;justify-content:space-between;align-items:center;gap:10px;border:1.5px solid var(--line);border-radius:14px;padding:14px;margin-bottom:10px;cursor:pointer;background:#fff}
+  .svc.sel{border-color:var(--accent);background:#f2fbf9}
+  .svc b{font-size:15px;display:block}
+  .svc small{color:var(--muted);display:block;margin-top:2px}
+  .svc .pr{font-weight:900;font-size:16px;white-space:nowrap}
+  .cal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+  .cal-head button{background:var(--soft);border:none;border-radius:9px;width:34px;height:34px;font-size:15px;cursor:pointer}
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
+  .cal-grid .dl{text-align:center;font-size:10.5px;font-weight:800;color:var(--muted);padding:4px 0}
+  .day{aspect-ratio:1;display:grid;place-items:center;border-radius:10px;font-size:13.5px;font-weight:600;cursor:pointer;border:1.5px solid transparent}
+  .day:hover{background:var(--soft)}
+  .day.off{color:#c8c0b6;cursor:not-allowed;text-decoration:line-through}
+  .day.off:hover{background:transparent}
+  .day.sel{background:var(--accent);color:#fff}
+  .day.blank{cursor:default}
+  .day.blank:hover{background:transparent}
+  .legend{display:flex;gap:14px;margin-top:10px;font-size:11.5px;color:var(--muted)}
+  .sum{background:var(--soft);border-radius:14px;padding:14px;margin-bottom:6px}
+  .sum .r{display:flex;justify-content:space-between;padding:5px 0;font-size:14px}
+  .sum .r b{font-weight:800}
+  .sum .tot{border-top:1px solid var(--line);margin-top:6px;padding-top:10px;font-size:16px}
+  .err{background:#fdecec;color:#b03030;border-radius:10px;padding:10px 12px;font-size:13px;margin-top:12px;display:none}
+  .ok{text-align:center;padding:36px 10px}
+  .ok .big{font-size:52px}
+  .center{min-height:70vh;display:grid;place-items:center;color:#8a8074;font-weight:700}
+  #pay-el{margin-top:14px}
+  .paynote{font-size:12px;color:var(--muted);margin-top:8px}
+</style>
+</head>
+<body>
+<div id="root" class="center">Loading…</div>
+
+<script>
+'use strict';
+var API = window.CC_API_BASE || 'https://gcr-api-clean.vercel.app';
+var PAGE=null, BLOCK=null, AVAIL={blocked:[],full:[]};
+var step=0, sel={ service:null, date:null, values:{} };
+var stripe=null, elements=null, paymentIntentId=null;
+
+function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function params(){
+  var m = location.pathname.match(/\/book\/([a-z0-9-]+)\/([a-z0-9-]+)/i);
+  if(m) return { slug:m[1], app:m[2] };
+  var q = new URLSearchParams(location.search);
+  return { slug:q.get('b'), app:q.get('app') };
+}
+function accent(){ return (PAGE&&PAGE.business&&PAGE.business.accent)||'#22c3a6'; }
+var P = params();
+
+/* which manifest field the chosen service maps into, if any */
+var SERVICE_KEYS = ['service','trip','boat','session','item'];
+function serviceField(){
+  var keys = (BLOCK.fields||[]).map(function(f){return f.key;});
+  for(var i=0;i<SERVICE_KEYS.length;i++) if(keys.indexOf(SERVICE_KEYS[i])!==-1) return SERVICE_KEYS[i];
+  return null;
+}
+function services(){ return (PAGE.data && PAGE.data.services) || []; }
+function hasServiceStep(){ return serviceField() && services().length > 0; }
+function hasDateStep(){ return (BLOCK.fields||[]).some(function(f){ return f.key==='date'; }); }
+function detailFields(){
+  var skip = { date:1 };
+  var sf = serviceField(); if(sf && hasServiceStep()) skip[sf]=1;
+  return (BLOCK.fields||[]).filter(function(f){ return !skip[f.key]; });
+}
+function stepList(){
+  var l = [];
+  if(hasServiceStep()) l.push('service');
+  if(hasDateStep()) l.push('date');
+  l.push('details','confirm');
+  return l;
+}
+
+/* ── pricing ── */
+function price(){
+  if(sel.service && sel.service.price) return parseFloat(sel.service.price)||0;
+  return 0;
+}
+function dueNow(){
+  var p = price(); if(!p || !PAGE.payment) return 0;
+  if(PAGE.payment.mode === 'Deposit only') return Math.round(p * (PAGE.payment.deposit||0)) / 100 * 1; // deposit% of price
+  return p;
+}
+
+function render(){
+  var b = PAGE.business||{};
+  document.title = 'Book — '+(b.name||'');
+  var steps = stepList();
+  var cur = steps[step];
+  var host = document.getElementById('root');
+  host.className='';
+
+  var inner = '';
+  if(cur==='service'){
+    inner = '<h2>Choose your '+esc(serviceField())+'</h2>'+
+      services().map(function(s,i){
+        var isSel = sel.service && sel.service.name===s.name;
+        return '<div class="svc'+(isSel?' sel':'')+'" onclick="pickService('+i+')">'+
+          '<div><b>'+esc(s.name)+'</b><small>'+esc([s.duration,s.desc].filter(Boolean).join(' · '))+
+          (s.capacity?' · up to '+esc(s.capacity)+' guests':'')+'</small></div>'+
+          (s.price?'<span class="pr">$'+esc(s.price)+'</span>':'')+'</div>';
+      }).join('')+
+      btnRow(false, sel.service ? 'Continue →' : 'Pick one to continue');
+  }
+  else if(cur==='date'){
+    inner = '<h2>Pick a date</h2><div id="cal"></div>'+
+      '<div class="legend"><span>⬜ available</span><span><s>x</s> unavailable</span></div>'+
+      btnRow(true, sel.date ? 'Continue →' : 'Pick a date');
+  }
+  else if(cur==='details'){
+    inner = '<h2>Your details</h2>'+
+      detailFields().map(function(f){
+        var v = sel.values[f.key]||'';
+        var id='df-'+f.key;
+        if(f.type==='select'&&f.options) return '<label>'+esc(f.label||f.key)+'</label><select id="'+id+'" onchange="sel.values[\''+f.key+'\']=this.value">'+f.options.map(function(o){return '<option'+(v===o?' selected':'')+'>'+esc(o)+'</option>';}).join('')+'</select>';
+        if(f.type==='textarea') return '<label>'+esc(f.label||f.key)+'</label><textarea id="'+id+'" rows="2" oninput="sel.values[\''+f.key+'\']=this.value">'+esc(v)+'</textarea>';
+        var t = f.type==='number'?'number':f.key==='phone'?'tel':'text';
+        return '<label>'+esc(f.label||f.key)+'</label><input id="'+id+'" type="'+t+'" value="'+esc(v)+'" oninput="sel.values[\''+f.key+'\']=this.value">';
+      }).join('')+
+      btnRow(true, 'Review →');
+  }
+  else if(cur==='confirm'){
+    var due = dueNow();
+    var rows = '';
+    if(sel.service) rows += sumRow(serviceField(), sel.service.name);
+    if(sel.date) rows += sumRow('Date', sel.date);
+    detailFields().forEach(function(f){ if(sel.values[f.key]) rows += sumRow(f.label||f.key, sel.values[f.key]); });
+    if(price()) rows += '<div class="r tot"><b>'+(due && due<price() ? 'Deposit due now' : 'Total')+'</b><b>$'+(due||price()).toFixed(2)+'</b></div>';
+    inner = '<h2>Confirm your booking</h2><div class="sum">'+rows+'</div>'+
+      (due>0 ? '<div id="pay-el"></div><div class="paynote">🔒 Secure payment — processed by Stripe, paid directly to '+esc(b.name||'the business')+'.</div>' : '')+
+      '<div class="err" id="cf-err"></div>'+
+      btnRow(true, due>0 ? 'Pay $'+due.toFixed(2)+' & Book →' : 'Confirm Booking →', 'doSubmit()');
+  }
+
+  host.innerHTML = '<div class="shell">'+
+    '<div class="top" style="background:linear-gradient(135deg,'+accent()+',#1c2b40)">'+
+      (b.logo&&/^https?:/i.test(b.logo)?'<div class="av" style="background-image:url(\''+esc(b.logo)+'\')"></div>':'<div class="av">'+(b.emoji||'🏪')+'</div>')+
+      '<div><b>'+esc(b.name||'')+'</b><span>'+esc(BLOCK.title)+'</span></div>'+
+      '<a href="'+pageUrl()+'">✕ Cancel</a></div>'+
+    '<div class="steps">'+steps.map(function(_,i){return '<div class="wstep'+(i<=step?' on':'')+'"></div>';}).join('')+'</div>'+
+    '<div class="body">'+inner+'</div></div>';
+
+  if(cur==='date') renderCal(_calY, _calM);
+  if(cur==='confirm' && dueNow()>0) mountPayment();
+}
+function pageUrl(){
+  return location.pathname.indexOf('/book/')===0 ? '/p/'+P.slug : 'biz.html?b='+P.slug;
+}
+function sumRow(k,v){ return '<div class="r"><span style="color:var(--muted);text-transform:capitalize">'+esc(k)+'</span><b>'+esc(v)+'</b></div>'; }
+function btnRow(back, nextLabel, action){
+  return '<div class="btnrow">'+
+    (back?'<button class="btn back" onclick="go(-1)">← Back</button>':'')+
+    '<button class="btn next" style="background:'+accent()+'" onclick="'+(action||'go(1)')+'">'+esc(nextLabel)+'</button></div>';
+}
+window.go = function(d){
+  var steps = stepList();
+  var cur = steps[step];
+  if(d>0){
+    if(cur==='service' && !sel.service) return;
+    if(cur==='date' && !sel.date) return;
+    if(cur==='details'){
+      var missing = detailFields().filter(function(f){ return (f.key==='name'||f.key==='customer'||f.key==='phone') && !sel.values[f.key]; });
+      if(missing.length){ alert('Please fill in: '+missing.map(function(f){return f.label||f.key;}).join(', ')); return; }
+    }
+  }
+  step = Math.max(0, Math.min(steps.length-1, step+d));
+  render();
+};
+window.pickService = function(i){ sel.service = services()[i]; render(); };
+
+/* ── calendar ── */
+var now = new Date(), _calY = now.getFullYear(), _calM = now.getMonth();
+function fmt(y,m,d){ return y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0'); }
+function renderCal(y,m){
+  _calY=y; _calM=m;
+  var months=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  var first = new Date(y,m,1).getDay(), days = new Date(y,m+1,0).getDate();
+  var today = new Date(); today.setHours(0,0,0,0);
+  var html = '<div class="cal-head"><button onclick="calNav(-1)">‹</button><b>'+months[m]+' '+y+'</b><button onclick="calNav(1)">›</button></div><div class="cal-grid">';
+  ['Su','Mo','Tu','We','Th','Fr','Sa'].forEach(function(d){ html+='<div class="dl">'+d+'</div>'; });
+  for(var i=0;i<first;i++) html+='<div class="day blank"></div>';
+  for(var d=1;d<=days;d++){
+    var ds = fmt(y,m,d);
+    var dt = new Date(y,m,d); dt.setHours(0,0,0,0);
+    var off = dt<today || AVAIL.blocked.indexOf(ds)!==-1 || AVAIL.full.indexOf(ds)!==-1;
+    var cls = 'day'+(off?' off':'')+(sel.date===ds?' sel':'');
+    html += '<div class="'+cls+'"'+(off?'':' onclick="pickDate(\''+ds+'\')"')+'>'+d+'</div>';
+  }
+  html += '</div>';
+  document.getElementById('cal').innerHTML = html;
+}
+window.calNav = function(d){ var m=_calM+d, y=_calY; if(m<0){m=11;y--;} if(m>11){m=0;y++;} renderCal(y,m); };
+window.pickDate = function(ds){ sel.date=ds; render(); };
+
+/* ── payment (Stripe, only when the business configured it) ── */
+var stripeCfg = null;
+function mountPayment(){
+  var due = dueNow();
+  var host = document.getElementById('pay-el');
+  fetch(API+'/api/stripe/config').then(function(r){return r.json();}).then(function(cfg){
+    if(!cfg.publishableKey){ host.innerHTML='<div class="paynote">Payment will be collected by the business directly.</div>'; stripeCfg=null; return; }
+    stripeCfg = cfg;
+    return fetch(API+'/api/stripe/create-payment-intent',{method:'POST',headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ amount: due, site_id: PAGE.site_id, description: (PAGE.business.name||'')+' — '+BLOCK.title })})
+      .then(function(r){return r.json();})
+      .then(function(pi){
+        if(pi.error) throw new Error(pi.error);
+        paymentIntentId = pi.payment_intent_id;
+        return loadStripeJs().then(function(){
+          stripe = Stripe(cfg.publishableKey);
+          elements = stripe.elements({ clientSecret: pi.client_secret });
+          elements.create('payment').mount('#pay-el');
+        });
+      });
+  }).catch(function(e){
+    console.warn('payment unavailable:', e.message);
+    host.innerHTML = '<div class="paynote">Online payment unavailable right now — your booking will be sent as a request and the business will follow up.</div>';
+    stripeCfg = null; paymentIntentId = null;
+  });
+}
+function loadStripeJs(){
+  return new Promise(function(res,rej){
+    if(window.Stripe) return res();
+    var sc=document.createElement('script'); sc.src='https://js.stripe.com/v3/'; sc.onload=res; sc.onerror=rej;
+    document.head.appendChild(sc);
+  });
+}
+
+/* ── submit ── */
+window.doSubmit = function(){
+  var btn = document.querySelector('.btn.next');
+  var errEl = document.getElementById('cf-err');
+  errEl.style.display='none';
+  btn.disabled=true; btn.textContent='Working…';
+
+  var payload = {};
+  Object.keys(sel.values).forEach(function(k){ payload[k]=sel.values[k]; });
+  if(sel.date) payload.date = sel.date;
+  var sf = serviceField();
+  if(sf && sel.service) payload[sf] = sel.service.name;
+
+  function sendBooking(){
+    if(paymentIntentId){ payload.payment_intent_id = paymentIntentId; payload.amount_paid = dueNow().toFixed(2); }
+    return fetch(API+'/api/platform/page/'+encodeURIComponent(P.slug)+'/submit/'+encodeURIComponent(P.app),{
+      method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
+      .then(function(r){ return r.json().then(function(d){ if(!r.ok||d.error) throw new Error(d.error||'Booking failed'); return d; }); });
+  }
+
+  var flow = Promise.resolve();
+  if(stripe && elements && dueNow()>0){
+    flow = stripe.confirmPayment({ elements: elements, redirect:'if_required' }).then(function(res){
+      if(res.error) throw new Error(res.error.message);
+    });
+  }
+  flow.then(sendBooking).then(function(){
+    document.getElementById('root').innerHTML = '<div class="shell"><div class="body ok">'+
+      '<div class="big">✅</div><h2>You\'re booked in!</h2>'+
+      '<p style="color:var(--muted);font-size:14px">'+(paymentIntentId?'Payment received. ':'')+
+      'You\'ll get a text'+(sel.values.phone?' at '+esc(sel.values.phone):'')+' as soon as '+esc(PAGE.business.name||'the business')+' confirms.</p>'+
+      '<a class="btn next" style="background:'+accent()+';display:flex;align-items:center;justify-content:center;text-decoration:none;color:#fff;margin-top:16px" href="'+pageUrl()+'">← Back to '+esc(PAGE.business.name||'page')+'</a>'+
+      '</div></div>';
+  }).catch(function(e){
+    btn.disabled=false; btn.textContent='Try Again →';
+    errEl.style.display='block'; errEl.textContent = e.message;
+    // availability rejection → bounce back to the date step with fresh data
+    if(/unavailable|fully booked/i.test(e.message)){
+      loadAvailability().then(function(){ sel.date=null; step = stepList().indexOf('date'); render();
+        var e2=document.getElementById('cf-err'); });
+    }
+  });
+};
+
+function loadAvailability(){
+  return fetch(API+'/api/platform/page/'+encodeURIComponent(P.slug)+'/availability?app='+encodeURIComponent(P.app))
+    .then(function(r){return r.json();})
+    .then(function(a){ AVAIL = { blocked:a.blocked||[], full:a.full||[] }; })
+    .catch(function(){ AVAIL={blocked:[],full:[]}; });
+}
+
+(function(){
+  if(!P.slug || !P.app){ document.getElementById('root').textContent='Missing booking link.'; return; }
+  Promise.all([
+    fetch(API+'/api/platform/page/'+encodeURIComponent(P.slug)).then(function(r){ if(!r.ok) throw new Error('Page not found'); return r.json(); }),
+    null
+  ]).then(function(res){
+    PAGE = res[0];
+    BLOCK = (PAGE.blocks||[]).filter(function(b){ return b.id===P.app; })[0];
+    if(!BLOCK){ throw new Error('This booking is not available.'); }
+    document.documentElement.style.setProperty('--accent', accent());
+    return loadAvailability();
+  }).then(render)
+    .catch(function(e){ document.getElementById('root').textContent = e.message; });
+})();
+</script>
+</body>
+</html>
