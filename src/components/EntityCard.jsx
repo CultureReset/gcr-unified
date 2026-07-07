@@ -28,7 +28,34 @@ export default function EntityCard({ entity, category }) {
         {entity.subtitle && <p className="subtitle">{entity.subtitle}</p>}
 
         {entity.city && (
-          <p className="meta-text">📍 {entity.city}, {entity.state}</p>
+          <p className="meta-text">📍 {entity.city}{entity.state ? `, ${entity.state}` : ''}</p>
+        )}
+
+        {/* Rental/unit details — beds, baths, sleeps, nightly price */}
+        {(entity.building || entity.unit_number || entity.view_type) && (
+          <p className="meta-text">
+            {[entity.building, entity.unit_number && `Unit ${entity.unit_number}`, entity.view_type && String(entity.view_type).replace(/_/g, ' ')].filter(Boolean).join(' · ')}
+          </p>
+        )}
+        {entity.rental && (
+          <>
+            {(entity.rental.bedrooms != null || entity.rental.bathrooms != null || entity.rental.capacity != null || entity.rental.sqft != null) && (
+              <p className="rental-specs">
+                {[
+                  entity.rental.bedrooms != null && `🛏 ${entity.rental.bedrooms} BR`,
+                  entity.rental.bathrooms != null && `🛁 ${entity.rental.bathrooms} BA`,
+                  entity.rental.capacity != null && `👥 Sleeps ${entity.rental.capacity}`,
+                  entity.rental.sqft != null && `📐 ${entity.rental.sqft} sqft`,
+                ].filter(Boolean).join(' · ')}
+              </p>
+            )}
+            {entity.rental.nightly_price != null && (
+              <p className="rental-price">
+                From ${Number(entity.rental.nightly_price).toLocaleString()}/night
+                {entity.rental.min_nights ? ` · ${entity.rental.min_nights}-night min` : ''}
+              </p>
+            )}
+          </>
         )}
 
         {entity.rating && (

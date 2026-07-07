@@ -120,6 +120,13 @@ function toCard(entity, photos = []) {
       facebook: entity.social_facebook || '',
       tiktok: entity.social_tiktok || '',
     },
+    // Rental/unit details (condo units, beach houses) — listing cards show
+    // beds/baths/sleeps/nightly price when the data exists
+    is_active: entity.is_active,
+    rental: entity.rental || null,
+    unit_number: entity.unit_number || null,
+    building: entity.building || null,
+    view_type: entity.view_type || null,
     raw: entity,
   }
 }
