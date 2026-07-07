@@ -29,6 +29,14 @@
       "destination": "/review-wall.html"
     },
     {
+      "source": "/manage/:id",
+      "destination": "/manage.html"
+    },
+    {
+      "source": "/waiver/:slug",
+      "destination": "/waiver.html"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
