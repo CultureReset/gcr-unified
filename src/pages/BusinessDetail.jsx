@@ -54,6 +54,23 @@ export default function RestaurantDetail() {
   const [failedSlides, setFailedSlides] = useState({})
   const [siblings, setSiblings] = useState([])
   const subSectionRefs = useRef({})
+  // Industry-first content flow: the DOM order of content sections follows
+  // the industry tab order (rank map filled during render, applied after
+  // paint via CSS flex order on the shared content-main container).
+  const sectionOrderRef = useRef({})
+  useEffect(() => {
+    const orders = sectionOrderRef.current || {}
+    const entries = Object.entries(sectionRefs.current).filter(([, el]) => el && el.isConnected)
+    if (!entries.length) return
+    const parent = entries[0][1].parentElement
+    if (parent) {
+      parent.style.display = 'flex'
+      parent.style.flexDirection = 'column'
+    }
+    for (const [id, el] of entries) {
+      el.style.order = orders[id] != null ? orders[id] : 500
+    }
+  })
 
   // Related profiles: same-property businesses (template: "Related profiles
   // — same-category businesses connected inside <parent>")
@@ -95,15 +112,17 @@ export default function RestaurantDetail() {
         // Default tab: open on the most relevant populated section for THIS entity type,
         // not always 'overview'. Order mirrors the tab row so a hotel opens on Rooms,
         // a shop on Products, a service on Services, a park on Park Info.
+        // A restaurant opens on its MENU even when it also has offerings —
+        // the industry's primary content wins over generic booking content.
         let defaultTab = 'overview'
-        if (hasOfferingsData) defaultTab = 'offerings'
-        else if (isFood && hasMenuData) defaultTab = 'menu'
-        else if (hasPricing) defaultTab = 'pricing'
-        else if (hasSchedules) defaultTab = 'schedule'
+        if (isFood && hasMenuData) defaultTab = 'menu'
         else if (hasRoomsData) defaultTab = 'rooms'
         else if (hasServicesData) defaultTab = 'services'
         else if (hasProductsData) defaultTab = 'products'
         else if (hasParkData) defaultTab = 'park-info'
+        else if (hasOfferingsData) defaultTab = 'offerings'
+        else if (hasPricing) defaultTab = 'pricing'
+        else if (hasSchedules) defaultTab = 'schedule'
         setActiveTab(defaultTab)
 
         // Preload counts for conditional tabs
@@ -436,6 +455,34 @@ export default function RestaurantDetail() {
     ...(photos.length ? [{ id: 'gallery', label: `Photos (${photos.length})`, icon: '📸' }] : []),
   ]
 
+  // Industry-specific tab order — each industry leads with what its visitors
+  // came for: food → menu & specials, activities → trips & pricing, stays →
+  // rooms & amenities, services → service list, shops → products, parks →
+  // park info. Tabs not named in a priority list keep their relative order
+  // after the prioritized ones.
+  const TAB_PRIORITY = isFood
+    ? ['menu', 'specials', 'happy-hour', 'drinks', 'offerings', 'pricing', 'events', 'hours', 'reviews', 'gallery']
+    : isActivity
+    ? ['offerings', 'pricing', 'schedule', 'experience', 'fish', 'meeting', 'faqs', 'reviews', 'gallery', 'hours']
+    : isStay
+    ? ['rooms', 'amenities', 'offerings', 'book-stay', 'policies', 'faqs', 'reviews', 'gallery']
+    : isService
+    ? ['services', 'offerings', 'pricing', 'team', 'reviews', 'hours', 'gallery']
+    : isShopping
+    ? ['products', 'offerings', 'specials', 'hours', 'gallery', 'reviews']
+    : isPark
+    ? ['park-info', 'offerings', 'events', 'gallery', 'reviews']
+    : []
+  const tabRank = (id, idx) => {
+    const i = TAB_PRIORITY.indexOf(id)
+    return i === -1 ? 1000 + idx : i
+  }
+  const orderedSections = sections
+    .map((s, idx) => ({ s, r: tabRank(s.id, idx) }))
+    .sort((a, b) => a.r - b.r)
+    .map(x => x.s)
+  sectionOrderRef.current = Object.fromEntries(orderedSections.map((s, i) => [s.id, i + 1]))
+
   // Sub-section chips — meal periods only for menu (Lunch / Dinner etc),
   // individual sections for drinks/happy-hour since they don't have period grouping
   // Sticky sub-nav: each meal period (Breakfast/Lunch/Dinner…) followed by its own
@@ -743,7 +790,7 @@ export default function RestaurantDetail() {
       {/* Sticky Tabs */}
       <div className="sticky-tabs">
         <div className="tabs-scroll">
-          {sections.map(sec => (
+          {orderedSections.map(sec => (
             <button
               key={sec.id}
               className={`tab ${activeTab === sec.id ? 'active' : ''}`}
