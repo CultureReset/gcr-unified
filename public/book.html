@@ -93,7 +93,7 @@
 'use strict';
 var API = window.CC_API_BASE || 'https://gcr-api-clean.vercel.app';
 var PAGE=null, BLOCK=null, AVAIL={blocked:[],full:[]};
-var step=0, sel={ service:null, resource:null, date:null, endDate:null, time:null, values:{} };
+var step=0, sel={ service:null, resource:null, date:null, endDate:null, time:null, values:{}, party:{}, addons:[], promo:null };
 /* universal handoff: any page can stage a cart/prefill for this checkout
    (sessionStorage cc_prefill:<slug>:<app> = {values:{...}, price:N, lines:[...]}) */
 var PREFILL=null;
@@ -125,6 +125,12 @@ function hasDateStep(){
   if(bmode()==='none') return false; // gift cards, memberships, pickup orders
   return (BLOCK.fields||[]).some(function(f){ return f.key==='date'; }) || bmode()!=='date';
 }
+function partyCfg(){ return (BLOCK.booking && BLOCK.booking.party) || null; }
+function partyTotal(){
+  var p = partyCfg(); if(!p) return 0;
+  return p.tiers.reduce(function(s,t){ return s + (sel.party[t.key]||0); }, 0);
+}
+function hasAddons(){ return !!(BLOCK.addons && BLOCK.addons.length); }
 function detailFields(){
   var skip = {};
   if(hasDateStep()){
@@ -133,6 +139,7 @@ function detailFields(){
     if(bmode()==='slots') skip.time=1; // picked with the date
   }
   var sf = serviceField(); if(sf && hasServiceStep()) skip[sf]=1;
+  var pc = partyCfg(); if(pc) pc.tiers.forEach(function(t){ skip[t.key]=1; }); // party step covers these
   if(PREFILL) Object.keys(PREFILL.values||{}).forEach(function(k){ skip[k]=1; }); // cart already filled these
   return (BLOCK.fields||[]).filter(function(f){ return !skip[f.key]; });
 }
@@ -140,7 +147,9 @@ function stepList(){
   var l = [];
   if(hasResources()) l.push('resource');
   if(hasServiceStep()) l.push('service');
+  if(partyCfg()) l.push('party');
   if(hasDateStep()) l.push('date');
+  if(hasAddons()) l.push('addons');
   l.push('details','confirm');
   return l;
 }
@@ -151,23 +160,46 @@ function nights(){
   var a=new Date(sel.date+'T00:00:00Z'), b=new Date(sel.endDate+'T00:00:00Z');
   return Math.max(1, Math.round((b-a)/86400000));
 }
-function price(){
+function basePrice(){
   if(PREFILL && PREFILL.price) return parseFloat(PREFILL.price)||0; // cart handoff
+  var p = 0;
   if(sel.resource){
     var r = sel.resource;
-    if(bmode()==='range') return (r.rate_night||r.rate_full||0) * nights();
-    return r.rate_full || r.rate_hourly || 0;
+    p = bmode()==='range' ? (r.rate_night||r.rate_full||0) * nights() : (r.rate_full || r.rate_hourly || 0);
+  } else if(sel.service && sel.service.price){
+    p = parseFloat(sel.service.price)||0;
   }
-  if(sel.service && sel.service.price) return parseFloat(sel.service.price)||0;
   // priced fields: the chosen option carries its own price
   // ("100" or "Monthly Unlimited $89" both work)
-  var p = 0;
   (BLOCK.fields||[]).forEach(function(f){
     if(!f.priced || !sel.values[f.key]) return;
     var m = String(sel.values[f.key]).match(/\$?\s*(\d+(?:\.\d{1,2})?)(?!.*\d)/);
     if(m) p += parseFloat(m[1]);
   });
+  // per-person tiers: 2 adults × $35 + 1 kid × $20
+  var pc = partyCfg();
+  if(pc) pc.tiers.forEach(function(t){ p += (sel.party[t.key]||0) * (t.price||0); });
   return p;
+}
+function addonPrice(a){
+  var mult = a.per==='person' ? Math.max(1, partyTotal())
+    : a.per==='day' ? nights() : 1;
+  return (a.price||0) * mult;
+}
+function addonsTotal(){
+  var tot = 0;
+  (BLOCK.addons||[]).forEach(function(a){ if(sel.addons.indexOf(a.id)!==-1) tot += addonPrice(a); });
+  return tot;
+}
+function discount(sub){
+  if(!sel.promo) return 0;
+  if(sel.promo.percent) return Math.min(sub, sub * sel.promo.percent / 100);
+  if(sel.promo.amount) return Math.min(sub, sel.promo.amount);
+  return 0;
+}
+function price(){
+  var sub = basePrice() + addonsTotal();
+  return Math.max(0, sub - discount(sub));
 }
 function dueNow(){
   var p = price(); if(!p || !PAGE.payment) return 0;
@@ -207,6 +239,33 @@ function render(){
       }).join('')+
       btnRow(false, sel.service ? 'Continue →' : 'Pick one to continue');
   }
+  else if(cur==='party'){
+    var pc = partyCfg();
+    inner = '<h2>Who\'s coming?</h2>'+
+      pc.tiers.map(function(t){
+        var q = sel.party[t.key]||0;
+        return '<div class="svc" style="cursor:default">'+
+          '<div><b style="text-transform:capitalize">'+esc(t.label)+'</b>'+(t.price?'<small>$'+t.price+' each</small>':'<small>Free</small>')+'</div>'+
+          '<span style="display:flex;align-items:center;gap:12px">'+
+            '<button type="button" onclick="partyAdd(\''+esc(t.key)+'\',-1)" style="width:36px;height:36px;border-radius:10px;border:1px solid var(--line);background:#fff;font-weight:900;font-size:16px;cursor:pointer'+(q?'':';opacity:.35')+'">−</button>'+
+            '<b style="min-width:18px;text-align:center;font-size:16px">'+q+'</b>'+
+            '<button type="button" onclick="partyAdd(\''+esc(t.key)+'\',1)" style="width:36px;height:36px;border-radius:10px;border:none;background:'+accent()+';color:#fff;font-weight:900;font-size:16px;cursor:pointer">+</button>'+
+          '</span></div>';
+      }).join('')+
+      ((BLOCK.booking&&BLOCK.booking.maxParty)?'<div class="paynote">Up to '+BLOCK.booking.maxParty+' per booking.</div>':'')+
+      btnRow(step>0, partyTotal()>0 ? 'Continue →' : 'Add at least one person');
+  }
+  else if(cur==='addons'){
+    inner = '<h2>Add anything extra?</h2>'+
+      BLOCK.addons.map(function(a){
+        var on = sel.addons.indexOf(a.id)!==-1;
+        return '<div class="svc'+(on?' sel':'')+'" onclick="toggleAddon(\''+esc(a.id)+'\')">'+
+          (a.url?'<div style="width:56px;height:44px;border-radius:10px;background:url(\''+esc(a.url)+'\') center/cover;flex-shrink:0"></div>':'')+
+          '<div style="flex:1"><b>'+esc(a.name)+'</b><small>'+esc(a.desc||'')+(a.per&&a.per!=='booking'?(a.desc?' · ':'')+'per '+esc(a.per):'')+'</small></div>'+
+          '<span class="pr">'+(on?'✓ ':'+')+'$'+addonPrice(a).toFixed(0)+'</span></div>';
+      }).join('')+
+      btnRow(true, sel.addons.length ? 'Continue →' : 'No thanks, continue →');
+  }
   else if(cur==='date'){
     var heading = bmode()==='range' ? 'Pick your dates' : 'Pick a date';
     var hint = bmode()==='range' ? (sel.date && !sel.endDate ? 'Now tap your check-out date' : 'Tap check-in, then check-out') : '';
@@ -234,13 +293,18 @@ function render(){
     var rows = '';
     if(sel.resource) rows += sumRow('Selection', sel.resource.name);
     if(sel.service) rows += sumRow(serviceField(), sel.service.name);
-    if(sel.date) rows += sumRow(bmode()==='range'?'Check-in':'Date', sel.date);
-    if(sel.endDate) rows += sumRow('Check-out', sel.endDate) + sumRow('Nights', String(nights()));
-    if(sel.time) rows += sumRow('Time', sel.time);
-    if(PREFILL && PREFILL.lines) PREFILL.lines.forEach(function(l){ rows += sumRow(l.qty>1?l.qty+'× '+l.name:l.name, '$'+(l.qty*(parseFloat(l.price)||0)).toFixed(2)); });
+    summaryRows().forEach(function(r){ rows += '<div class="r"><span style="color:var(--muted);text-transform:capitalize">'+r[0]+'</span><b>'+r[1]+'</b></div>'; }); // already escaped
+    if(sel.endDate) rows += sumRow('Nights', String(nights()));
     detailFields().forEach(function(f){ if(sel.values[f.key]) rows += sumRow(f.label||f.key, sel.values[f.key]); });
     if(price()) rows += '<div class="r tot"><b>'+(due && due<price() ? 'Deposit due now' : 'Total')+'</b><b>$'+(due||price()).toFixed(2)+'</b></div>';
+    var promoBox = '<div style="display:flex;gap:8px;margin:10px 0 2px">'+
+      '<input id="promo-in" placeholder="Promo code" value="'+esc(sel.promo?sel.promo.code:'')+'" style="flex:1"'+(sel.promo?' disabled':'')+'>'+
+      (sel.promo
+        ? '<button type="button" class="btn back" style="flex:0 0 auto;min-height:44px;padding:0 14px" onclick="clearPromo()">✕ Remove</button>'
+        : '<button type="button" class="btn back" style="flex:0 0 auto;min-height:44px;padding:0 14px" onclick="applyPromo()">Apply</button>')+
+      '</div><div class="paynote" id="promo-msg">'+(sel.promo?'✓ '+esc(sel.promo.off)+' off applied':'')+'</div>';
     inner = '<h2>'+(bmode()==='none'?'Confirm your order':'Confirm your booking')+'</h2><div class="sum">'+rows+'</div>'+
+      promoBox+
       (due>0 ? '<div id="pay-el"></div><div class="paynote">🔒 Secure payment — processed by Stripe, paid directly to '+esc(b.name||'the business')+'.</div>' : '')+
       '<div class="err" id="cf-err"></div>'+
       btnRow(true, due>0 ? 'Pay $'+due.toFixed(2)+' & Book →' : 'Confirm Booking →', 'doSubmit()');
@@ -284,10 +348,25 @@ function summaryRows(){
   (BLOCK.fields||[]).forEach(function(f){
     if(f.priced && sel.values[f.key]) rows.push([esc(f.label||f.key), esc(sel.values[f.key])]);
   });
+  // per-person tiers: 2 × Adult
+  var pc = partyCfg();
+  if(pc) pc.tiers.forEach(function(t){
+    var q = sel.party[t.key]||0; if(!q) return;
+    rows.push([q+' × '+esc(t.label), '$'+(q*(t.price||0)).toFixed(2)]);
+  });
+  // picked add-ons
+  (BLOCK.addons||[]).forEach(function(a){
+    if(sel.addons.indexOf(a.id)!==-1) rows.push(['+ '+esc(a.name), '$'+addonPrice(a).toFixed(2)]);
+  });
   // rate breakdown for stays
   if(bmode()==='range' && sel.resource && sel.date && sel.endDate){
     var r = sel.resource.rate_night || sel.resource.rate_full || 0;
     if(r) rows.push(['$'+r+' × '+nights()+' night'+(nights()>1?'s':''), '$'+(r*nights()).toFixed(2)]);
+  }
+  // promo discount
+  if(sel.promo){
+    var d = discount(basePrice()+addonsTotal());
+    if(d>0) rows.push(['Promo '+esc(sel.promo.code)+' ('+esc(sel.promo.off)+')', '−$'+d.toFixed(2)]);
   }
   return rows;
 }
@@ -337,6 +416,7 @@ window.go = function(d){
   if(d>0){
     if(cur==='resource' && !sel.resource) return;
     if(cur==='service' && !sel.service) return;
+    if(cur==='party' && partyTotal()<1) return;
     if(cur==='date'){
       if(!sel.date) return;
       if(bmode()==='range' && !sel.endDate) return;
@@ -351,6 +431,20 @@ window.go = function(d){
   render();
 };
 window.pickService = function(i){ sel.service = services()[i]; render(); };
+window.partyAdd = function(key, d){
+  var pc = partyCfg(); if(!pc) return;
+  var max = (BLOCK.booking&&BLOCK.booking.maxParty)||99;
+  var next = Math.max(0, (sel.party[key]||0) + d);
+  var others = partyTotal() - (sel.party[key]||0);
+  if(others + next > max) next = max - others;
+  sel.party[key] = next;
+  render();
+};
+window.toggleAddon = function(id){
+  var i = sel.addons.indexOf(id);
+  if(i===-1) sel.addons.push(id); else sel.addons.splice(i,1);
+  render();
+};
 window.pickResource = function(i){
   sel.resource = BLOCK.resources[i];
   sel.date=null; sel.endDate=null; sel.time=null; SLOTS=null;
@@ -393,6 +487,20 @@ window.pickDate = function(ds){
   render();
 };
 window.pickSlot = function(t){ sel.time=t; render(); };
+window.applyPromo = function(){
+  var code = (document.getElementById('promo-in').value||'').trim();
+  var msg = document.getElementById('promo-msg');
+  if(!code) return;
+  msg.textContent = 'Checking…';
+  fetch(API+'/api/platform/page/'+encodeURIComponent(P.slug)+'/promo/'+encodeURIComponent(code))
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      if(!d.valid){ msg.textContent = d.error || 'That code isn\'t valid.'; return; }
+      sel.promo = d; render();
+    })
+    .catch(function(){ msg.textContent = 'Could not check the code — try again.'; });
+};
+window.clearPromo = function(){ sel.promo=null; render(); };
 function loadSlots(ds){
   var q = '?app='+encodeURIComponent(P.app)+'&date='+encodeURIComponent(ds)+(sel.resource?'&resource='+encodeURIComponent(sel.resource.id):'');
   fetch(API+'/api/platform/page/'+encodeURIComponent(P.slug)+'/availability'+q)
@@ -407,9 +515,13 @@ function renderSlots(){
   host.innerHTML = '<label style="margin-top:14px">Pick a time — '+esc(sel.date)+'</label>'+
     '<div style="display:flex;gap:8px;flex-wrap:wrap">'+
     SLOTS.map(function(sl){
-      var off = sl.remaining<=0;
+      var need = partyCfg() ? Math.max(1, partyTotal()) : 1;
+      var off = sl.remaining < need;
       var on = sel.time===sl.time;
-      return '<button type="button" '+(off?'disabled':'')+' onclick="pickSlot(\''+esc(sl.time)+'\')" style="padding:10px 14px;border-radius:11px;border:1.5px solid '+(on?'var(--accent)':'var(--line)')+';background:'+(on?'var(--accent)':off?'#f0ece5':'#fff')+';color:'+(on?'#fff':off?'#b3aca0':'inherit')+';font-weight:800;font-size:13px;cursor:'+(off?'not-allowed':'pointer')+'">'+esc(sl.time)+(off?' · full':'')+'</button>';
+      var tag = sl.remaining<=0 ? ' · full'
+        : (partyCfg() && sl.remaining<=12) ? ' · '+sl.remaining+' left'
+        : (off ? ' · only '+sl.remaining+' left' : '');
+      return '<button type="button" '+(off?'disabled':'')+' onclick="pickSlot(\''+esc(sl.time)+'\')" style="padding:10px 14px;border-radius:11px;border:1.5px solid '+(on?'var(--accent)':'var(--line)')+';background:'+(on?'var(--accent)':off?'#f0ece5':'#fff')+';color:'+(on?'#fff':off?'#b3aca0':'inherit')+';font-weight:800;font-size:13px;cursor:'+(off?'not-allowed':'pointer')+'">'+esc(sl.time)+tag+'</button>';
     }).join('')+'</div>';
 }
 
@@ -462,6 +574,10 @@ window.doSubmit = function(){
   if(sel.endDate) payload.end_date = sel.endDate;
   if(sel.time) payload.time = sel.time;
   if(sel.resource) payload.resource_id = sel.resource.id;
+  var pc = partyCfg();
+  if(pc) pc.tiers.forEach(function(t){ if(sel.party[t.key]) payload[t.key] = sel.party[t.key]; });
+  if(sel.addons.length) payload.addons = sel.addons;
+  if(sel.promo) payload.promo = sel.promo.code;
   var sf = serviceField();
   if(sf && sel.service) payload[sf] = sel.service.name;
 
