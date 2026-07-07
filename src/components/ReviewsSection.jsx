@@ -112,11 +112,11 @@ export default function ReviewsSection({ slug }) {
                   <div
                     className="bar-fill"
                     style={{
-                      width: stats.total > 0 ? `${(stats.distribution[rating] / stats.total) * 100}%` : '0'
+                      width: stats.total > 0 ? `${((stats.distribution?.[rating] || 0) / stats.total) * 100}%` : '0'
                     }}
                   />
                 </div>
-                <span className="rating-count">{stats.distribution[rating]}</span>
+                <span className="rating-count">{stats.distribution?.[rating] || 0}</span>
               </div>
             ))}
           </div>

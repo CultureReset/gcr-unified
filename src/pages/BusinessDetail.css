@@ -19,9 +19,13 @@
 .detail-header {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 12px;
-  padding: 6px 12px;
-  background: transparent;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--border);
   position: sticky;
   /* GCRHeader is now shown on this route — stick just below it, same
      pattern as CategoryPage's .category-toolbar. */
@@ -30,19 +34,28 @@
 }
 
 .back-btn, .share-btn {
-  background: none;
-  border: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #fff;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
   font-size: 14px;
   font-weight: 600;
-  color: var(--accent);
+  color: var(--ink);
   cursor: pointer;
-  padding: 8px 12px;
-  border-radius: 6px;
+  padding: 8px 14px;
+  border-radius: 999px;
   transition: all 0.2s;
+  flex: 0 0 auto;
+  width: auto;
 }
 
-.back-btn:hover, .share-btn:hover {
-  background: rgba(232, 93, 4, 0.1);
+@media (hover: hover) {
+  .back-btn:hover, .share-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
 }
 
 .share-btn {
@@ -627,9 +640,22 @@
   border: none;
 }
 
-.tab:hover {
-  border-color: var(--accent);
-  color: var(--accent);
+/* hover only on devices that truly hover — on touch, iOS keeps :hover
+   "stuck" on the last-tapped tab, which reads as two active tabs at once */
+@media (hover: hover) {
+  .tab:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+}
+
+.tab:focus {
+  outline: none;
+}
+
+.tab:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .tab.active {
