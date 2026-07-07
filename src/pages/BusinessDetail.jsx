@@ -136,7 +136,7 @@ export default function RestaurantDetail() {
           if (reviewStats?.total) setReviewCount(reviewStats.total)
           if ((teamData?.team || []).length > 0) setHasTeam(true)
           if ((blogData?.posts || []).length > 0) setHasBlog(true)
-          if ((policiesData?.faqs || []).length > 0) setHasPolicies(true)
+          if ((policiesData?.faqs || []).length > 0 || (data.policies || []).length > 0) setHasPolicies(true)
           if (availData?.availability?.length > 0) setAvailability(availData)
         })
       } catch (err) {
@@ -420,7 +420,7 @@ export default function RestaurantDetail() {
   const sections = [
     // Data-driven — show if data exists regardless of type
     ...(hasOfferings                     ? [{ id: 'offerings',   label: 'Offerings',    icon: '🎟️' }] : []),
-    ...(pricing.length                   ? [{ id: 'pricing',     label: 'Pricing',      icon: '💰' }] : []),
+    ...((pricing.length || whatsIncluded.length || requirements.length || whatToBring.length) ? [{ id: 'pricing', label: 'Pricing', icon: '💰' }] : []),
     ...(schedules.length                 ? [{ id: 'schedule',    label: 'Schedule',     icon: '🗓️' }] : []),
     // Food tabs
     ...((isFood || hasMenu)   ? (hasMenu    ? [{ id: 'menu',       label: 'Menu',        icon: '🍽️' }] : []) : []),
@@ -1194,6 +1194,11 @@ export default function RestaurantDetail() {
                       const features = Array.isArray(m.features) ? m.features : []
                       return (
                         <div key={item.id} className="offering-card">
+                          {item.image_url && (
+                            <div className="offering-image">
+                              <img src={item.image_url} alt={item.item_name} loading="lazy" />
+                            </div>
+                          )}
                           <div className="offering-head">
                             <span className="offering-icon">{item.icon || '•'}</span>
                             <span className="offering-name">{item.item_name}</span>
@@ -1560,7 +1565,7 @@ export default function RestaurantDetail() {
           <div ref={el => { sectionRefs.current["blog"] = el }} id="section-blog"><BlogSection slug={slug} /></div>
 
           {/* Policies */}
-          <div ref={el => { sectionRefs.current["policies"] = el }} id="section-policies"><PoliciesSection slug={slug} /></div>
+          <div ref={el => { sectionRefs.current["policies"] = el }} id="section-policies"><PoliciesSection slug={slug} policies={business.policies} /></div>
 
           {/* Menu */}
           {hasMenu && (
