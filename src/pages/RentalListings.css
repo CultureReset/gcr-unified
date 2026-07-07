@@ -94,3 +94,24 @@
 }
 
 .stay-units-avail { color: #0f9d75; }
+
+/* Amenity chips on unit cards */
+.stay-amenity-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 6px;
+}
+
+.stay-amenity-chip {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: #eef6fb;
+  border: 1px solid #d8e2ec;
+  color: #33415c;
+  text-transform: capitalize;
+}
+
+.stay-amenity-chip.more { background: #fff5f0; }
