@@ -3,15 +3,16 @@ import '../styles/EntityCard.css'
 
 export default function EntityCard({ entity, category }) {
   const navigate = useNavigate()
-  const imageUrl = entity.photos?.[0]?.image_url || entity.hero_image_url || `https://images.unsplash.com/photo-1504674900968-08049c043914?w=400&h=300&fit=crop`
+  const imageUrl = entity.hero_image_url || entity.photos?.[0]?.image_url || entity.photos?.[0]?.url || null
 
   const handleClick = () => navigate(`/business/${entity.slug}`)
 
   return (
     <div className="entity-card" onClick={handleClick}>
       {/* Image */}
-      <div className="card-image" style={{ backgroundImage: `url(${imageUrl})` }}>
-        {!entity.is_active && <div className="card-badge closed">Closed</div>}
+      <div className="card-image" style={imageUrl ? { backgroundImage: `url(${imageUrl})` } : { display: 'grid', placeItems: 'center', fontSize: 42, background: 'linear-gradient(135deg,#eef6fb,#fdf3ea)' }}>
+        {!imageUrl && <span>{entity.icon || '📍'}</span>}
+        {entity.is_active === false && <div className="card-badge closed">Closed</div>}
         {category === 'artists' && entity.is_performing_today && (
           <div className="card-badge live">🔴 Live Now</div>
         )}
