@@ -12,7 +12,7 @@ const API_CAT_MAP = {
 }
 
 
-const TAG_EMOJI = {
+export const TAG_EMOJI = {
   seafood:'🦐', fresh_seafood:'🦐', raw_bar:'🦪', fish_tacos:'🌮', burgers:'🍔',
   pizza:'🍕', sushi:'🍣', wings:'🍗', steaks:'🥩', bbq:'🔥', breakfast:'🍳',
   brunch:'🥞', sunday_brunch:'🥂', dessert:'🍰', ice_cream:'🍦', vegan:'🥗',

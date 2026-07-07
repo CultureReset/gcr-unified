@@ -18,14 +18,14 @@
 }
 
 .back-btn-sm {
-  background: rgba(255,255,255,0.1);
+  background: rgba(0,0,0,0.06);
   border-radius: 50%;
   width: 38px;
   height: 38px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
+  color: var(--text);
 }
 
 .swipe-header-left {
@@ -37,14 +37,14 @@
 .swipe-title {
   font-size: 16px;
   font-weight: 800;
-  color: white;
+  color: var(--text);
   display: flex;
   align-items: center;
   gap: 6px;
 }
 
 .swipe-count {
-  background: rgba(124,106,247,0.2);
+  background: rgba(11,122,117,0.12);
   color: var(--primary);
   padding: 6px 12px;
   border-radius: 20px;
@@ -56,7 +56,7 @@
 .swipe-view-toggle {
   display: flex;
   gap: 2px;
-  background: rgba(255,255,255,0.08);
+  background: rgba(0,0,0,0.05);
   border-radius: 10px;
   padding: 3px;
 }
@@ -64,7 +64,7 @@
   width: 34px; height: 34px;
   border-radius: 8px;
   background: none;
-  color: rgba(255,255,255,0.45);
+  color: var(--text3);
   display: flex; align-items: center; justify-content: center;
   transition: all 0.15s;
 }
@@ -91,16 +91,16 @@
   font-size: 13px;
   font-weight: 600;
   white-space: nowrap;
-  background: rgba(255,255,255,0.06);
-  border: 1px solid rgba(255,255,255,0.1);
-  color: rgba(255,255,255,0.6);
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  color: var(--text2);
   transition: all 0.15s;
   flex-shrink: 0;
 }
 .cat-tab.active {
-  background: var(--primary);
+  background: var(--card);
   border-color: var(--primary);
-  color: white;
+  color: var(--primary);
 }
 
 /* List view */
@@ -115,14 +115,14 @@
 .list-card {
   display: flex;
   gap: 12px;
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.08);
+  background: var(--card);
+  border: 1px solid var(--border);
   border-radius: 16px;
   overflow: hidden;
   cursor: pointer;
   transition: background 0.15s;
 }
-.list-card:active { background: rgba(255,255,255,0.08); }
+.list-card:active { background: var(--bg); }
 .list-card-img {
   width: 90px;
   height: 90px;
@@ -145,14 +145,14 @@
   align-items: flex-start;
   gap: 8px;
 }
-.list-card-name { font-size: 15px; font-weight: 700; color: white; }
+.list-card-name { font-size: 15px; font-weight: 700; color: var(--text); }
 .list-card-sub { font-size: 12px; color: var(--accent); font-weight: 600; margin-top: 2px; }
 .list-card-meta { font-size: 12px; color: var(--text2); margin-top: 3px; }
 .list-card-addr { color: var(--text3); }
 .list-card-badges { display: flex; flex-wrap: wrap; gap: 4px; }
 .list-save-btn {
   font-size: 22px;
-  color: rgba(255,255,255,0.3);
+  color: var(--text3);
   background: none;
   padding: 0 4px;
   flex-shrink: 0;
@@ -194,14 +194,14 @@
 }
 
 .trip-edit-sheet {
-  background: #14161f;
+  background: var(--card);
   width: 100%;
   border-radius: 20px 20px 0 0;
   padding: 24px 20px calc(24px + env(safe-area-inset-bottom));
 }
 
 .trip-edit-sheet h3 {
-  color: white;
+  color: var(--text);
   font-size: 18px;
   font-weight: 800;
   margin: 0 0 18px;
@@ -211,7 +211,7 @@
   display: block;
   font-size: 12px;
   font-weight: 700;
-  color: rgba(255,255,255,0.5);
+  color: var(--text3);
   text-transform: uppercase;
   letter-spacing: 0.5px;
   margin-bottom: 8px;
@@ -227,15 +227,15 @@
 .trip-edit-dates input {
   flex: 1;
   padding: 10px 12px;
-  background: rgba(255,255,255,0.08);
-  border: 1px solid rgba(255,255,255,0.15);
+  background: var(--bg);
+  border: 1px solid var(--border);
   border-radius: 10px;
-  color: white;
+  color: var(--text);
   font-size: 14px;
 }
 
 .trip-edit-dates span {
-  color: rgba(255,255,255,0.4);
+  color: var(--text3);
 }
 
 .trip-edit-group-row {
@@ -250,28 +250,28 @@
   align-items: center;
   gap: 6px;
   padding: 9px 14px;
-  background: rgba(255,255,255,0.08);
-  border: 1.5px solid rgba(255,255,255,0.15);
+  background: var(--bg);
+  border: 1.5px solid var(--border);
   border-radius: 20px;
-  color: rgba(255,255,255,0.75);
+  color: var(--text2);
   font-size: 13px;
   font-weight: 600;
 }
 
 .trip-edit-group-btn.active {
-  background: rgba(124,106,247,0.2);
-  border-color: #7c6af7;
-  color: white;
+  background: rgba(11,122,117,0.12);
+  border-color: var(--primary);
+  color: var(--primary);
 }
 
 .trip-edit-input {
   width: 100%;
   box-sizing: border-box;
   padding: 10px 12px;
-  background: rgba(255,255,255,0.08);
-  border: 1px solid rgba(255,255,255,0.15);
+  background: var(--bg);
+  border: 1px solid var(--border);
   border-radius: 10px;
-  color: white;
+  color: var(--text);
   font-size: 14px;
 }
 
@@ -280,8 +280,8 @@
   top: 100%;
   left: 0;
   right: 0;
-  background: #1a1c28;
-  border: 1px solid rgba(255,255,255,0.15);
+  background: var(--card);
+  border: 1px solid var(--border);
   border-top: none;
   border-radius: 0 0 10px 10px;
   max-height: 200px;
@@ -295,19 +295,19 @@
   padding: 10px 12px;
   background: none;
   border: none;
-  border-bottom: 1px solid rgba(255,255,255,0.06);
+  border-bottom: 1px solid var(--border);
   text-align: left;
   cursor: pointer;
 }
 
 .trip-edit-autocomplete-item .ac-name {
-  color: white;
+  color: var(--text);
   font-size: 14px;
   font-weight: 600;
 }
 
 .trip-edit-autocomplete-item .ac-meta {
-  color: rgba(255,255,255,0.5);
+  color: var(--text3);
   font-size: 12px;
   margin-top: 2px;
 }
@@ -327,12 +327,12 @@
 }
 
 .trip-edit-cancel {
-  background: rgba(255,255,255,0.08);
-  color: white;
+  background: var(--bg);
+  color: var(--text);
 }
 
 .trip-edit-save {
-  background: #7c6af7;
+  background: var(--primary);
   color: white;
 }
 
@@ -591,22 +591,151 @@
   font-weight: 600;
 }
 
-/* BusinessCard's CTAs float directly on the photo (inside .card-overlay-info,
-   over the dark gradient scrim) instead of a separate white footer — pill
-   shape + a stronger, blurred backdrop keep them legible over any photo. */
-.card-ctas-floating {
+/* ── BusinessCard info panel — solid dark navy footer below the photo
+   (not overlaid on it), matching the richer reference layout: name/rating,
+   location, description, a tag row with icons, then a status pill + Book
+   Now + chevron row. Kept intentionally dark regardless of the (now light)
+   page theme — same rationale as the reference: a dark panel reads
+   consistently over any photo tone without needing per-photo contrast
+   tuning, the way a transparent overlay would. ── */
+.card-type-badge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 2;
+  background: var(--primary);
+  color: white;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 6px 12px;
+  border-radius: 20px;
+}
+
+.card-badge-stacked {
+  top: 48px !important;
+}
+
+.card-save-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 3;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.45);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+  transition: transform 0.12s;
+}
+
+.card-save-btn:active { transform: scale(0.88); }
+
+.card-photo-counter-stacked {
+  top: 56px !important;
+  right: 12px !important;
+}
+
+.card-info-panel {
+  background: #10233a;
+  color: white;
+  padding: 16px 18px 14px;
+  flex-shrink: 0;
+}
+
+.card-tag-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  font-size: 12px;
+  color: rgba(255,255,255,0.85);
+  font-weight: 600;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255,255,255,0.12);
+}
+
+.card-tag-item {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+}
+
+.card-tag-divider {
+  margin: 0 8px;
+  opacity: 0.35;
+}
+
+.card-bottom-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
   margin-top: 12px;
 }
 
-.card-ctas-floating .cta-book,
-.card-ctas-floating .cta-detail {
-  border-radius: 999px;
+.card-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 6px 12px;
+  border-radius: 20px;
+  border: 1px solid rgba(255,255,255,0.18);
+  color: rgba(255,255,255,0.9);
+  white-space: nowrap;
 }
 
-.card-ctas-floating .cta-detail {
-  background: rgba(255,255,255,0.2);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+.card-status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #94a3b8;
+  flex-shrink: 0;
+}
+
+.card-status-pill.status-open .card-status-dot { background: #4ade80; }
+.card-status-pill.status-opening .card-status-dot { background: #38bdf8; }
+.card-status-pill.status-closing .card-status-dot { background: #fb923c; }
+.card-status-pill.status-closed .card-status-dot { background: #94a3b8; }
+
+.card-bottom-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.card-book-pill {
+  background: var(--primary);
+  color: white;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 8px 14px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.card-chevron-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: white;
+  font-size: 24px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  flex-shrink: 0;
 }
 
 .swipe-actions {
@@ -646,10 +775,10 @@
 .action-btn:active { transform: scale(0.88); }
 
 .action-btn.nope {
-  background: rgba(239,68,68,0.12);
-  border: 2.5px solid rgba(239,68,68,0.5);
-  color: #fca5a5;
-  box-shadow: 0 4px 20px rgba(239,68,68,0.15);
+  background: var(--card);
+  border: none;
+  color: var(--red);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
 }
 
 .swipe-flash.maybe {
@@ -659,10 +788,10 @@
 }
 
 .action-btn.like {
-  background: rgba(34,197,94,0.12);
-  border: 2.5px solid rgba(34,197,94,0.5);
-  color: #86efac;
-  box-shadow: 0 4px 24px rgba(34,197,94,0.2);
+  background: var(--card);
+  border: none;
+  color: var(--green);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
 }
 
 .all-done {
@@ -675,7 +804,7 @@
 }
 
 .done-emoji { font-size: 64px; }
-.all-done h3 { font-size: 24px; font-weight: 800; color: white; }
+.all-done h3 { font-size: 24px; font-weight: 800; color: var(--text); }
 .all-done p { font-size: 15px; color: var(--text2); }
 .all-done .btn-primary { width: auto; padding: 14px 32px; }
 
@@ -759,31 +888,6 @@
   color: var(--text2);
 }
 
-/* ── Colored tag pills ── */
-.card-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
-  margin-bottom: 8px;
-}
-
-.card-tag {
-  font-size: 11px;
-  font-weight: 700;
-  padding: 3px 10px;
-  border-radius: 20px;
-  letter-spacing: 0.2px;
-}
-
-.tag-green   { background: rgba(34,197,94,0.18);  color: #86efac; border: 1px solid rgba(34,197,94,0.3); }
-.tag-amber   { background: rgba(245,158,11,0.18); color: #fcd34d; border: 1px solid rgba(245,158,11,0.3); }
-.tag-blue    { background: rgba(59,130,246,0.18); color: #93c5fd; border: 1px solid rgba(59,130,246,0.3); }
-.tag-teal    { background: rgba(20,184,166,0.18); color: #5eead4; border: 1px solid rgba(20,184,166,0.3); }
-.tag-cyan    { background: rgba(6,182,212,0.18);  color: #67e8f9; border: 1px solid rgba(6,182,212,0.3); }
-.tag-gold    { background: rgba(234,179,8,0.18);  color: #fde047; border: 1px solid rgba(234,179,8,0.3); }
-.tag-purple  { background: rgba(168,85,247,0.18); color: #d8b4fe; border: 1px solid rgba(168,85,247,0.3); }
-.tag-orange  { background: rgba(249,115,22,0.18); color: #fdba74; border: 1px solid rgba(249,115,22,0.3); }
-.tag-default { background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.55); border: 1px solid rgba(255,255,255,0.12); }
 
 /* ── Super flash ── */
 .swipe-flash.super {
@@ -833,19 +937,19 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  background: rgba(15, 23, 42, 0.88);
+  background: var(--card);
   backdrop-filter: blur(8px);
-  border: 1px solid rgba(14,165,233,0.4);
+  border: 1px solid var(--border);
   border-radius: 10px;
   padding: 8px 12px;
   margin-top: 6px;
   font-size: 13px;
-  color: #7dd3fc;
-  box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+  color: var(--text2);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.1);
 }
 .loc-prompt span { flex: 1; }
 .loc-yes {
-  background: #0ea5e9;
+  background: var(--primary);
   color: white;
   border: none;
   border-radius: 6px;
@@ -857,7 +961,7 @@
 .loc-no {
   background: transparent;
   border: none;
-  color: #64748b;
+  color: var(--text3);
   font-size: 14px;
   cursor: pointer;
   padding: 2px 4px;
@@ -936,48 +1040,16 @@
   color: rgba(255,255,255,0.75);
 }
 
-/* Tags overlaid on image */
-.card-tags-overlay {
-  position: absolute;
-  top: 12px;
-  left: 12px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
-  z-index: 2;
-}
-
 /* When card has overlay, body is just CTAs */
 .business-card .card-body {
   padding: 10px 14px 12px;
 }
 
-/* Tighten super button */
 .action-btn.super {
-  background: rgba(250,204,21,0.12);
-  border: 2.5px solid rgba(250,204,21,0.5);
-  color: #fde68a;
-  box-shadow: 0 4px 16px rgba(250,204,21,0.1);
-}
-
-/* ── Tags moved to overlay bottom (above name) — no badge collision ── */
-.card-tags-overlay-bottom {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
-  margin-bottom: 8px;
-  z-index: 2;
-}
-
-/* Keep old overlay class for any remaining uses */
-.card-tags-overlay {
-  position: absolute;
-  top: 12px;
-  left: 12px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
-  z-index: 2;
+  background: var(--card);
+  border: none;
+  color: #d97706;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
 }
 
 /* ── Drag direction tint overlay ── */
