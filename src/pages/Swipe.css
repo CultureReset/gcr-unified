@@ -1104,6 +1104,33 @@
 .card-float-btn.undo-float { left: 20px; }
 .card-float-btn.maybe-float { right: 20px; }
 
+/* One-time discovery caption under Maybe/Undo — they're deliberately
+   subtle floating buttons (that's the point, see the comment where
+   they're rendered), so a first-time visitor needs one nudge to find
+   them at all. Dismissed on first tap of either, or after 5s, and
+   never shown again on this device (see showCornerHint). */
+.card-float-hint {
+  position: absolute;
+  top: 106px;
+  z-index: 21;
+  background: rgba(0,0,0,0.65);
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 20px;
+  pointer-events: none;
+  white-space: nowrap;
+  animation: hint-fade-in 0.3s ease;
+}
+.card-float-hint.hint-undo { left: 8px; }
+.card-float-hint.hint-maybe { right: 8px; }
+
+@keyframes hint-fade-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 .card-float-btn.disabled {
   opacity: 0.3;
   cursor: not-allowed;

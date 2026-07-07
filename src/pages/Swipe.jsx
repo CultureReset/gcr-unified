@@ -211,6 +211,12 @@ export default function Swipe() {
   const [prefMap, setPrefMap] = useState({})
   const [swipingDir, setSwipingDir] = useState(null)
   const [undoStack, setUndoStack] = useState([]) // { business, action: 'like'|'nope'|'super' }
+  // Maybe/Undo float quietly in the card's top corners (see the layout
+  // rationale where they're rendered below) — that's deliberately subtle,
+  // but a first-time visitor has no way to discover them on their own.
+  // Show a caption under each once, dismissed on first interaction with
+  // either or after a few seconds, never shown again on this device.
+  const [showCornerHint, setShowCornerHint] = useState(() => !localStorage.getItem('gcr_corner_hint_seen'))
   const swipeCountRef = useRef(0)
   const pageRef = useRef(null)
   const personalizationCounterRef = useRef(0)
@@ -293,6 +299,16 @@ export default function Swipe() {
   // Show location prompt once if no location yet
   useEffect(() => {
     if (!userLocation) setLocPrompt(true)
+  }, [])
+
+  // Corner hint auto-dismisses on its own after a few seconds even if the
+  // visitor never taps Maybe/Undo — it's a one-time nudge, not something
+  // that should sit on screen indefinitely waiting for an interaction.
+  useEffect(() => {
+    if (!showCornerHint) return
+    const timer = setTimeout(dismissCornerHint, 5000)
+    return () => clearTimeout(timer)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // Fetch SMS config and set up opt-in trigger
@@ -511,8 +527,19 @@ export default function Swipe() {
   // pressLike which is a full swipe-right.
   function toggleSavePlace(business) {
     const real = resolveReal(business)
-    if (savedPlaces.some(p => p.id === real.id)) removeSavedPlace(real.id)
-    else addSavedPlace(real)
+    if (savedPlaces.some(p => p.id === real.id)) {
+      removeSavedPlace(real.id)
+      setLikedCount(p => Math.max(0, p - 1))
+    } else {
+      addSavedPlace(real)
+      // Same preference/seen signal a swipe-right records — a heart-save
+      // is just as real an endorsement as swiping right, it just doesn't
+      // dismiss the card, so it shouldn't be invisible to the algorithm
+      // that's supposed to be learning from likes.
+      recordSwipe(business, 'like')
+      setLikedCount(p => p + 1)
+      bumpPersonalizationCounter()
+    }
   }
 
   function pressLike() {
@@ -549,10 +576,17 @@ export default function Swipe() {
     bumpPersonalizationCounter()
   }
 
+  function dismissCornerHint() {
+    if (!showCornerHint) return
+    setShowCornerHint(false)
+    localStorage.setItem('gcr_corner_hint_seen', '1')
+  }
+
   // "Not sure yet" — distinct from Pass (rejected) and Like (want to go).
   // Mild positive signal for preference scoring (see SWIPE_WEIGHTS.maybe on
   // the backend), doesn't save the place, but is undo-able like every other action.
   function pressMaybe() {
+    dismissCornerHint()
     if (cards.length === 0) return
     const top = cards[cards.length - 1]
     recordSwipe(top, 'maybe')
@@ -563,6 +597,7 @@ export default function Swipe() {
   }
 
   function pressUndo() {
+    dismissCornerHint()
     if (undoStack.length === 0) return
     const last = undoStack[undoStack.length - 1]
     setUndoStack(prev => prev.slice(0, -1))
@@ -806,9 +841,11 @@ export default function Swipe() {
                 >
                   ↩
                 </button>
+                {showCornerHint && <span className="card-float-hint hint-undo">Undo</span>}
                 <button className="card-float-btn maybe-float" onClick={pressMaybe} aria-label="Maybe">
                   🤔
                 </button>
+                {showCornerHint && <span className="card-float-hint hint-maybe">Maybe</span>}
               </>
             )}
           </div>
