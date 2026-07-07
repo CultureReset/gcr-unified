@@ -1136,6 +1136,9 @@ function BusinessCard({ business, isTop, onDetail, userLocation, swipingDir, sav
               {status.label}
             </span>
           )}
+          {business.price_per_person && (
+            <span className="card-price-pill">💵 {business.price_per_person}</span>
+          )}
           {isTop && (
             <div className="card-bottom-actions"
               onTouchStart={e => e.stopPropagation()}

@@ -706,6 +706,22 @@
 .card-status-pill.status-closing .card-status-dot { background: #fb923c; }
 .card-status-pill.status-closed .card-status-dot { background: #94a3b8; }
 
+/* Per-person pricing (activities/tours like parasailing charters) — a
+   distinct gold fill so it stands out from the outlined status pill next
+   to it, since price is often the deciding factor for booking. */
+.card-price-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 6px 12px;
+  border-radius: 20px;
+  background: rgba(250,204,21,0.15);
+  color: #fde047;
+  white-space: nowrap;
+}
+
 .card-bottom-actions {
   display: flex;
   align-items: center;
