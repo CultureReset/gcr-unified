@@ -1075,41 +1075,44 @@ function BusinessCard({ business, isTop, onDetail, userLocation, swipingDir }) {
         {allPhotos.length > 1 && (
           <div className="card-photo-counter">{photoIdx + 1}/{allPhotos.length}</div>
         )}
-      </div>
 
-      {/* Info overlaid at bottom of image */}
-      <div className="card-overlay-info">
-        {/* Tags above name — no longer collide with top-left badges */}
-        {displayedTags.length > 0 && (
-          <div className="card-tags-overlay-bottom">
-            {displayedTags.slice(0,3).map(tag => (
-              <span key={tag} className={`card-tag ${tagColor(tag)}`}>{tag}</span>
-            ))}
-          </div>
-        )}
-        <div className="card-name-row">
-          <h3 className="card-name">{business.name}</h3>
-          {business.rating ? (
-            <div className="card-rating">
-              ⭐ {business.rating}
-              {business.review_count > 0 && <span className="card-review-count"> ({business.review_count})</span>}
+        {/* Info overlaid at bottom of image — must live inside .card-image-wrap
+            (the positioned ancestor) so `position:absolute; bottom:0` anchors
+            to the photo, not the whole card; as a sibling it anchored to
+            .swipe-card-wrapper instead and sat on top of .card-body's CTAs. */}
+        <div className="card-overlay-info">
+          {/* Tags above name — no longer collide with top-left badges */}
+          {displayedTags.length > 0 && (
+            <div className="card-tags-overlay-bottom">
+              {displayedTags.slice(0,3).map(tag => (
+                <span key={tag} className={`card-tag ${tagColor(tag)}`}>{tag}</span>
+              ))}
             </div>
-          ) : null}
-        </div>
-        <div className="card-meta-row">
-          {business.city && <span>📍 {business.city}</span>}
-          {business.price_range && <><span className="dot">·</span><span>{business.price_range}</span></>}
-          {distLabel && <><span className="dot">·</span><span>🚗 {distLabel}</span></>}
-        </div>
-        {desc && <p className="card-desc">{desc}</p>}
-        {(status || business.live_music || business.happy_hour || business.duration) && (
-          <div className="card-badges" style={{marginTop:6}}>
-            {status && <span className={`badge badge-status-${status.cls}`}>{status.label}</span>}
-            {business.live_music && <span className="badge badge-live">🎵 Live</span>}
-            {business.happy_hour && <span className="badge badge-happy">🍹 HH</span>}
-            {business.duration && <span className="badge badge-music">⏱ {business.duration}</span>}
+          )}
+          <div className="card-name-row">
+            <h3 className="card-name">{business.name}</h3>
+            {business.rating ? (
+              <div className="card-rating">
+                ⭐ {business.rating}
+                {business.review_count > 0 && <span className="card-review-count"> ({business.review_count})</span>}
+              </div>
+            ) : null}
           </div>
-        )}
+          <div className="card-meta-row">
+            {business.city && <span>📍 {business.city}</span>}
+            {business.price_range && <><span className="dot">·</span><span>{business.price_range}</span></>}
+            {distLabel && <><span className="dot">·</span><span>🚗 {distLabel}</span></>}
+          </div>
+          {desc && <p className="card-desc">{desc}</p>}
+          {(status || business.live_music || business.happy_hour || business.duration) && (
+            <div className="card-badges" style={{marginTop:6}}>
+              {status && <span className={`badge badge-status-${status.cls}`}>{status.label}</span>}
+              {business.live_music && <span className="badge badge-live">🎵 Live</span>}
+              {business.happy_hour && <span className="badge badge-happy">🍹 HH</span>}
+              {business.duration && <span className="badge badge-music">⏱ {business.duration}</span>}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Body — CTAs only */}
