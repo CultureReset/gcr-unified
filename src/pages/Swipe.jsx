@@ -779,11 +779,9 @@ export default function Swipe() {
                     ? <PromoCard card={business} isTop={index === cards.length - 1} onDetail={() => navigate(business.linked_slug ? `/business/${business.linked_slug}` : '#')} />
                     : business._isSocial
                       ? <SocialCard post={business} isTop={index === cards.length - 1} onDetail={() => navigate(`/business/${business.entity_slug}`)} swipingDir={index === cards.length - 1 ? swipingDir : null} />
-                      : business._isSponsored
-                      ? <SponsoredCard business={business} isTop={index === cards.length - 1} onDetail={() => navigate(`/business/${business._sponsorSlug}`)} userLocation={userLocation} swipingDir={index === cards.length - 1 ? swipingDir : null} />
                       : business._isDeal
                         ? <DealSwipeCard deal={business._dealData} isTop={index === cards.length - 1} onDetail={() => business.entity_slug ? navigate(`/business/${business.entity_slug}`) : navigate('/deals')} />
-                        : <BusinessCard business={business} isTop={index === cards.length - 1} onDetail={() => navigate(`/business/${business.slug}`)} userLocation={userLocation} swipingDir={index === cards.length - 1 ? swipingDir : null} savedPlaces={savedPlaces} onToggleSave={toggleSavePlace} />
+                        : <BusinessCard business={business} isTop={index === cards.length - 1} onDetail={() => navigate(`/business/${business._isSponsored ? business._sponsorSlug : business.slug}`)} userLocation={userLocation} swipingDir={index === cards.length - 1 ? swipingDir : null} savedPlaces={savedPlaces} onToggleSave={toggleSavePlace} />
                   }
                 </TinderCard>
               ))
@@ -1019,7 +1017,11 @@ function BusinessCard({ business, isTop, onDetail, userLocation, swipingDir, sav
     ? calcDistance(userLocation.lat, userLocation.lng, business.latitude, business.longitude)
     : null
   const distLabel = formatDistance(distMiles)
-  const isSaved = (savedPlaces || []).some(p => p.id === business.id)
+  // Sponsored cards save under their real business id (_sponsorSlug), not
+  // this card instance's own display id — same remap toggleSavePlace's
+  // resolveReal() does — so the saved-state check has to match that.
+  const realId = business._isSponsored ? business._sponsorSlug : business.id
+  const isSaved = (savedPlaces || []).some(p => p.id === realId)
 
   const allPhotos = [
     business.hero_image_url,
@@ -1054,7 +1056,7 @@ function BusinessCard({ business, isTop, onDetail, userLocation, swipingDir, sav
   const badgeEmoji = categoryInfo?.emoji || '📍'
 
   return (
-    <div className={`business-card ${isTop ? 'top' : ''}`}>
+    <div className={`business-card ${business._isSponsored ? 'sponsored-card' : ''} ${isTop ? 'top' : ''}`}>
       {/* Photo */}
       <div
         className="card-image-wrap"
@@ -1079,7 +1081,14 @@ function BusinessCard({ business, isTop, onDetail, userLocation, swipingDir, sav
           </div>
         )}
 
-        <div className="card-type-badge">{badgeEmoji} {badgeLabel}</div>
+        {/* Sponsored disclosure takes the primary top-left badge slot instead
+            of the category type badge — an ad label has to stay visible and
+            unambiguous, not compete with/get buried under other badging. */}
+        {business._isSponsored ? (
+          <div className="card-sponsored-badge">⭐ Sponsored</div>
+        ) : (
+          <div className="card-type-badge">{badgeEmoji} {badgeLabel}</div>
+        )}
 
         {business.verified && (
           <div className="card-featured-badge card-badge-stacked">⭐ Featured</div>
@@ -1181,135 +1190,45 @@ function PromoCard({ card, isTop, onDetail }) {
           <img src={card.hero_image_url} alt={card.name} className="card-image"
             onError={e => { try { e.target.style.display='none' } catch {} }} />
         )}
-        <div className="card-image-overlay" />
         <div className="card-promo-badge">📅 Tonight</div>
       </div>
 
-      <div className="card-body">
-        <div className="card-info">
+      <div className="card-info-panel">
+        <div className="card-name-row">
           <h3 className="card-name">{card.name}</h3>
-          {card.description && <div className="card-desc">{card.description}</div>}
-          {card.city && (
-            <div className="card-meta-row">
-              <span>📍 {card.city}</span>
-            </div>
-          )}
         </div>
-
-        {isTop && (
-          <div className="card-ctas"
-            onTouchStart={e => e.stopPropagation()}
-            onTouchMove={e => e.stopPropagation()}
-            onTouchEnd={e => e.stopPropagation()}
-            onPointerDown={e => e.stopPropagation()}
-            onPointerUp={e => e.stopPropagation()}
-          >
-            {card.cta_url && (
-              <a className="cta-book pressable" href={card.cta_url} target="_blank" rel="noopener noreferrer"
-                onClick={e => e.stopPropagation()}>
-                {card.cta_label || '📅 Learn More'}
-              </a>
-            )}
-            {card.linked_slug && (
-              <button className="cta-detail pressable"
-                onPointerUp={e => { e.stopPropagation(); onDetail() }}
-                onClick={e => { e.stopPropagation(); onDetail() }}>
-                View Place
-              </button>
-            )}
-          </div>
-        )}
-      </div>
-    </div>
-  )
-}
-
-function SponsoredCard({ business, isTop, onDetail, userLocation, swipingDir }) {
-  const [photoIdx, setPhotoIdx] = useState(0)
-  const ptrRef = useRef(null)
-  const distMiles = userLocation
-    ? calcDistance(userLocation.lat, userLocation.lng, business.latitude, business.longitude)
-    : null
-  const distLabel = formatDistance(distMiles)
-
-  const allPhotos = [
-    business.hero_image_url,
-    ...(business.photos || []).filter(p => p !== business.hero_image_url)
-  ].filter(Boolean)
-
-  const photo = allPhotos[photoIdx] || null
-
-  function handleImgDown(e) { ptrRef.current = { x: e.clientX, y: e.clientY } }
-  function handleImgUp(e) {
-    if (!ptrRef.current) return
-    const dx = Math.abs(e.clientX - ptrRef.current.x)
-    const dy = Math.abs(e.clientY - ptrRef.current.y)
-    ptrRef.current = null
-    if (dx < 8 && dy < 8 && allPhotos.length > 1) {
-      e.stopPropagation()
-      setPhotoIdx(i => (i + 1) % allPhotos.length)
-    }
-  }
-
-  const desc = business.subtitle || (business.description ? business.description.slice(0, 90) + (business.description.length > 90 ? '…' : '') : '')
-
-  return (
-    <div className={`business-card sponsored-card ${isTop ? 'top' : ''}`}>
-      <div
-        className="card-image-wrap"
-        style={!photo ? {background:'linear-gradient(135deg,#92400e,#d97706)'} : undefined}
-        onPointerDown={handleImgDown}
-        onPointerUp={handleImgUp}
-      >
-        {photo && (
-          <img src={photo} alt={business.name} className="card-image"
-            onError={e => { try { e.target.style.display='none'; if (e.target.parentNode) e.target.parentNode.style.background='linear-gradient(135deg,#92400e,#d97706)' } catch {} }} />
-        )}
-        <div className="card-image-overlay" />
-        {swipingDir === 'right' && (
-          <div className="card-drag-tint like-tint">
-            <span className="drag-stamp like-stamp">LIKE ♥</span>
-          </div>
-        )}
-        {swipingDir === 'left' && (
-          <div className="card-drag-tint nope-tint">
-            <span className="drag-stamp nope-stamp">NOPE ✕</span>
-          </div>
-        )}
-        <div className="card-sponsored-badge">⭐ Sponsored</div>
-        {allPhotos.length > 1 && (
-          <div className="card-photo-counter">{photoIdx + 1}/{allPhotos.length}</div>
-        )}
-      </div>
-
-      <div className="card-body">
-        <div className="card-info">
-          <div className="card-name-row">
-            <h3 className="card-name">{business.name}</h3>
-            {business.rating ? <div className="rating">⭐ {business.rating}</div> : null}
-          </div>
-          {desc && <div className="card-desc">{desc}</div>}
+        {card.city && (
           <div className="card-meta-row">
-            {business.city && <span>📍 {business.city}</span>}
-            {business.city && business.price_range && <span className="dot">·</span>}
-            {business.price_range && <span>{business.price_range}</span>}
-            {distLabel && <><span className="dot">·</span><span className="card-distance">🚗 {distLabel}</span></>}
+            <span>📍 {card.city}</span>
           </div>
-        </div>
+        )}
+        {card.description && <p className="card-desc">{card.description}</p>}
 
         {isTop && (
-          <div className="card-ctas"
-            onTouchStart={e => e.stopPropagation()}
-            onTouchMove={e => e.stopPropagation()}
-            onTouchEnd={e => e.stopPropagation()}
-            onPointerDown={e => e.stopPropagation()}
-            onPointerUp={e => e.stopPropagation()}
-          >
-            <button className="cta-detail"
-              onPointerUp={e => { e.stopPropagation(); onDetail() }}
-              onClick={e => { e.stopPropagation(); onDetail() }}>
-              View Profile
-            </button>
+          <div className="card-bottom-row">
+            <div className="card-bottom-actions"
+              onTouchStart={e => e.stopPropagation()}
+              onTouchMove={e => e.stopPropagation()}
+              onTouchEnd={e => e.stopPropagation()}
+              onPointerDown={e => e.stopPropagation()}
+              onPointerUp={e => e.stopPropagation()}
+            >
+              {card.cta_url && (
+                <a className="card-book-pill pressable" href={card.cta_url} target="_blank" rel="noopener noreferrer"
+                  onClick={e => e.stopPropagation()}>
+                  {card.cta_label || '📅 Learn More'}
+                </a>
+              )}
+              {card.linked_slug && (
+                <button className="card-chevron-btn pressable"
+                  onPointerUp={e => { e.stopPropagation(); onDetail() }}
+                  onClick={e => { e.stopPropagation(); onDetail() }}
+                  aria-label="View place"
+                >
+                  ›
+                </button>
+              )}
+            </div>
           </div>
         )}
       </div>
@@ -1336,14 +1255,12 @@ function DealSwipeCard({ deal, isTop, onDetail }) {
 
   return (
     <div className={`business-card deal-swipe-card ${isTop ? 'top' : ''}`}>
-      {/* Full-bleed background */}
-      <div className="card-image-wrap" style={{ background: style.bg, minHeight: 150 }}>
+      <div className="card-image-wrap" style={{ background: style.bg }}>
         {deal.image_url && (
           <img src={deal.image_url} alt={deal.entity_name} className="card-image"
             style={{ opacity: 0.35 }}
             onError={e => { try { e.target.style.display = 'none' } catch {} }} />
         )}
-        <div className="card-image-overlay" />
 
         {/* Deal type badge top-left */}
         <div className="card-featured-badge" style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }}>
@@ -1354,68 +1271,71 @@ function DealSwipeCard({ deal, isTop, onDetail }) {
         {urgency && (
           <div className="deal-swipe-urgent">🔴 URGENT</div>
         )}
-
-        {/* Main content overlaid on image bottom */}
-        <div className="card-overlay-info deal-swipe-overlay">
-          <div className="deal-swipe-entity">{deal.entity_name}</div>
-          <h3 className="card-name deal-swipe-headline">{deal.headline}</h3>
-
-          {/* Spots bar */}
-          {spotsRemaining !== null && spotsTotal && (
-            <div className="deal-swipe-spots">
-              <div className="deal-swipe-spots-text">
-                {spotsRemaining === 0
-                  ? '🔴 Fully booked'
-                  : spotsRemaining === 1
-                  ? '🔴 Last spot!'
-                  : spotsRemaining <= 3
-                  ? `🟡 Only ${spotsRemaining} spot${spotsRemaining !== 1 ? 's' : ''} left`
-                  : `🟢 ${spotsRemaining} of ${spotsTotal} open`}
-              </div>
-              <div className="deal-swipe-bar">
-                <div
-                  className="deal-swipe-bar-fill"
-                  style={{ width: `${Math.min(100, ((spotsTotal - spotsRemaining) / spotsTotal) * 100)}%` }}
-                />
-              </div>
-            </div>
-          )}
-
-          {/* Price */}
-          {(deal.deal_price || deal.price_label) && (
-            <div className="deal-swipe-price">
-              {deal.price_label || `$${deal.deal_price}${deal.price_unit ? `/${deal.price_unit}` : ''}`}
-            </div>
-          )}
-
-          <div className="deal-swipe-hint">← Swipe right to save · Tap for details →</div>
-        </div>
       </div>
 
-      {/* CTA body */}
-      {isTop && (
-        <div className="card-body"
-          onTouchStart={e => e.stopPropagation()} onTouchMove={e => e.stopPropagation()}
-          onTouchEnd={e => e.stopPropagation()} onPointerDown={e => e.stopPropagation()}
-          onPointerUp={e => e.stopPropagation()}
-        >
-          <div className="card-ctas" style={!deal.claim_url ? { gridTemplateColumns: '1fr' } : undefined}>
-            {deal.claim_url && (
-              <a className="cta-book pressable" href={deal.claim_url} target="_blank" rel="noopener noreferrer"
-                onClick={e => e.stopPropagation()}>
-                {deal.deal_type === 'charter_opening' ? '🎣 Grab This Spot' :
-                 deal.deal_type === 'rental_gap' ? '🏠 Book Now' :
-                 '📅 Claim Deal'}
-              </a>
-            )}
-            <button className="cta-detail pressable"
-              onPointerUp={e => { e.stopPropagation(); onDetail() }}
-              onClick={e => { e.stopPropagation(); onDetail() }}>
-              View Details →
-            </button>
-          </div>
+      {/* Info panel — same dark panel BusinessCard uses, not overlaid on
+          the photo, so the deal's own gradient stays visible above it. */}
+      <div className="card-info-panel">
+        <div className="deal-swipe-entity">{deal.entity_name}</div>
+        <div className="card-name-row">
+          <h3 className="card-name">{deal.headline}</h3>
         </div>
-      )}
+
+        {(deal.deal_price || deal.price_label) && (
+          <div className="card-price-hero">
+            💵 {deal.price_label || `$${deal.deal_price}${deal.price_unit ? `/${deal.price_unit}` : ''}`}
+          </div>
+        )}
+
+        {/* Spots bar */}
+        {spotsRemaining !== null && spotsTotal && (
+          <div className="deal-swipe-spots">
+            <div className="deal-swipe-spots-text">
+              {spotsRemaining === 0
+                ? '🔴 Fully booked'
+                : spotsRemaining === 1
+                ? '🔴 Last spot!'
+                : spotsRemaining <= 3
+                ? `🟡 Only ${spotsRemaining} spot${spotsRemaining !== 1 ? 's' : ''} left`
+                : `🟢 ${spotsRemaining} of ${spotsTotal} open`}
+            </div>
+            <div className="deal-swipe-bar">
+              <div
+                className="deal-swipe-bar-fill"
+                style={{ width: `${Math.min(100, ((spotsTotal - spotsRemaining) / spotsTotal) * 100)}%` }}
+              />
+            </div>
+          </div>
+        )}
+
+        <div className="deal-swipe-hint">← Swipe right to save · Tap for details →</div>
+
+        {isTop && (
+          <div className="card-bottom-row">
+            <div className="card-bottom-actions"
+              onTouchStart={e => e.stopPropagation()} onTouchMove={e => e.stopPropagation()}
+              onTouchEnd={e => e.stopPropagation()} onPointerDown={e => e.stopPropagation()}
+              onPointerUp={e => e.stopPropagation()}
+            >
+              {deal.claim_url && (
+                <a className="card-book-pill pressable" href={deal.claim_url} target="_blank" rel="noopener noreferrer"
+                  onClick={e => e.stopPropagation()}>
+                  {deal.deal_type === 'charter_opening' ? '🎣 Grab This Spot' :
+                   deal.deal_type === 'rental_gap' ? '🏠 Book Now' :
+                   '📅 Claim Deal'}
+                </a>
+              )}
+              <button className="card-chevron-btn pressable"
+                onPointerUp={e => { e.stopPropagation(); onDetail() }}
+                onClick={e => { e.stopPropagation(); onDetail() }}
+                aria-label="View details"
+              >
+                ›
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   )
 }
