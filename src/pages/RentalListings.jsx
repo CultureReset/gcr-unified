@@ -25,12 +25,12 @@ const SORT_OPTIONS = [
   { id: 'name',     label: 'A–Z' },
 ]
 
-function StayCard({ entity, navigate, savedSlugs, onSave }) {
+function StayCard({ entity, navigate, savedSlugs, onSave, unitsInfo }) {
   const img = entity.hero_image_url
   const slug = entity.slug
   const beds = entity.bedrooms_min || entity.bedrooms_max
   const sleeps = entity.sleeps_min || entity.sleeps_max
-  const price = entity.price_from
+  const price = entity.price_from ?? unitsInfo?.price_min
   const rating = entity.rating ? parseFloat(entity.rating).toFixed(1) : null
   const isSaved = savedSlugs?.has(slug)
 
@@ -61,17 +61,55 @@ function StayCard({ entity, navigate, savedSlugs, onSave }) {
         <div className="stay-card-location">{entity.city || 'Gulf Coast'}</div>
         <div className="stay-card-specs">
           {beds && <span>🛏️ {beds}{entity.bedrooms_max && entity.bedrooms_max !== beds ? `–${entity.bedrooms_max}` : ''} bed</span>}
+          {!beds && unitsInfo?.beds_min != null && (
+            <span>🛏️ {unitsInfo.beds_min}{unitsInfo.beds_max !== unitsInfo.beds_min ? `–${unitsInfo.beds_max}` : ''} bed</span>
+          )}
           {sleeps && <span>👥 Sleeps {sleeps}</span>}
           {entity.pool && <span>🏊 Pool</span>}
           {entity.pet_friendly && <span>🐾 Pets OK</span>}
         </div>
+        {unitsInfo?.unit_count > 0 && (
+          <div className="stay-units-line">
+            🚪 {unitsInfo.unit_count} unit{unitsInfo.unit_count === 1 ? '' : 's'}
+            <span className="stay-units-avail"> · {unitsInfo.available_units} available</span>
+          </div>
+        )}
         {rating && (
           <div className="stay-card-rating">
             ⭐ {rating}
             {entity.review_count > 0 && <span className="stay-review-count">({entity.review_count.toLocaleString()})</span>}
           </div>
         )}
-        <button className="stay-view-btn">View →</button>
+        <button className="stay-view-btn">{unitsInfo?.unit_count > 0 ? 'View Available Units →' : 'View →'}</button>
+      </div>
+    </article>
+  )
+}
+
+// Individual unit card (booking-platform units view)
+function UnitCard({ unit, navigate }) {
+  const r = unit.rental || {}
+  const img = unit.hero_image_url
+  const unitLabel = [unit.building, unit.unit_number && `Unit ${unit.unit_number}`, unit.view_type && String(unit.view_type).replace(/_/g, ' ')]
+    .filter(Boolean).join(' · ')
+  return (
+    <article className="stay-card" onClick={() => navigate(`/business/${unit.slug}`)}>
+      <div className="stay-card-img">
+        {img ? <img src={img} alt={unit.name} loading="lazy" /> : <div className="stay-card-img-placeholder">🚪</div>}
+        <div className="stay-type-badge">🚪 Unit</div>
+        {r.nightly_price != null && <div className="stay-price-badge">${Math.round(r.nightly_price)}<span>/night</span></div>}
+      </div>
+      <div className="stay-card-body">
+        <div className="stay-card-name">{unit.name}</div>
+        {unit.parent_name && <div className="stay-card-location">🏛 {unit.parent_name}</div>}
+        {unitLabel && <div className="stay-card-location">{unitLabel}</div>}
+        <div className="stay-card-specs">
+          {r.bedrooms != null && <span>🛏️ {r.bedrooms} BR</span>}
+          {r.bathrooms != null && <span>🛁 {r.bathrooms} BA</span>}
+          {r.capacity != null && <span>👥 Sleeps {r.capacity}</span>}
+          {r.min_nights != null && <span>🌙 {r.min_nights}-night min</span>}
+        </div>
+        <button className="stay-view-btn">View Unit →</button>
       </div>
     </article>
   )
@@ -85,7 +123,22 @@ export default function RentalListings() {
   const [activeType, setActiveType] = useState('all')
   const [sort, setSort] = useState('default')
   const [search, setSearch] = useState('')
+  const [viewMode, setViewMode] = useState('complexes') // 'complexes' | 'units'
+  const [units, setUnits] = useState([])
+  const [unitSummary, setUnitSummary] = useState({})
   const savedSlugs = new Set((savedPlaces || []).map(p => p.slug))
+
+  // Units + per-complex availability summary (booking-platform layer)
+  useEffect(() => {
+    fetch(`${API_BASE}/api/gcr/stay-units`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => {
+        if (!d) return
+        setUnits(d.units || [])
+        setUnitSummary(d.summary || {})
+      })
+      .catch(() => {})
+  }, [])
 
   useEffect(() => {
     async function load() {
@@ -200,7 +253,20 @@ export default function RentalListings() {
         </div>
       </div>
 
+      {/* Complexes / Units view toggle (booking-platform browse modes) */}
+      <div className="staying-view-toggle">
+        <button
+          className={`staying-view-btn ${viewMode === 'complexes' ? 'active' : ''}`}
+          onClick={() => setViewMode('complexes')}
+        >🏢 Complexes</button>
+        <button
+          className={`staying-view-btn ${viewMode === 'units' ? 'active' : ''}`}
+          onClick={() => setViewMode('units')}
+        >🚪 Units{units.length > 0 && <span className="staying-type-count">{units.length}</span>}</button>
+      </div>
+
       {/* Type toggle */}
+      {viewMode === 'complexes' && (
       <div className="staying-type-bar">
         {TYPE_TABS.map(t => (
           <button
@@ -213,6 +279,7 @@ export default function RentalListings() {
           </button>
         ))}
       </div>
+      )}
 
       {/* Search + Sort */}
       <div className="staying-controls">
@@ -234,7 +301,32 @@ export default function RentalListings() {
 
       {/* Grid */}
       <div className="staying-content">
-        {loading ? (
+        {viewMode === 'units' ? (
+          (() => {
+            let unitList = units
+            if (search.trim()) {
+              const q = search.toLowerCase()
+              unitList = unitList.filter(u =>
+                (u.name || '').toLowerCase().includes(q) ||
+                (u.parent_name || '').toLowerCase().includes(q) ||
+                (u.building || '').toLowerCase().includes(q)
+              )
+            }
+            if (sort === 'price_asc') unitList = [...unitList].sort((a, b) => (a.rental?.nightly_price ?? 99999) - (b.rental?.nightly_price ?? 99999))
+            else if (sort === 'name') unitList = [...unitList].sort((a, b) => (a.name || '').localeCompare(b.name || ''))
+            return unitList.length === 0 ? (
+              <div className="staying-empty">
+                <div style={{fontSize:'3rem'}}>🚪</div>
+                <p>No bookable units listed yet{search ? ` for "${search}"` : ''}</p>
+                <p style={{fontSize:13, color:'#5c6b81'}}>Units appear here as complexes list their rentals.</p>
+              </div>
+            ) : (
+              <div className="stay-grid">
+                {unitList.map(u => <UnitCard key={u.slug} unit={u} navigate={navigate} />)}
+              </div>
+            )
+          })()
+        ) : loading ? (
           <div className="staying-loading">
             <div className="staying-spinner" />
             <p>Loading stays...</p>
@@ -254,6 +346,7 @@ export default function RentalListings() {
                 navigate={navigate}
                 savedSlugs={savedSlugs}
                 onSave={handleSave}
+                unitsInfo={unitSummary[e.slug]}
               />
             ))}
           </div>
