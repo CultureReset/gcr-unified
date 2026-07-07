@@ -591,6 +591,24 @@
   font-weight: 600;
 }
 
+/* BusinessCard's CTAs float directly on the photo (inside .card-overlay-info,
+   over the dark gradient scrim) instead of a separate white footer — pill
+   shape + a stronger, blurred backdrop keep them legible over any photo. */
+.card-ctas-floating {
+  margin-top: 12px;
+}
+
+.card-ctas-floating .cta-book,
+.card-ctas-floating .cta-detail {
+  border-radius: 999px;
+}
+
+.card-ctas-floating .cta-detail {
+  background: rgba(255,255,255,0.2);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
 .swipe-actions {
   display: flex;
   flex-direction: column;

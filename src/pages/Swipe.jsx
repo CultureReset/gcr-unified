@@ -1112,33 +1112,32 @@ function BusinessCard({ business, isTop, onDetail, userLocation, swipingDir }) {
               {business.duration && <span className="badge badge-music">⏱ {business.duration}</span>}
             </div>
           )}
+
+          {/* CTAs float directly on the photo — no separate white footer,
+              so the card is full-bleed photo edge to edge like a Tinder card. */}
+          {isTop && (
+            <div className="card-ctas card-ctas-floating" style={!business.booking_url ? {gridTemplateColumns:'1fr'} : undefined}
+              onTouchStart={e => e.stopPropagation()}
+              onTouchMove={e => e.stopPropagation()}
+              onTouchEnd={e => e.stopPropagation()}
+              onPointerDown={e => e.stopPropagation()}
+              onPointerUp={e => e.stopPropagation()}
+            >
+              {business.booking_url && (
+                <a className="cta-book pressable" href={business.booking_url} target="_blank" rel="noopener noreferrer"
+                  onClick={e => e.stopPropagation()}>
+                  📅 Book Now
+                </a>
+              )}
+              <button className="cta-detail pressable"
+                onPointerUp={e => { e.stopPropagation(); onDetail() }}
+                onClick={e => { e.stopPropagation(); onDetail() }}>
+                View Details →
+              </button>
+            </div>
+          )}
         </div>
       </div>
-
-      {/* Body — CTAs only */}
-      {isTop && (
-        <div className="card-body"
-          onTouchStart={e => e.stopPropagation()}
-          onTouchMove={e => e.stopPropagation()}
-          onTouchEnd={e => e.stopPropagation()}
-          onPointerDown={e => e.stopPropagation()}
-          onPointerUp={e => e.stopPropagation()}
-        >
-          <div className="card-ctas" style={!business.booking_url ? {gridTemplateColumns:'1fr'} : undefined}>
-            {business.booking_url && (
-              <a className="cta-book pressable" href={business.booking_url} target="_blank" rel="noopener noreferrer"
-                onClick={e => e.stopPropagation()}>
-                📅 Book Now
-              </a>
-            )}
-            <button className="cta-detail pressable"
-              onPointerUp={e => { e.stopPropagation(); onDetail() }}
-              onClick={e => { e.stopPropagation(); onDetail() }}>
-              View Details →
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   )
 }
