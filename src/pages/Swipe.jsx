@@ -460,8 +460,14 @@ export default function Swipe() {
   function refillDeck(next) {
     if (next.length < 5) {
       const shownIds = new Set(next.map(b => b.id))
-      // Allow same business (slug) to appear multiple times, just not same card instance (id)
-      const remaining = pool.filter(b => !shownIds.has(b.id))
+      // Allow the same business (slug) to appear multiple times in the
+      // INITIAL deck (once per exploded photo-card) — but not once its slug
+      // has actually been swiped. Without the seenSlugs check, once the
+      // real unseen supply in `pool` ran low this refilled from already-
+      // decided cards forever: cards.length never reached 0, so `allGone`
+      // (which requires exactly that) never fired and the deck looped
+      // through repeats instead of ever reaching "You've seen them all!".
+      const remaining = pool.filter(b => !shownIds.has(b.id) && !seenSlugs.includes(b.slug))
       return [...remaining.slice(0, DECK_SIZE - next.length), ...next]
     }
     return next
@@ -731,10 +737,14 @@ export default function Swipe() {
         <button className="swipe-change-btn" onClick={openTripEdit}>Change</button>
         {view === 'swipe' && (
           <span className="swipe-progress">
-            {/* clamp: refillDeck recycles cards from the pool, so the live
-                deck can briefly hold more entries than the de-duplicated
-                `businesses` count — without clamping, "seen" went negative. */}
-            {Math.min(businesses.length, Math.max(0, businesses.length - cards.length))}/{businesses.length}
+            {businesses.length === 0 ? 'All done' : (
+              <>
+                {/* clamp: refillDeck recycles cards from the pool, so the live
+                    deck can briefly hold more entries than the de-duplicated
+                    `businesses` count — without clamping, "seen" went negative. */}
+                {Math.min(businesses.length, Math.max(0, businesses.length - cards.length))}/{businesses.length}
+              </>
+            )}
           </span>
         )}
         {view === 'list' && (
