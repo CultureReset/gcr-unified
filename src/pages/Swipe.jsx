@@ -1111,6 +1111,12 @@ function BusinessCard({ business, isTop, onDetail, userLocation, swipingDir, sav
             </div>
           ) : null}
         </div>
+        {/* Price up top, large — the deciding factor for bookable activities
+            (parasailing, charters, tours) deserves more weight than a small
+            pill buried at the bottom next to the status pill. */}
+        {business.price_per_person && (
+          <div className="card-price-hero">💵 {business.price_per_person}</div>
+        )}
         <div className="card-meta-row">
           {business.city && <span>📍 {business.city}</span>}
           {business.price_range && <><span className="dot">·</span><span>{business.price_range}</span></>}
@@ -1135,9 +1141,6 @@ function BusinessCard({ business, isTop, onDetail, userLocation, swipingDir, sav
               <span className="card-status-dot" />
               {status.label}
             </span>
-          )}
-          {business.price_per_person && (
-            <span className="card-price-pill">💵 {business.price_per_person}</span>
           )}
           {isTop && (
             <div className="card-bottom-actions"
