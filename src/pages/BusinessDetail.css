@@ -1716,3 +1716,76 @@
   text-decoration: none;
   margin-top: 4px;
 }
+
+/* Connected parent backlink (template: "This profile belongs to <parent>") */
+.parent-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 6px 0 2px;
+  padding: 7px 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--chip);
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.parent-link strong { color: var(--accent); }
+
+/* Related profiles (template: same-property businesses) */
+.related-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  text-align: left;
+}
+
+.related-name { font-weight: 600; }
+
+.related-sub {
+  font-size: 12px;
+  color: var(--muted);
+  text-transform: capitalize;
+}
+
+/* Quick facts grid (template: structured info card under the title) */
+.quick-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+  margin: 12px 0 4px;
+  padding: 12px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+}
+
+.qf-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.qf-k {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+.qf-v {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+  text-decoration: none;
+}
+
+a.qf-v { color: var(--accent); }

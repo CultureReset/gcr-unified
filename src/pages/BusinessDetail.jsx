@@ -9,6 +9,7 @@ import BlogSection from '../components/BlogSection'
 import PoliciesSection from '../components/PoliciesSection'
 import BookingCalendar from '../components/BookingCalendar'
 import HubTemplate from '../components/HubTemplate'
+import { fetchChildRentals } from '../services/gcrApi'
 import './BusinessDetail.css'
 import '../components/MiniSiteComponents.css'
 
@@ -51,7 +52,20 @@ export default function RestaurantDetail() {
   const [showAllTags, setShowAllTags] = useState(false)
   const [availability, setAvailability] = useState(null)
   const [failedSlides, setFailedSlides] = useState({})
+  const [siblings, setSiblings] = useState([])
   const subSectionRefs = useRef({})
+
+  // Related profiles: same-property businesses (template: "Related profiles
+  // — same-category businesses connected inside <parent>")
+  useEffect(() => {
+    const pSlug = business?.parent?.slug
+    if (!pSlug) { setSiblings([]); return }
+    let cancelled = false
+    fetchChildRentals(pSlug).then(list => {
+      if (!cancelled) setSiblings((list || []).filter(c => c.slug !== slug).slice(0, 4))
+    })
+    return () => { cancelled = true }
+  }, [business?.parent?.slug, slug])
   const sectionRefs = useRef({})
   const observerRef = useRef(null)
   const detailHeaderRef = useRef(null)
@@ -590,6 +604,45 @@ export default function RestaurantDetail() {
 
         {business.city && <p className="meta">📍 {business.city}, {business.state}</p>}
         {business.rating && <p className="meta">⭐ {business.rating} ({business.review_count || 0} reviews)</p>}
+
+        {/* Connected parent — child profiles link back to their property hub */}
+        {business.parent && (
+          <button className="parent-link" onClick={() => navigate(`/business/${business.parent.slug}`)}>
+            🏛 Part of <strong>{business.parent.name}</strong> →
+          </button>
+        )}
+
+        {/* Quick facts (template: 📍 Location / ☎️ Phone / ✉️ Email card) */}
+        {(business.address_line_1 || business.phone || business.email || business.website_url) && (
+          <div className="quick-facts">
+            {business.address_line_1 && (
+              <div className="qf-item">
+                <span className="qf-k">📍 Location</span>
+                <span className="qf-v">{business.address_line_1}{business.city ? `, ${business.city}` : ''}</span>
+              </div>
+            )}
+            {business.phone && (
+              <div className="qf-item">
+                <span className="qf-k">☎️ Phone</span>
+                <a className="qf-v" href={`tel:${business.phone}`}>{business.phone}</a>
+              </div>
+            )}
+            {business.email && (
+              <div className="qf-item">
+                <span className="qf-k">✉️ Email</span>
+                <a className="qf-v" href={`mailto:${business.email}`}>{business.email}</a>
+              </div>
+            )}
+            {business.website_url && (
+              <div className="qf-item">
+                <span className="qf-k">🌐 Website</span>
+                <a className="qf-v" href={business.website_url} target="_blank" rel="noopener noreferrer">
+                  {business.website_url.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '')}
+                </a>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Tags */}
         {tags.length > 0 && (
@@ -2050,6 +2103,22 @@ export default function RestaurantDetail() {
             <div className="sidebar-card hh-card">
               <h3 className="sidebar-title">🍺 Happy Hour</h3>
               <p>{business.hh_days}</p>
+            </div>
+          )}
+
+          {/* Related profiles — same-property businesses */}
+          {business.parent && siblings.length > 0 && (
+            <div className="sidebar-card">
+              <h3 className="sidebar-title">More at {business.parent.name}</h3>
+              {siblings.map(sib => (
+                <button key={sib.slug} className="sidebar-btn related-btn" onClick={() => navigate(`/business/${sib.slug}`)}>
+                  <span className="related-name">{sib.name}</span>
+                  {sib.type && <span className="related-sub">{String(sib.type).replace(/_/g, ' ')}</span>}
+                </button>
+              ))}
+              <button className="sidebar-btn" onClick={() => navigate(`/business/${business.parent.slug}`)}>
+                🏛 View all at {business.parent.name}
+              </button>
             </div>
           )}
         </aside>
