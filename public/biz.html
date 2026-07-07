@@ -123,15 +123,15 @@ function openBlock(i){
   document.getElementById('pop-title').textContent = bl.title;
   var body = document.getElementById('pop-body');
 
-  // 0. Booking block → its own standalone checkout page
+  // 0a. Cart block → pick items here, then hand off to the universal checkout
+  if(bl.cart){
+    openCart(i); return;
+  }
+
+  // 0b. Booking block → the universal standalone checkout page
   if(bl.checkout){
     if(bl.url){ window.open(bl.url, '_blank'); return; } // business uses an external booking link
-    var slug = slugFromUrl();
-    var ref = new URLSearchParams(location.search).get('ref');
-    var refQ = ref ? (location.pathname.indexOf('/p/')===0 ? '?ref=' : '&ref=')+encodeURIComponent(ref) : '';
-    location.href = (location.pathname.indexOf('/p/')===0
-      ? '/book/'+encodeURIComponent(slug)+'/'+encodeURIComponent(bl.id)
-      : 'book.html?b='+encodeURIComponent(slug)+'&app='+encodeURIComponent(bl.id)) + refQ;
+    location.href = checkoutUrl(bl.id);
     return;
   }
 
@@ -192,6 +192,79 @@ function submitBlock(i){
     er.style.display = 'block'; er.textContent = e.message || 'Something went wrong — try again.';
   });
 }
+
+function checkoutUrl(appId){
+  var slug = slugFromUrl();
+  var ref = new URLSearchParams(location.search).get('ref');
+  var pretty = location.pathname.indexOf('/p/')===0;
+  var refQ = ref ? (pretty ? '?ref=' : '&ref=')+encodeURIComponent(ref) : '';
+  return (pretty
+    ? '/book/'+encodeURIComponent(slug)+'/'+encodeURIComponent(appId)
+    : 'book.html?b='+encodeURIComponent(slug)+'&app='+encodeURIComponent(appId)) + refQ;
+}
+
+/* ── universal cart: any block whose manifest declares cart:{source,into,totalInto}
+      lets guests pick quantities from that data stream, then checks out
+      through the same universal checkout page as every other app ── */
+var CART = {}; // record index -> qty
+function cartItems(bl){ return ((PAGE.data && PAGE.data[bl.cart.source]) || []).filter(function(r){ return r.name && r.price != null && r.price !== ''; }); }
+function cartTotal(bl){
+  var t = 0;
+  cartItems(bl).forEach(function(r, idx){ t += (CART[idx]||0) * (parseFloat(r.price)||0); });
+  return t;
+}
+function openCart(i){
+  CART = {};
+  document.getElementById('pop-title').textContent = PAGE.blocks[i].title;
+  renderCart(i); openPop();
+}
+window.cartAdd = function(i, idx, d){
+  CART[idx] = Math.max(0, (CART[idx]||0) + d);
+  renderCart(i);
+};
+function renderCart(i){
+  var bl = PAGE.blocks[i];
+  var items = cartItems(bl);
+  var bySection = {};
+  items.forEach(function(r, idx){
+    var s = r.section || '';
+    (bySection[s] = bySection[s] || []).push({ r:r, idx:idx });
+  });
+  var html = Object.keys(bySection).map(function(s){
+    return (s?'<label>'+esc(s)+'</label>':'') + bySection[s].map(function(e){
+      var q = CART[e.idx]||0;
+      return '<div class="item"><div style="flex:1"><b>'+esc(e.r.name)+'</b>'+(e.r.desc?'<small>'+esc(e.r.desc)+'</small>':'')+'</div>'+
+        '<span class="pr">$'+esc(e.r.price)+'</span>'+
+        '<span style="display:flex;align-items:center;gap:8px;white-space:nowrap">'+
+          '<button type="button" onclick="cartAdd('+i+','+e.idx+',-1)" style="width:30px;height:30px;border-radius:9px;border:1px solid var(--line);background:#fff;font-weight:900;cursor:pointer'+(q?'':';opacity:.35')+'">−</button>'+
+          '<b style="min-width:14px;text-align:center">'+q+'</b>'+
+          '<button type="button" onclick="cartAdd('+i+','+e.idx+',1)" style="width:30px;height:30px;border-radius:9px;border:none;background:'+accent()+';color:#fff;font-weight:900;cursor:pointer">+</button>'+
+        '</span></div>';
+    }).join('');
+  }).join('');
+  var total = cartTotal(bl);
+  var n = Object.keys(CART).reduce(function(a,k){ return a + CART[k]; }, 0);
+  document.getElementById('pop-body').innerHTML =
+    (items.length ? html : '<div class="ok">Nothing on the menu yet — check back soon!</div>')+
+    (items.length ? '<button class="submit" style="background:'+accent()+(n?'':';opacity:.5')+'" '+(n?'':'disabled')+' onclick="cartCheckout('+i+')">'+
+      (n ? 'Checkout — '+n+' item'+(n>1?'s':'')+' · $'+total.toFixed(2)+' →' : 'Add items to order')+'</button>' : '');
+}
+window.cartCheckout = function(i){
+  var bl = PAGE.blocks[i];
+  var items = cartItems(bl);
+  var lines = [], text = [];
+  items.forEach(function(r, idx){
+    var q = CART[idx]||0; if(!q) return;
+    lines.push({ name:r.name, price:parseFloat(r.price)||0, qty:q });
+    text.push(q+'x '+r.name+' ($'+r.price+')');
+  });
+  if(!lines.length) return;
+  var values = {};
+  values[bl.cart.into||'items'] = text.join('\n');
+  if(bl.cart.totalInto) values[bl.cart.totalInto] = cartTotal(bl).toFixed(2);
+  try{ sessionStorage.setItem('cc_prefill:'+slugFromUrl()+':'+bl.id, JSON.stringify({ values:values, price:cartTotal(bl), lines:lines })); }catch(e){}
+  location.href = checkoutUrl(bl.id);
+};
 
 function openPop(){ document.getElementById('pop').classList.add('open'); }
 function closePop(){ document.getElementById('pop').classList.remove('open'); }
