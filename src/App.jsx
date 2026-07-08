@@ -39,6 +39,7 @@ import ServiceListings from './pages/ServiceListings'
 import ServiceDetail from './pages/ServiceDetail'
 import BookService from './pages/BookService'
 import Reserve from './pages/Reserve'
+import TransportationRequest from './pages/TransportationRequest'
 import Confirmation from './pages/Confirmation'
 import Deals from './pages/Deals'
 import ArHunts from './pages/ArHunts'
@@ -147,6 +148,7 @@ function AppRoutes() {
         <Route path="/service/:slug" element={<ServiceDetail />} />
         <Route path="/book-service/:slug" element={<BookService />} />
         <Route path="/reserve/:slug" element={<Reserve />} />
+        <Route path="/transportation/:slug" element={<TransportationRequest />} />
         <Route path="/setup/*" element={<RequireAuth><Setup /></RequireAuth>} />
         <Route path="/home" element={<RequireAuth><Home /></RequireAuth>} />
         <Route path="/swipe/:category" element={<Swipe />} />

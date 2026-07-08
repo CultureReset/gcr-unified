@@ -736,7 +736,7 @@ export default function RestaurantDetail() {
           const bookLabel = isActivity ? '🎟️ Book This Activity' : isService ? '📅 Schedule Service' : isShopping ? '🛍️ Shop Online' : '📅 Book Now'
           const hasExternalCta = business.reservation_url || business.order_url || business.booking_url
           const showGcrReserve = !hasExternalCta && (isFood || business.reservable)
-          return (hasExternalCta || showGcrReserve) ? (
+          return (hasExternalCta || showGcrReserve || business.offers_transportation) ? (
             <div className="primary-cta">
               {business.reservation_url && (
                 <a href={business.reservation_url} onClick={e => trackAndOpen(e, business.reservation_url, 'reserve')} target="_blank" rel="noopener noreferrer" className="btn-primary-cta">{reserveLabel}</a>
@@ -751,6 +751,9 @@ export default function RestaurantDetail() {
               )}
               {showGcrReserve && (
                 <button onClick={() => trackAndNavigate(`/reserve/${business.slug}`, 'reserve')} className="btn-primary-cta">📅 Reserve a Table</button>
+              )}
+              {business.offers_transportation && (
+                <button onClick={() => trackAndNavigate(`/transportation/${business.slug}`, 'transportation')} className="btn-primary-cta">🚗 Request Pickup</button>
               )}
             </div>
           ) : null

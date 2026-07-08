@@ -51,6 +51,21 @@ export default function Confirmation() {
         { label: 'View My Bookings', path: '/my-bookings' },
       ],
     },
+    transportation: {
+      title: 'Ride Requested!',
+      subtitle: "We're finding you a driver",
+      status: 'Dispatching',
+      nextStep: 'A local driver will text you a price to confirm — usually within a few minutes',
+      messages: [
+        '📱 Watch for a text with your driver\'s bid',
+        '✅ Reply YES to confirm or NO to get another driver',
+        '💳 You pay the driver directly — nothing is charged here',
+      ],
+      buttons: [
+        { label: 'Back Home', path: '/' },
+        { label: 'View My Bookings', path: '/my-bookings' },
+      ],
+    },
   }
 
   const data = confirmationData[type] || confirmationData.rental
