@@ -176,6 +176,28 @@
   color: #222;
 }
 
+.reserve-addon {
+  background: #f0f4ff;
+  border: 1px solid #dbe4ff;
+  border-radius: 10px;
+  padding: 14px;
+}
+.reserve-addon-fields {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #dbe4ff;
+}
+.reserve-addon-fields input {
+  width: 100%;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 13px;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
 .party-stepper {
   display: flex;
   align-items: center;

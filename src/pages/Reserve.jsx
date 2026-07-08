@@ -64,6 +64,14 @@ export default function Reserve() {
   const [time, setTime] = useState(null)
   const [notes, setNotes] = useState('')
 
+  // Transportation add-on — available on ANY booking, not just pickup/delivery
+  // businesses like Gulf Coast Luggo. GCR brokers this out via SMS dispatch
+  // (POST /api/transportation/request), separate from the reservation itself.
+  const [wantsRide, setWantsRide] = useState(false)
+  const [ridePickup, setRidePickup] = useState('')
+  const [rideDropoff, setRideDropoff] = useState('')
+  const [rideWindow, setRideWindow] = useState('')
+
   useEffect(() => {
     async function load() {
       setLoading(true)
@@ -188,6 +196,26 @@ export default function Reserve() {
       })
       if (!res.ok) throw new Error('Reservation request failed')
       const data = await res.json()
+
+      if (wantsRide && ridePickup.trim() && rideDropoff.trim()) {
+        fetch(`${API_BASE}/api/transportation/request`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            source: 'reservation_addon',
+            linked_entity_slug: slug,
+            customer_name: guestName.trim(),
+            customer_phone: guestPhone.trim(),
+            request_type: 'passenger',
+            pickup_location: ridePickup.trim(),
+            dropoff_location: rideDropoff.trim(),
+            pickup_date: date,
+            pickup_window: rideWindow,
+            passengers: partySize,
+          }),
+        }).catch(() => {})
+      }
+
       navigate(`/confirmation/reservation/${data.log_id || 'pending'}`)
     } catch (err) {
       setToast({ message: err.message, type: 'error' })
@@ -310,6 +338,21 @@ export default function Reserve() {
             <section className="reserve-section">
               <h2>Special Requests (Optional)</h2>
               <textarea placeholder="Allergies, occasion, seating preference..." value={notes} onChange={e => setNotes(e.target.value)} rows={3} />
+            </section>
+
+            <section className="reserve-section reserve-addon">
+              <label className="reserve-consent-row">
+                <input type="checkbox" checked={wantsRide} onChange={e => setWantsRide(e.target.checked)} />
+                <span>🚗 Need a ride to or from {business.name}?</span>
+              </label>
+              {wantsRide && (
+                <div className="reserve-addon-fields">
+                  <input type="text" placeholder="Pickup location" value={ridePickup} onChange={e => setRidePickup(e.target.value)} required={wantsRide} />
+                  <input type="text" placeholder="Drop-off location" value={rideDropoff} onChange={e => setRideDropoff(e.target.value)} required={wantsRide} />
+                  <input type="text" placeholder="Preferred time (e.g. 6:30 PM)" value={rideWindow} onChange={e => setRideWindow(e.target.value)} />
+                  <p className="reserve-consent-text">A local driver is offered this trip separately and will text you a price to confirm — not run or guaranteed by {business.name}.</p>
+                </div>
+              )}
             </section>
 
             {(business.deposit_amount || business.cancellation_policy || business.refund_policy) && (
