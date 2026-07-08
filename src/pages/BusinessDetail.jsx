@@ -34,6 +34,22 @@ export default function RestaurantDetail() {
     window.open(ref ? `${url}${sep}gcr_ref=${encodeURIComponent(ref)}` : url, '_blank', 'noopener,noreferrer')
   }
 
+  // Same click attribution as trackAndOpen, but for internal GCR pages (e.g.
+  // the Reserve flow) — navigates in-app instead of opening a new tab, so we
+  // know this session came specifically from the booking CTA, not a generic
+  // page visit.
+  async function trackAndNavigate(path, type) {
+    let cid = ''
+    try {
+      const r = await authFetch('/api/tourist/track-click', {
+        method: 'POST',
+        body: JSON.stringify({ entity_slug: slug, click_type: type, target_url: path }),
+      })
+      if (r.ok) { const d = await r.json().catch(() => ({})); cid = d.click_id || '' }
+    } catch { /* never block navigation */ }
+    navigate(cid ? `${path}?cid=${encodeURIComponent(cid)}` : path)
+  }
+
   const [business, setBusiness] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -734,7 +750,7 @@ export default function RestaurantDetail() {
                 <a href={business.booking_url} onClick={e => trackAndOpen(e, business.booking_url, 'book')} target="_blank" rel="noopener noreferrer" className="btn-primary-cta">{bookLabel}</a>
               )}
               {showGcrReserve && (
-                <button onClick={() => navigate(`/reserve/${business.slug}`)} className="btn-primary-cta">📅 Reserve a Table</button>
+                <button onClick={() => trackAndNavigate(`/reserve/${business.slug}`, 'reserve')} className="btn-primary-cta">📅 Reserve a Table</button>
               )}
             </div>
           ) : null

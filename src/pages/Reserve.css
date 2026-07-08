@@ -110,6 +110,31 @@
   resize: vertical;
 }
 
+.reserve-consent-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-bottom: 8px;
+}
+
+.reserve-consent-row input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  margin-top: 1px;
+  accent-color: #667eea;
+}
+
+.reserve-consent-text {
+  font-size: 11px;
+  color: #999;
+  line-height: 1.5;
+  margin: 0;
+}
+
 .party-stepper {
   display: flex;
   align-items: center;

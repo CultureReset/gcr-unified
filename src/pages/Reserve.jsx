@@ -1,9 +1,11 @@
 import { useEffect, useState, useMemo } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import Toast from '../components/Toast'
 import './Reserve.css'
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'https://gcr-api-clean.vercel.app'
+
+const SMS_CONSENT_TEXT = 'By checking this box, you agree to receive text messages about this booking from Gulf Coast Radar and the business at the phone number provided. Msg & data rates may apply, message frequency varies. Reply STOP to opt out at any time. Consent is not a condition of purchase.'
 
 // Common dinner-service window, in 30-min increments — used as a fallback
 // grid whenever a business hasn't set up (or synced from FareHarbor/Peak/
@@ -28,6 +30,8 @@ function todayISO() {
 export default function Reserve() {
   const { slug } = useParams()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const clickId = searchParams.get('cid') || null
 
   const [business, setBusiness] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -35,12 +39,21 @@ export default function Reserve() {
   const [toast, setToast] = useState(null)
   const [submitting, setSubmitting] = useState(false)
 
-  const [partySize, setPartySize] = useState(2)
-  const [date, setDate] = useState(todayISO())
-  const [time, setTime] = useState(null)
+  // Opt-in gate — captured before the rest of the booking flow so the
+  // business has a name + phone on file even if the customer abandons
+  // checkout, and so SMS only ever goes to numbers with explicit consent
+  // (required until A2P 10DLC approval is in place).
+  const [optedIn, setOptedIn] = useState(false)
+  const [optInId, setOptInId] = useState(null)
+  const [optInSubmitting, setOptInSubmitting] = useState(false)
+  const [smsConsent, setSmsConsent] = useState(false)
   const [guestName, setGuestName] = useState('')
   const [guestEmail, setGuestEmail] = useState('')
   const [guestPhone, setGuestPhone] = useState('')
+
+  const [partySize, setPartySize] = useState(2)
+  const [date, setDate] = useState(todayISO())
+  const [time, setTime] = useState(null)
   const [notes, setNotes] = useState('')
 
   useEffect(() => {
@@ -82,10 +95,40 @@ export default function Reserve() {
       }))
     : defaultTimeOptions()
 
+  async function handleOptInContinue(e) {
+    e.preventDefault()
+    if (!guestName.trim()) { setToast({ message: 'Name required', type: 'error' }); return }
+    if (!guestPhone.trim()) { setToast({ message: 'Phone number required', type: 'error' }); return }
+
+    setOptInSubmitting(true)
+    try {
+      const res = await fetch(`${API_BASE}/api/gcr/opt-in`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          entity_slug: slug,
+          click_id: clickId,
+          name: guestName.trim(),
+          phone: guestPhone.trim(),
+          email: guestEmail.trim() || null,
+          sms_consent: smsConsent,
+          consent_text: smsConsent ? SMS_CONSENT_TEXT : null,
+        }),
+      })
+      if (!res.ok) throw new Error('Could not continue — please try again')
+      const data = await res.json()
+      setOptInId(data.opt_in_id || null)
+      setOptedIn(true)
+    } catch (err) {
+      setToast({ message: err.message, type: 'error' })
+    } finally {
+      setOptInSubmitting(false)
+    }
+  }
+
   async function handleSubmit(e) {
     e.preventDefault()
     if (!time) { setToast({ message: 'Pick a time', type: 'error' }); return }
-    if (!guestName.trim()) { setToast({ message: 'Name required', type: 'error' }); return }
 
     setSubmitting(true)
     try {
@@ -100,8 +143,11 @@ export default function Reserve() {
           event_time: time,
           party_size: partySize,
           customer_name: guestName.trim(),
+          customer_email: guestEmail.trim() || null,
+          customer_phone: guestPhone.trim() || null,
+          opt_in_id: optInId,
           status: 'pending',
-          notes: [guestEmail && `Email: ${guestEmail}`, guestPhone && `Phone: ${guestPhone}`, notes].filter(Boolean).join(' · '),
+          notes,
         }),
       })
       if (!res.ok) throw new Error('Reservation request failed')
@@ -137,68 +183,84 @@ export default function Reserve() {
         )}
         {business.description && <p className="reserve-biz-desc">{business.description}</p>}
 
-        <form onSubmit={handleSubmit} className="reserve-form">
-          <section className="reserve-section">
-            <h2>Party Size</h2>
-            <div className="party-stepper">
-              <button type="button" onClick={() => setPartySize(p => Math.max(1, p - 1))}>−</button>
-              <span>{partySize} {partySize === 1 ? 'guest' : 'guests'}</span>
-              <button type="button" onClick={() => setPartySize(p => Math.min(20, p + 1))}>+</button>
-            </div>
-          </section>
+        {!optedIn ? (
+          <form onSubmit={handleOptInContinue} className="reserve-form">
+            <section className="reserve-section">
+              <h2>Your Information</h2>
+              <input type="text" placeholder="Full Name" value={guestName} onChange={e => setGuestName(e.target.value)} required />
+              <input type="tel" placeholder="Phone Number" value={guestPhone} onChange={e => setGuestPhone(e.target.value)} required />
+              <input type="email" placeholder="Email (optional)" value={guestEmail} onChange={e => setGuestEmail(e.target.value)} />
+            </section>
 
-          <section className="reserve-section">
-            <h2>Date</h2>
-            <input
-              type="date"
-              value={date}
-              min={todayISO()}
-              onChange={e => { setDate(e.target.value); setTime(null) }}
-              required
-            />
-          </section>
+            <section className="reserve-section">
+              <label className="reserve-consent-row">
+                <input type="checkbox" checked={smsConsent} onChange={e => setSmsConsent(e.target.checked)} />
+                <span>Text me updates about this booking</span>
+              </label>
+              <p className="reserve-consent-text">{SMS_CONSENT_TEXT}</p>
+            </section>
 
-          <section className="reserve-section">
-            <h2>Time</h2>
-            {!hasRealSlots && (
-              <p className="reserve-time-note">Showing typical hours — exact time will be confirmed by the restaurant.</p>
-            )}
-            <div className="time-grid">
-              {timeOptions.map(t => (
-                <button
-                  key={t.value}
-                  type="button"
-                  disabled={t.full}
-                  className={`time-slot ${time === t.value ? 'active' : ''} ${t.full ? 'full' : ''}`}
-                  onClick={() => setTime(t.value)}
-                >
-                  {t.label}
-                  {hasRealSlots && !t.full && t.remaining != null && <span className="time-slot-spots">{t.remaining} left</span>}
-                  {t.full && <span className="time-slot-spots">Full</span>}
-                </button>
-              ))}
-            </div>
-          </section>
+            <button type="submit" className="reserve-submit" disabled={optInSubmitting}>
+              {optInSubmitting ? 'Please wait...' : 'Continue'}
+            </button>
+          </form>
+        ) : (
+          <form onSubmit={handleSubmit} className="reserve-form">
+            <section className="reserve-section">
+              <h2>Party Size</h2>
+              <div className="party-stepper">
+                <button type="button" onClick={() => setPartySize(p => Math.max(1, p - 1))}>−</button>
+                <span>{partySize} {partySize === 1 ? 'guest' : 'guests'}</span>
+                <button type="button" onClick={() => setPartySize(p => Math.min(20, p + 1))}>+</button>
+              </div>
+            </section>
 
-          <section className="reserve-section">
-            <h2>Your Information</h2>
-            <input type="text" placeholder="Full Name" value={guestName} onChange={e => setGuestName(e.target.value)} required />
-            <input type="email" placeholder="Email" value={guestEmail} onChange={e => setGuestEmail(e.target.value)} />
-            <input type="tel" placeholder="Phone" value={guestPhone} onChange={e => setGuestPhone(e.target.value)} />
-          </section>
+            <section className="reserve-section">
+              <h2>Date</h2>
+              <input
+                type="date"
+                value={date}
+                min={todayISO()}
+                onChange={e => { setDate(e.target.value); setTime(null) }}
+                required
+              />
+            </section>
 
-          <section className="reserve-section">
-            <h2>Special Requests (Optional)</h2>
-            <textarea placeholder="Allergies, occasion, seating preference..." value={notes} onChange={e => setNotes(e.target.value)} rows={3} />
-          </section>
+            <section className="reserve-section">
+              <h2>Time</h2>
+              {!hasRealSlots && (
+                <p className="reserve-time-note">Showing typical hours — exact time will be confirmed by the restaurant.</p>
+              )}
+              <div className="time-grid">
+                {timeOptions.map(t => (
+                  <button
+                    key={t.value}
+                    type="button"
+                    disabled={t.full}
+                    className={`time-slot ${time === t.value ? 'active' : ''} ${t.full ? 'full' : ''}`}
+                    onClick={() => setTime(t.value)}
+                  >
+                    {t.label}
+                    {hasRealSlots && !t.full && t.remaining != null && <span className="time-slot-spots">{t.remaining} left</span>}
+                    {t.full && <span className="time-slot-spots">Full</span>}
+                  </button>
+                ))}
+              </div>
+            </section>
 
-          <button type="submit" className="reserve-submit" disabled={submitting}>
-            {submitting ? 'Sending...' : `Request Table for ${partySize}`}
-          </button>
-          <p className="reserve-disclaimer">
-            This sends a reservation request to {business.name} — no payment is collected here.
-          </p>
-        </form>
+            <section className="reserve-section">
+              <h2>Special Requests (Optional)</h2>
+              <textarea placeholder="Allergies, occasion, seating preference..." value={notes} onChange={e => setNotes(e.target.value)} rows={3} />
+            </section>
+
+            <button type="submit" className="reserve-submit" disabled={submitting}>
+              {submitting ? 'Sending...' : `Request Table for ${partySize}`}
+            </button>
+            <p className="reserve-disclaimer">
+              This sends a reservation request to {business.name} — no payment is collected here.
+            </p>
+          </form>
+        )}
       </div>
     </div>
   )
