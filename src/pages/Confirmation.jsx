@@ -36,6 +36,21 @@ export default function Confirmation() {
         { label: 'View My Bookings', path: '/my-bookings' },
       ],
     },
+    reservation: {
+      title: 'Reservation Requested!',
+      subtitle: 'Your table request has been sent',
+      status: 'Awaiting Confirmation',
+      nextStep: 'The restaurant will confirm your requested time — exact time may be adjusted based on availability',
+      messages: [
+        '📧 A confirmation email has been sent to your email address',
+        '📞 The restaurant may call to confirm details',
+        '⏰ You\'ll be notified when they confirm your reservation',
+      ],
+      buttons: [
+        { label: 'Back to Restaurants', path: '/restaurants' },
+        { label: 'View My Bookings', path: '/my-bookings' },
+      ],
+    },
   }
 
   const data = confirmationData[type] || confirmationData.rental
