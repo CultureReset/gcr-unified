@@ -1,4 +1,5 @@
 import { API_BASE } from '../config'
+import { anonymousVisitorId } from '../context/AppContext'
 
 export function calcDistance(lat1, lng1, lat2, lng2) {
   if (lat1 == null || lng1 == null || lat2 == null || lng2 == null) return null
@@ -354,11 +355,13 @@ export async function fetchLiveNow(touristId = null) {
 // Fetch this user's preference scores — returns a tag→score map
 export async function fetchPreferences() {
   const token = localStorage.getItem('gcr_access_token')
-  if (!token) return {}
+  // A guest's own in-session swipes/saves are already being recorded under
+  // their guest id (see AppContext's authHeaders) — fetch by the same id so
+  // their live deck can personalize immediately instead of only after they
+  // sign up.
+  const headers = token ? { Authorization: `Bearer ${token}` } : { 'X-Guest-Id': anonymousVisitorId() }
   try {
-    const r = await fetch(`${API_BASE}/api/tourist/preferences`, {
-      headers: { Authorization: `Bearer ${token}` }
-    })
+    const r = await fetch(`${API_BASE}/api/tourist/preferences`, { headers })
     if (!r.ok) return {}
     const d = await r.json()
     const map = {}
