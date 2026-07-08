@@ -51,6 +51,14 @@ export default function Reserve() {
   const [guestEmail, setGuestEmail] = useState('')
   const [guestPhone, setGuestPhone] = useState('')
 
+  // Waiver — clickwrap (typed name already collected above + checkbox),
+  // shown only when the business has turned waiver_required on.
+  const [waiverAgreed, setWaiverAgreed] = useState(false)
+  const [waiverSigned, setWaiverSigned] = useState(false)
+  const [waiverId, setWaiverId] = useState(null)
+  const [waiverSubmitting, setWaiverSubmitting] = useState(false)
+  const [signatureTypedName, setSignatureTypedName] = useState('')
+
   const [partySize, setPartySize] = useState(2)
   const [date, setDate] = useState(todayISO())
   const [time, setTime] = useState(null)
@@ -126,6 +134,34 @@ export default function Reserve() {
     }
   }
 
+  async function handleWaiverSign(e) {
+    e.preventDefault()
+    if (!waiverAgreed) { setToast({ message: 'Check the box to agree to the waiver', type: 'error' }); return }
+
+    setWaiverSubmitting(true)
+    try {
+      const res = await fetch(`${API_BASE}/api/gcr/waiver/${slug}/sign`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          customer_name: guestName.trim(),
+          customer_email: guestEmail.trim() || null,
+          customer_phone: guestPhone.trim() || null,
+          waiver_text: business.waiver_text,
+          signature_typed_name: signatureTypedName.trim(),
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Could not sign waiver')
+      setWaiverId(data.waiver_id || null)
+      setWaiverSigned(true)
+    } catch (err) {
+      setToast({ message: err.message, type: 'error' })
+    } finally {
+      setWaiverSubmitting(false)
+    }
+  }
+
   async function handleSubmit(e) {
     e.preventDefault()
     if (!time) { setToast({ message: 'Pick a time', type: 'error' }); return }
@@ -147,7 +183,7 @@ export default function Reserve() {
           customer_phone: guestPhone.trim() || null,
           opt_in_id: optInId,
           status: 'pending',
-          notes,
+          notes: [notes, waiverId && `Waiver ID: ${waiverId}`].filter(Boolean).join(' | '),
         }),
       })
       if (!res.ok) throw new Error('Reservation request failed')
@@ -204,6 +240,29 @@ export default function Reserve() {
               {optInSubmitting ? 'Please wait...' : 'Continue'}
             </button>
           </form>
+        ) : business.waiver_required && !waiverSigned ? (
+          <form onSubmit={handleWaiverSign} className="reserve-form">
+            <section className="reserve-section">
+              <h2>Waiver</h2>
+              <div className="reserve-waiver-text">{business.waiver_text}</div>
+              {business.waiver_document_url && (
+                <a href={business.waiver_document_url} target="_blank" rel="noopener noreferrer" className="reserve-doc-link">📄 View full waiver document</a>
+              )}
+            </section>
+
+            <section className="reserve-section">
+              <label className="reserve-consent-row">
+                <input type="checkbox" checked={waiverAgreed} onChange={e => setWaiverAgreed(e.target.checked)} />
+                <span>I have read and agree to the waiver above</span>
+              </label>
+              <p className="reserve-consent-text">Type your full name exactly as entered above to sign.</p>
+              <input type="text" placeholder="Type your full name to sign" value={signatureTypedName} onChange={e => setSignatureTypedName(e.target.value)} required />
+            </section>
+
+            <button type="submit" className="reserve-submit" disabled={waiverSubmitting || !waiverAgreed}>
+              {waiverSubmitting ? 'Signing...' : 'Agree & Sign'}
+            </button>
+          </form>
         ) : (
           <form onSubmit={handleSubmit} className="reserve-form">
             <section className="reserve-section">
@@ -252,6 +311,33 @@ export default function Reserve() {
               <h2>Special Requests (Optional)</h2>
               <textarea placeholder="Allergies, occasion, seating preference..." value={notes} onChange={e => setNotes(e.target.value)} rows={3} />
             </section>
+
+            {(business.deposit_amount || business.cancellation_policy || business.refund_policy) && (
+              <section className="reserve-section reserve-policies">
+                <h2>Policies</h2>
+                {business.deposit_amount && (
+                  <p><strong>Deposit:</strong> {business.deposit_type === 'percent' ? `${business.deposit_amount}%` : `$${business.deposit_amount}`}</p>
+                )}
+                {business.cancellation_policy && (
+                  <div>
+                    <strong>Cancellation Policy</strong>
+                    <p>{business.cancellation_policy}</p>
+                    {business.cancellation_policy_doc_url && (
+                      <a href={business.cancellation_policy_doc_url} target="_blank" rel="noopener noreferrer" className="reserve-doc-link">📄 Full document</a>
+                    )}
+                  </div>
+                )}
+                {business.refund_policy && (
+                  <div>
+                    <strong>Refund Policy</strong>
+                    <p>{business.refund_policy}</p>
+                    {business.refund_policy_doc_url && (
+                      <a href={business.refund_policy_doc_url} target="_blank" rel="noopener noreferrer" className="reserve-doc-link">📄 Full document</a>
+                    )}
+                  </div>
+                )}
+              </section>
+            )}
 
             <button type="submit" className="reserve-submit" disabled={submitting}>
               {submitting ? 'Sending...' : `Request Table for ${partySize}`}

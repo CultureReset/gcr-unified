@@ -132,7 +132,48 @@
   font-size: 11px;
   color: #999;
   line-height: 1.5;
-  margin: 0;
+  margin: 0 0 10px;
+}
+
+.reserve-waiver-text {
+  max-height: 240px;
+  overflow-y: auto;
+  padding: 14px;
+  background: #f9f9f9;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #444;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  margin-bottom: 10px;
+}
+
+.reserve-doc-link {
+  display: inline-block;
+  font-size: 13px;
+  color: #667eea;
+  font-weight: 600;
+  text-decoration: none;
+}
+.reserve-doc-link:hover { text-decoration: underline; }
+
+.reserve-policies {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 16px;
+}
+.reserve-policies h2 { margin-top: 0; }
+.reserve-policies p {
+  font-size: 13px;
+  color: #555;
+  line-height: 1.5;
+  margin: 4px 0 10px;
+}
+.reserve-policies strong {
+  font-size: 13px;
+  color: #222;
 }
 
 .party-stepper {
