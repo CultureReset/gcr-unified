@@ -1875,3 +1875,71 @@ a.qf-v { color: var(--accent); }
 /* ── Perfect For ── */
 .perfect-for-section { margin-top: 12px; }
 .perfect-for-section h3 { font-size: 14px; margin-bottom: 6px; }
+
+/* ── Deals ── */
+.bd-deals-list { display: flex; flex-direction: column; gap: 16px; }
+.bd-deal-card {
+  background: var(--card);
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--border, rgba(0,0,0,.08));
+  transition: box-shadow .2s;
+}
+.bd-deal-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,.1); }
+.bd-deal-urgent { border-left: 4px solid #e85d3a; }
+.bd-deal-featured { border-left: 4px solid #d97706; }
+.bd-deal-img {
+  height: 160px;
+  background-size: cover;
+  background-position: center;
+  position: relative;
+}
+.bd-deal-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: #e85d3a;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 6px;
+}
+.bd-deal-badge--today { background: #d97706; left: 10px; right: auto; }
+.bd-deal-body { padding: 14px 16px; }
+.bd-deal-type {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  color: var(--accent);
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+.bd-deal-headline {
+  font-size: 17px;
+  font-weight: 700;
+  margin: 0 0 6px;
+  color: var(--ink);
+}
+.bd-deal-desc { font-size: 14px; color: var(--muted, #6b7280); margin: 0 0 10px; line-height: 1.4; }
+.bd-deal-meta { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 10px; }
+.bd-deal-price { font-size: 18px; font-weight: 800; color: var(--accent); }
+.bd-deal-was { font-size: 13px; color: var(--muted, #6b7280); margin-left: 6px; }
+.bd-deal-spots { font-size: 13px; font-weight: 600; color: #059669; }
+.bd-deal-spots.low { color: #d97706; }
+.bd-deal-spots.critical { color: #e85d3a; }
+.bd-deal-timer { font-size: 12px; color: var(--muted, #6b7280); }
+.bd-deal-cta {
+  display: inline-block;
+  background: var(--accent);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 8px 18px;
+  border-radius: 8px;
+  text-decoration: none;
+  cursor: pointer;
+  border: none;
+  transition: background .15s;
+}
+.bd-deal-cta:hover { background: var(--accent-dark, #c44d00); }

@@ -423,6 +423,7 @@ export default function RestaurantDetail() {
   const activityOptions = business.activity_options || []
   const fishSpecies = business.fish_species || []
   const loyaltyProgram = business.loyalty_program || null
+  const deals = business.deals || []
   const announcements = business.announcements || []
   const socialPosts = business.social_posts || []
   const hasSocialPosts = socialPosts.length > 0
@@ -436,6 +437,7 @@ export default function RestaurantDetail() {
   const hasMeetingPoints = meetingPoints.length > 0
   const hasFishSpecies = fishSpecies.length > 0
   const hasActivityOptions = activityOptions.length > 0
+  const hasDeals = deals.length > 0
   const hasAmenities = amenities.length > 0 || entityAmenities.length > 0 || ownAmenities.length > 0 || complexAmenities.length > 0
   const hasAboutBullets = aboutBullets.length > 0
   const hasPerfectFor = perfectFor.length > 0
@@ -465,6 +467,8 @@ export default function RestaurantDetail() {
     ...(hasActivityOptions ? [{ id: 'options', label: 'Options', icon: '🎛️' }] : []),
     ...(hasMeetingPoints  ? [{ id: 'meeting',  label: 'Meeting Point', icon: '📌' }] : []),
     ...(hasFishSpecies    ? [{ id: 'fish',     label: 'Fish Species',  icon: '🐟' }] : []),
+    // Deals
+    ...(hasDeals      ? [{ id: 'deals',     label: `Deals (${deals.length})`, icon: '🔥' }] : []),
     // Common
     ...(hours.length  ? [{ id: 'hours',     label: 'Hours',        icon: '🕐' }] : []),
     ...(events.length ? [{ id: 'events',    label: 'Events',       icon: '🎉' }] : []),
@@ -1496,6 +1500,62 @@ export default function RestaurantDetail() {
                     </div>
                   )
                 })()}
+            </section>
+          )}
+
+          {/* Deals */}
+          {hasDeals && (
+            <section className="content-section" ref={el => { sectionRefs.current["deals"] = el }} id="section-deals">
+              <h2>🔥 Deals & Specials</h2>
+              <div className="bd-deals-list">
+                {deals.map((deal, i) => {
+                  const discPct = deal.discount_pct || (deal.original_price && deal.deal_price ? Math.round((1 - deal.deal_price / deal.original_price) * 100) : null)
+                  const timeLeft = deal.expires_at ? (() => {
+                    const diff = new Date(deal.expires_at) - Date.now()
+                    if (diff <= 0) return 'Expired'
+                    const h = Math.floor(diff / 3600000)
+                    const m = Math.floor((diff % 3600000) / 60000)
+                    if (h > 24) return `${Math.floor(h / 24)}d left`
+                    if (h > 0) return `${h}h ${m}m left`
+                    return `${m}m left`
+                  })() : null
+                  const isUrgent = deal.is_today_only || (deal.spots_remaining != null && deal.spots_remaining <= 3)
+                  return (
+                    <div key={deal.id || i} className={`bd-deal-card${isUrgent ? ' bd-deal-urgent' : ''}${deal.is_featured ? ' bd-deal-featured' : ''}`}>
+                      {deal.image_url && (
+                        <div className="bd-deal-img" style={{ backgroundImage: `url(${deal.image_url})` }}>
+                          {discPct && <span className="bd-deal-badge">-{discPct}%</span>}
+                          {deal.is_today_only && <span className="bd-deal-badge bd-deal-badge--today">Today Only</span>}
+                        </div>
+                      )}
+                      <div className="bd-deal-body">
+                        <div className="bd-deal-type">{deal.deal_type?.replace(/_/g, ' ')}</div>
+                        <h3 className="bd-deal-headline">{deal.headline}</h3>
+                        {deal.description && <p className="bd-deal-desc">{deal.description}</p>}
+                        <div className="bd-deal-meta">
+                          {deal.deal_price != null && (
+                            <span className="bd-deal-price">
+                              ${deal.deal_price}{deal.price_unit ? `/${deal.price_unit}` : ''}
+                              {deal.original_price && <s className="bd-deal-was">${deal.original_price}</s>}
+                            </span>
+                          )}
+                          {deal.spots_remaining != null && (
+                            <span className={`bd-deal-spots${deal.spots_remaining <= 2 ? ' critical' : deal.spots_remaining <= 5 ? ' low' : ''}`}>
+                              {deal.spots_remaining <= 0 ? 'Sold out' : `${deal.spots_remaining} spot${deal.spots_remaining !== 1 ? 's' : ''} left`}
+                            </span>
+                          )}
+                          {timeLeft && timeLeft !== 'Expired' && <span className="bd-deal-timer">⏳ {timeLeft}</span>}
+                        </div>
+                        {deal.claim_url ? (
+                          <a href={deal.claim_url} target="_blank" rel="noopener noreferrer" className="bd-deal-cta" onClick={e => e.stopPropagation()}>View Deal →</a>
+                        ) : deal.claim_phone ? (
+                          <a href={`tel:${deal.claim_phone.replace(/\D/g, '')}`} className="bd-deal-cta" onClick={e => e.stopPropagation()}>📞 Call to Claim</a>
+                        ) : null}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
             </section>
           )}
 
