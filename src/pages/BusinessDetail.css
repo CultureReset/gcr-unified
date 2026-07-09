@@ -1791,3 +1791,87 @@
 }
 
 a.qf-v { color: var(--accent); }
+
+/* ── Price Tiers (offerings + pricing items) ── */
+.offering-tiers, .pricing-tiers {
+  margin-top: 6px;
+  padding: 6px 0 0;
+  border-top: 1px dashed var(--border);
+}
+.tier-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 3px 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+.tier-label { flex: 1; }
+.tier-age { font-size: 12px; color: var(--muted); opacity: .8; }
+.tier-price { font-weight: 600; color: var(--ink); margin-left: 12px; }
+
+/* ── Room amenities ── */
+.room-amenities-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+.room-amenity-chip {
+  display: inline-block;
+  padding: 2px 8px;
+  background: var(--chip);
+  border-radius: 4px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* ── Activity options ── */
+.activity-options-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.activity-option-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+.activity-option-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.activity-option-name { font-weight: 600; font-size: 15px; }
+.activity-option-price { font-weight: 700; color: var(--accent); font-size: 15px; }
+.activity-option-desc { font-size: 13px; color: var(--muted); margin: 6px 0 0; }
+.activity-option-meta {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* ── About bullets ── */
+.about-bullets ul {
+  list-style: none;
+  padding: 0;
+  margin: 12px 0 0;
+}
+.about-bullets li {
+  padding: 4px 0;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.about-bullets li::before {
+  content: '•';
+  color: var(--accent);
+  font-weight: 700;
+  margin-right: 8px;
+}
+
+/* ── Perfect For ── */
+.perfect-for-section { margin-top: 12px; }
+.perfect-for-section h3 { font-size: 14px; margin-bottom: 6px; }

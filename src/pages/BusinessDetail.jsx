@@ -462,6 +462,7 @@ export default function RestaurantDetail() {
     // Park tabs
     ...(hasParkInfo   ? [{ id: 'park-info', label: 'Park Info',    icon: '🌳' }] : []),
     // Activity extras
+    ...(hasActivityOptions ? [{ id: 'options', label: 'Options', icon: '🎛️' }] : []),
     ...(hasMeetingPoints  ? [{ id: 'meeting',  label: 'Meeting Point', icon: '📌' }] : []),
     ...(hasFishSpecies    ? [{ id: 'fish',     label: 'Fish Species',  icon: '🐟' }] : []),
     // Common
@@ -1274,6 +1275,16 @@ export default function RestaurantDetail() {
                               {features.map((f, k) => <span key={k} className="offering-chip feature">★ {f}</span>)}
                             </div>
                           )}
+                          {(item.tiers || []).length > 0 && (
+                            <div className="offering-tiers">
+                              {item.tiers.map((t, ti) => (
+                                <div key={t.id || ti} className="tier-row">
+                                  <span className="tier-label">{t.label}</span>
+                                  {t.price != null && <span className="tier-price">${t.price}</span>}
+                                </div>
+                              ))}
+                            </div>
+                          )}
                           {(m.requires || m.deposit || m.ages || m.note) && (
                             <div className="offering-notes">
                               {m.ages && <span>👥 {m.ages}</span>}
@@ -1329,6 +1340,20 @@ export default function RestaurantDetail() {
                           )}
                           {item.description && <div className="pricing-desc">{item.description}</div>}
                         </div>
+                        {(item.tiers || []).length > 0 && (
+                          <div className="pricing-tiers">
+                            {item.tiers.map((t, ti) => (
+                              <div key={t.id || ti} className="tier-row">
+                                <span className="tier-label">
+                                  {t.label || [t.duration_label, t.season && t.season !== 'regular' ? t.season : null].filter(Boolean).join(' — ') || 'Option'}
+                                  {t.age_min != null && t.age_max != null && <span className="tier-age"> (ages {t.age_min}–{t.age_max})</span>}
+                                  {t.age_min != null && t.age_max == null && <span className="tier-age"> (ages {t.age_min}+)</span>}
+                                </span>
+                                {t.price != null && <span className="tier-price">${t.price}</span>}
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     )
                   })}
@@ -1883,6 +1908,13 @@ export default function RestaurantDetail() {
                         {room.floor && <span>🏢 {room.floor}</span>}
                       </div>
                       {room.description && <p className="room-desc">{room.description}</p>}
+                      {(room.room_amenities || []).length > 0 && (
+                        <div className="room-amenities-row">
+                          {room.room_amenities.map((a, ai) => (
+                            <span key={a.id || ai} className="room-amenity-chip">✓ {a.name}</span>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -2182,6 +2214,29 @@ export default function RestaurantDetail() {
                   )}
                 </div>
               ))}
+            </section>
+          )}
+
+          {/* ACTIVITY OPTIONS — trip variants (Half Day / Full Day, Inshore / Offshore, etc.) */}
+          {hasActivityOptions && (
+                      <section className="content-section" ref={el => { sectionRefs.current["options"] = el }} id="section-options">
+              <h2>🎛️ Trip Options</h2>
+              <div className="activity-options-list">
+                {activityOptions.map((opt, i) => (
+                  <div key={opt.id || i} className="activity-option-card">
+                    <div className="activity-option-head">
+                      <span className="activity-option-name">{opt.option_name || opt.name}</span>
+                      {opt.price != null && <span className="activity-option-price">${opt.price}</span>}
+                    </div>
+                    {opt.description && <p className="activity-option-desc">{opt.description}</p>}
+                    <div className="activity-option-meta">
+                      {opt.duration && <span>⏱ {opt.duration}</span>}
+                      {opt.capacity && <span>👥 Up to {opt.capacity}</span>}
+                      {opt.min_age && <span>🎂 Ages {opt.min_age}+</span>}
+                    </div>
+                  </div>
+                ))}
+              </div>
             </section>
           )}
 
