@@ -395,6 +395,11 @@ export default function RestaurantDetail() {
   // Industry-specific data from API
   const roomTypes = business.room_types || []
   const amenities = business.amenities || []
+  const entityAmenities = business.entity_amenities || []
+  const aboutBullets = business.about_bullets || []
+  const perfectFor = business.perfect_for || []
+  const entityPolicies = business.policies || []
+  const parentEntity = business.parent || null
   // Two-level amenities (booking-platform style): the unit's own amenities
   // (amenity tags + bookable_resources.amenities) and the complex's amenities
   const ownAmenities = [...new Set([
@@ -431,7 +436,10 @@ export default function RestaurantDetail() {
   const hasMeetingPoints = meetingPoints.length > 0
   const hasFishSpecies = fishSpecies.length > 0
   const hasActivityOptions = activityOptions.length > 0
-  const hasAmenities = amenities.length > 0 || ownAmenities.length > 0 || complexAmenities.length > 0
+  const hasAmenities = amenities.length > 0 || entityAmenities.length > 0 || ownAmenities.length > 0 || complexAmenities.length > 0
+  const hasAboutBullets = aboutBullets.length > 0
+  const hasPerfectFor = perfectFor.length > 0
+  const hasEntityPolicies = entityPolicies.length > 0
 
   const sections = [
     // Data-driven — show if data exists regardless of type
@@ -466,7 +474,7 @@ export default function RestaurantDetail() {
     ...(hasTeam     ? [{ id: 'team',     label: 'Team',     icon: '👥' }] : []),
     ...(hasBlog        ? [{ id: 'blog',     label: 'Blog',     icon: '📰' }] : []),
     ...(hasSocialPosts ? [{ id: 'social',   label: 'Social',   icon: '📱' }] : []),
-    ...(hasPolicies ? [{ id: 'policies', label: 'Policies', icon: '📋' }] : []),
+    ...((hasPolicies || hasEntityPolicies) ? [{ id: 'policies', label: 'Policies', icon: '📋' }] : []),
     { id: 'location', label: 'Location', icon: '📍' },
     ...(photos.length ? [{ id: 'gallery', label: `Photos (${photos.length})`, icon: '📸' }] : []),
   ]
@@ -860,6 +868,27 @@ export default function RestaurantDetail() {
                   <p>{business.ai_overview}</p>
                 </div>
               )}
+              {aboutBullets.length > 0 && (
+                <div className="about-bullets">
+                  <ul>
+                    {aboutBullets.map((b, i) => (
+                      <li key={b.id || i}>{b.icon && <span>{b.icon} </span>}{b.text}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {perfectFor.length > 0 && (
+                <div className="perfect-for-section">
+                  <h3>Perfect For</h3>
+                  <div className="badge-row">
+                    {perfectFor.map((p, i) => (
+                      <span key={p.id || i} className="badge">{p.label}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {business.ai_review_summary && (
                 <div className="ai-review-summary">
                   <h3>What Visitors Say</h3>
@@ -1872,7 +1901,7 @@ export default function RestaurantDetail() {
             </section>
           )}
 
-          {/* AMENITIES — Hotel / Stay */}
+          {/* AMENITIES — all business types */}
           {hasAmenities && (
                       <section className="content-section" ref={el => { sectionRefs.current["amenities"] = el }} id="section-amenities">
               <h2>✨ Amenities</h2>
@@ -1897,34 +1926,52 @@ export default function RestaurantDetail() {
                   </div>
                 </div>
               )}
-              {amenities.length === 0 ? (
-                ownAmenities.length === 0 && complexAmenities.length === 0 ? <p className="no-data">No amenities listed yet</p> : null
-              ) : (
-                <>
-                  {/* Group by category */}
-                  {(() => {
-                    const grouped = amenities.reduce((acc, a) => {
-                      const cat = a.category || 'General'
-                      if (!acc[cat]) acc[cat] = []
-                      acc[cat].push(a)
-                      return acc
-                    }, {})
-                    return Object.entries(grouped).map(([cat, items]) => (
-                      <div key={cat} className="amenity-group">
-                        {Object.keys(grouped).length > 1 && <h3>{cat}</h3>}
-                        <div className="amenities-grid">
-                          {items.map((a, i) => (
-                            <div key={a.id || i} className="amenity-item">
-                              {a.icon && <span>{a.icon} </span>}
-                              {a.name}
-                              {a.is_shared === false && <span className="amenity-badge">In-unit</span>}
-                            </div>
-                          ))}
+              {/* entity_amenities — grouped by category, shown for ALL business types */}
+              {entityAmenities.length > 0 && (() => {
+                const grouped = entityAmenities.reduce((acc, a) => {
+                  const cat = a.category || 'General'
+                  if (!acc[cat]) acc[cat] = []
+                  acc[cat].push(a)
+                  return acc
+                }, {})
+                return Object.entries(grouped).map(([cat, items]) => (
+                  <div key={`ea-${cat}`} className="amenity-group">
+                    {Object.keys(grouped).length > 1 && <h3>{cat}</h3>}
+                    <div className="amenities-grid">
+                      {items.map((a, i) => (
+                        <div key={a.id || i} className="amenity-item">
+                          ✓ {(a.amenity || '').replace(/_/g, ' ')}
                         </div>
-                      </div>
-                    ))
-                  })()}
-                </>
+                      ))}
+                    </div>
+                  </div>
+                ))
+              })()}
+              {/* Stay-specific amenities table */}
+              {amenities.length > 0 && (() => {
+                const grouped = amenities.reduce((acc, a) => {
+                  const cat = a.category || 'General'
+                  if (!acc[cat]) acc[cat] = []
+                  acc[cat].push(a)
+                  return acc
+                }, {})
+                return Object.entries(grouped).map(([cat, items]) => (
+                  <div key={cat} className="amenity-group">
+                    {Object.keys(grouped).length > 1 && <h3>{cat}</h3>}
+                    <div className="amenities-grid">
+                      {items.map((a, i) => (
+                        <div key={a.id || i} className="amenity-item">
+                          {a.icon && <span>{a.icon} </span>}
+                          {a.name}
+                          {a.is_shared === false && <span className="amenity-badge">In-unit</span>}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))
+              })()}
+              {amenities.length === 0 && entityAmenities.length === 0 && ownAmenities.length === 0 && complexAmenities.length === 0 && (
+                <p className="no-data">No amenities listed yet</p>
               )}
             </section>
           )}
