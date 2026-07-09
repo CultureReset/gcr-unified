@@ -1,4 +1,5 @@
 import { API_BASE } from '../config'
+import { anonymousVisitorId } from '../context/AppContext'
 
 export function calcDistance(lat1, lng1, lat2, lng2) {
   if (lat1 == null || lng1 == null || lat2 == null || lng2 == null) return null
@@ -67,8 +68,12 @@ function formatHappyHour(e) {
 }
 
 function toCard(entity, photos = []) {
+  // tag_name is the field the API actually returns (GCRCard.jsx reads it too);
+  // label/name/tag are legacy fallbacks. Without tag_name here, every tag
+  // silently dropped out of the swipe cards — the tag row rendered empty on
+  // real data even though the entities had tags.
   const tags = Array.isArray(entity.tags)
-    ? entity.tags.map(t => typeof t === 'string' ? t : t.label || t.name || t.tag).filter(Boolean)
+    ? entity.tags.map(t => typeof t === 'string' ? t : t.tag_name || t.label || t.name || t.tag).filter(Boolean)
     : []
   const fixUrl = u => {
     if (!u) return null
@@ -113,7 +118,7 @@ function toCard(entity, photos = []) {
     verified: !!entity.featured,
     duration: entity.duration_text || null,
     price_per_person: (entity.price_from && entity.price_unit)
-      ? `$${entity.price_from}${entity.price_to && entity.price_to !== entity.price_from ? `-$${entity.price_to}` : ''} ${entity.price_unit}`
+      ? `$${entity.price_from}${entity.price_to && entity.price_to !== entity.price_from ? `-$${entity.price_to}` : ''}/${entity.price_unit}`
       : null,
     social: {
       instagram: entity.social_instagram || '',
@@ -357,11 +362,13 @@ export async function fetchLiveNow(touristId = null) {
 // Fetch this user's preference scores — returns a tag→score map
 export async function fetchPreferences() {
   const token = localStorage.getItem('gcr_access_token')
-  if (!token) return {}
+  // A guest's own in-session swipes/saves are already being recorded under
+  // their guest id (see AppContext's authHeaders) — fetch by the same id so
+  // their live deck can personalize immediately instead of only after they
+  // sign up.
+  const headers = token ? { Authorization: `Bearer ${token}` } : { 'X-Guest-Id': anonymousVisitorId() }
   try {
-    const r = await fetch(`${API_BASE}/api/tourist/preferences`, {
-      headers: { Authorization: `Bearer ${token}` }
-    })
+    const r = await fetch(`${API_BASE}/api/tourist/preferences`, { headers })
     if (!r.ok) return {}
     const d = await r.json()
     const map = {}

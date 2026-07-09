@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import TinderCard from 'react-tinder-card'
 import { useApp } from '../context/AppContext'
 import { CATEGORIES } from '../data/categories'
+import { TAG_EMOJI } from '../components/GCRCard'
 import { fetchBusinesses, calcDistance, formatDistance, fetchPreferences, personalizeAndSort, searchProperties } from '../services/gcrApi'
 import { API_BASE } from '../config'
 import './Swipe.css'
@@ -114,23 +115,17 @@ function shuffle(arr) {
   return copy
 }
 
-const TAG_COLORS = [
-  { pattern: /golf|outdoor|park|hiking|biking|sport|kayak|surf|swim|paddle|snorkel|fishing|boat|sail/i, cls: 'tag-green' },
-  { pattern: /happy.hour|cocktail|full.bar|open.bar/i, cls: 'tag-amber' },
-  { pattern: /bar|drink|wine|beer|brewery|spirits/i, cls: 'tag-amber' },
-  { pattern: /family|kid|child|toddler/i, cls: 'tag-blue' },
-  { pattern: /seafood|fresh.catch|fish|shrimp|crab|oyster|lobster/i, cls: 'tag-teal' },
-  { pattern: /waterfront|gulf.front|beachfront|bayfront|marina|dock|harbor/i, cls: 'tag-cyan' },
-  { pattern: /popular|top.rated|local.fav|award|trending|best/i, cls: 'tag-gold' },
-  { pattern: /nightlife|live.music|dj|club|lounge/i, cls: 'tag-purple' },
-  { pattern: /breakfast|brunch|lunch|dinner|dining|cuisine/i, cls: 'tag-orange' },
-]
+// Same normalization GCRCard.jsx uses to key into TAG_EMOJI, duplicated here
+// rather than imported since it's one line and pulling in the whole module
+// just for this would be overkill.
+function tagEmoji(label) {
+  if (/happy\s*hour/i.test(label)) return '🍹'
+  const key = label.toLowerCase().replace(/[\s\-/]+/g, '_').replace(/[^a-z0-9_]/g, '')
+  return TAG_EMOJI[key] || ''
+}
 
-function tagColor(tag) {
-  for (const { pattern, cls } of TAG_COLORS) {
-    if (pattern.test(tag)) return cls
-  }
-  return 'tag-default'
+function titleCase(str) {
+  return str.replace(/[_-]+/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
 }
 
 // Open/closed status line — same logic as GCRCard.jsx (not shared as a util
@@ -216,6 +211,12 @@ export default function Swipe() {
   const [prefMap, setPrefMap] = useState({})
   const [swipingDir, setSwipingDir] = useState(null)
   const [undoStack, setUndoStack] = useState([]) // { business, action: 'like'|'nope'|'super' }
+  // Maybe/Undo float quietly in the card's top corners (see the layout
+  // rationale where they're rendered below) — that's deliberately subtle,
+  // but a first-time visitor has no way to discover them on their own.
+  // Show a caption under each once, dismissed on first interaction with
+  // either or after a few seconds, never shown again on this device.
+  const [showCornerHint, setShowCornerHint] = useState(() => !localStorage.getItem('gcr_corner_hint_seen'))
   const swipeCountRef = useRef(0)
   const pageRef = useRef(null)
   const personalizationCounterRef = useRef(0)
@@ -300,6 +301,16 @@ export default function Swipe() {
     if (!userLocation) setLocPrompt(true)
   }, [])
 
+  // Corner hint auto-dismisses on its own after a few seconds even if the
+  // visitor never taps Maybe/Undo — it's a one-time nudge, not something
+  // that should sit on screen indefinitely waiting for an interaction.
+  useEffect(() => {
+    if (!showCornerHint) return
+    const timer = setTimeout(dismissCornerHint, 5000)
+    return () => clearTimeout(timer)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   // Fetch SMS config and set up opt-in trigger
   useEffect(() => {
     if (smsDone) return
@@ -341,6 +352,7 @@ export default function Swipe() {
       ? allBusinesses.filter(b => !b._isPromo || b.category === 'all')
       : allBusinesses.filter(b => b.category === category))
       .filter(b => isGuest ? true : !seenSlugs.includes(b.slug))
+      .filter(b => b.hero_image_url) // Only show cards with images — no blank gradient placeholders
     setPool(visible)
 
     // Resume exactly where they left off: restore whichever still-unseen
@@ -380,6 +392,7 @@ export default function Swipe() {
     const visible = (category === 'all'
       ? allBusinesses.filter(b => !b._isPromo || b.category === 'all')
       : allBusinesses.filter(b => b.category === category))
+      .filter(b => b.hero_image_url) // Only show cards with images — no blank gradient placeholders
     setPool(visible)
     const sorted = Object.keys(prefMap).length
       ? personalizeAndSort(visible, prefMap)
@@ -408,11 +421,16 @@ export default function Swipe() {
       </div>
       <div className="cards-container">
         <div className="swipe-card-wrapper" style={{position:'relative'}}>
-          <div className="business-card" style={{animation:'shimmer 1.4s infinite'}}>
-            <div className="card-image-wrap" style={{background:'rgba(255,255,255,0.06)'}} />
-            <div className="card-body">
-              <div style={{height:22,width:'60%',background:'rgba(255,255,255,0.08)',borderRadius:8,marginBottom:10}} />
-              <div style={{height:14,width:'40%',background:'rgba(255,255,255,0.05)',borderRadius:8}} />
+          {/* Mirrors the real card's proportions (big photo, dark info panel
+              below) instead of a generic thin-footer shape, so there's no
+              jarring resize/recolor jump once the real deck renders in. */}
+          <div className="business-card">
+            <div className="card-image-wrap skeleton-pulse" style={{background:'rgba(0,0,0,0.06)'}} />
+            <div className="card-info-panel">
+              <div className="skeleton-pulse" style={{height:22,width:'65%',background:'rgba(255,255,255,0.14)',borderRadius:8,marginBottom:10}} />
+              <div className="skeleton-pulse" style={{height:13,width:'40%',background:'rgba(255,255,255,0.08)',borderRadius:8,marginBottom:14}} />
+              <div className="skeleton-pulse" style={{height:13,width:'85%',background:'rgba(255,255,255,0.08)',borderRadius:8,marginBottom:6}} />
+              <div className="skeleton-pulse" style={{height:13,width:'55%',background:'rgba(255,255,255,0.08)',borderRadius:8}} />
             </div>
           </div>
         </div>
@@ -425,10 +443,10 @@ export default function Swipe() {
     </div>
   )
   if (error) return (
-    <div className="swipe-page" style={{display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',textAlign:'center',padding:20}}>
+    <div className="swipe-page" style={{display:'flex',alignItems:'center',justifyContent:'center',color:'var(--text)',textAlign:'center',padding:20}}>
       <div>
         <div>Could not load businesses.</div>
-        <div style={{fontSize:13,color:'#aaa',marginTop:8}}>{error}</div>
+        <div style={{fontSize:13,color:'var(--text3)',marginTop:8}}>{error}</div>
         <button onClick={() => navigate('/home')} style={{marginTop:16,padding:'10px 18px'}}>Back</button>
       </div>
     </div>
@@ -442,8 +460,14 @@ export default function Swipe() {
   function refillDeck(next) {
     if (next.length < 5) {
       const shownIds = new Set(next.map(b => b.id))
-      // Allow same business (slug) to appear multiple times, just not same card instance (id)
-      const remaining = pool.filter(b => !shownIds.has(b.id))
+      // Allow the same business (slug) to appear multiple times in the
+      // INITIAL deck (once per exploded photo-card) — but not once its slug
+      // has actually been swiped. Without the seenSlugs check, once the
+      // real unseen supply in `pool` ran low this refilled from already-
+      // decided cards forever: cards.length never reached 0, so `allGone`
+      // (which requires exactly that) never fired and the deck looped
+      // through repeats instead of ever reaching "You've seen them all!".
+      const remaining = pool.filter(b => !shownIds.has(b.id) && !seenSlugs.includes(b.slug))
       return [...remaining.slice(0, DECK_SIZE - next.length), ...next]
     }
     return next
@@ -504,6 +528,26 @@ export default function Swipe() {
     setCards(prev => refillDeck(prev.filter(b => b.id !== business.id)))
   }
 
+  // Quick save/unsave from the card's heart button — independent of the
+  // swipe gesture (doesn't dismiss the card or advance the deck), unlike
+  // pressLike which is a full swipe-right.
+  function toggleSavePlace(business) {
+    const real = resolveReal(business)
+    if (savedPlaces.some(p => p.id === real.id)) {
+      removeSavedPlace(real.id)
+      setLikedCount(p => Math.max(0, p - 1))
+    } else {
+      addSavedPlace(real)
+      // Same preference/seen signal a swipe-right records — a heart-save
+      // is just as real an endorsement as swiping right, it just doesn't
+      // dismiss the card, so it shouldn't be invisible to the algorithm
+      // that's supposed to be learning from likes.
+      recordSwipe(business, 'like')
+      setLikedCount(p => p + 1)
+      bumpPersonalizationCounter()
+    }
+  }
+
   function pressLike() {
     if (cards.length === 0) return
     const top = cards[cards.length - 1]
@@ -538,10 +582,17 @@ export default function Swipe() {
     bumpPersonalizationCounter()
   }
 
+  function dismissCornerHint() {
+    if (!showCornerHint) return
+    setShowCornerHint(false)
+    localStorage.setItem('gcr_corner_hint_seen', '1')
+  }
+
   // "Not sure yet" — distinct from Pass (rejected) and Like (want to go).
   // Mild positive signal for preference scoring (see SWIPE_WEIGHTS.maybe on
   // the backend), doesn't save the place, but is undo-able like every other action.
   function pressMaybe() {
+    dismissCornerHint()
     if (cards.length === 0) return
     const top = cards[cards.length - 1]
     recordSwipe(top, 'maybe')
@@ -552,6 +603,7 @@ export default function Swipe() {
   }
 
   function pressUndo() {
+    dismissCornerHint()
     if (undoStack.length === 0) return
     const last = undoStack[undoStack.length - 1]
     setUndoStack(prev => prev.slice(0, -1))
@@ -685,7 +737,14 @@ export default function Swipe() {
         <button className="swipe-change-btn" onClick={openTripEdit}>Change</button>
         {view === 'swipe' && (
           <span className="swipe-progress">
-            {businesses.length - cards.length}/{businesses.length}
+            {businesses.length === 0 ? 'All done' : (
+              <>
+                {/* clamp: refillDeck recycles cards from the pool, so the live
+                    deck can briefly hold more entries than the de-duplicated
+                    `businesses` count — without clamping, "seen" went negative. */}
+                {Math.min(businesses.length, Math.max(0, businesses.length - cards.length))}/{businesses.length}
+              </>
+            )}
           </span>
         )}
         {view === 'list' && (
@@ -773,34 +832,39 @@ export default function Swipe() {
                     ? <PromoCard card={business} isTop={index === cards.length - 1} onDetail={() => navigate(business.linked_slug ? `/business/${business.linked_slug}` : '#')} />
                     : business._isSocial
                       ? <SocialCard post={business} isTop={index === cards.length - 1} onDetail={() => navigate(`/business/${business.entity_slug}`)} swipingDir={index === cards.length - 1 ? swipingDir : null} />
-                      : business._isSponsored
-                      ? <SponsoredCard business={business} isTop={index === cards.length - 1} onDetail={() => navigate(`/business/${business._sponsorSlug}`)} userLocation={userLocation} swipingDir={index === cards.length - 1 ? swipingDir : null} />
                       : business._isDeal
                         ? <DealSwipeCard deal={business._dealData} isTop={index === cards.length - 1} onDetail={() => business.entity_slug ? navigate(`/business/${business.entity_slug}`) : navigate('/deals')} />
-                        : <BusinessCard business={business} isTop={index === cards.length - 1} onDetail={() => navigate(`/business/${business.slug}`)} userLocation={userLocation} swipingDir={index === cards.length - 1 ? swipingDir : null} />
+                        : <BusinessCard business={business} isTop={index === cards.length - 1} onDetail={() => navigate(`/business/${business._isSponsored ? business._sponsorSlug : business.slug}`)} userLocation={userLocation} swipingDir={index === cards.length - 1 ? swipingDir : null} savedPlaces={savedPlaces} onToggleSave={toggleSavePlace} />
                   }
                 </TinderCard>
               ))
+            )}
+
+            {/* Maybe/Undo float on the card itself instead of a second full-width
+                row below the deck — they're secondary actions, not worth the
+                same screen real estate as Nope/Must Do/Like, and the card
+                (the actual thing being decided on) should get that space instead. */}
+            {!allGone && (
+              <>
+                <button
+                  className={`card-float-btn undo-float ${undoStack.length === 0 ? 'disabled' : ''}`}
+                  onClick={pressUndo}
+                  disabled={undoStack.length === 0}
+                  aria-label="Undo last swipe"
+                >
+                  ↩
+                </button>
+                {showCornerHint && <span className="card-float-hint hint-undo">Undo</span>}
+                <button className="card-float-btn maybe-float" onClick={pressMaybe} aria-label="Maybe">
+                  🤔
+                </button>
+                {showCornerHint && <span className="card-float-hint hint-maybe">Maybe</span>}
+              </>
             )}
           </div>
 
           {!allGone && (
             <div className="swipe-actions">
-              <div className="swipe-actions-row secondary">
-                <button className="action-btn maybe" onClick={pressMaybe}>
-                  <span>🤔</span>
-                  <span>MAYBE</span>
-                </button>
-                <button
-                  className={`action-btn undo ${undoStack.length === 0 ? 'disabled' : ''}`}
-                  onClick={pressUndo}
-                  disabled={undoStack.length === 0}
-                  aria-label="Undo last swipe"
-                >
-                  <span>↩</span>
-                  <span>UNDO</span>
-                </button>
-              </div>
               <div className="swipe-actions-row primary">
                 <button className="action-btn nope" onClick={pressNope}>
                   <span>✕</span>
@@ -832,11 +896,11 @@ export default function Swipe() {
       {smsPrompt && !smsDone && (
         <div style={{position:'fixed',inset:0,zIndex:9000,display:'flex',alignItems:'flex-end',background:'rgba(0,0,0,.5)'}}
              onClick={e => { if(e.target===e.currentTarget) setSmsPrompt(false) }}>
-          <div style={{width:'100%',background:'#0f172a',borderRadius:'20px 20px 0 0',padding:'28px 24px 40px',boxShadow:'0 -8px 40px rgba(0,0,0,.5)'}}>
-            <div style={{width:40,height:4,background:'#0ea5e9',borderRadius:999,margin:'0 auto 20px',opacity:0.5}}></div>
+          <div style={{width:'100%',background:'var(--card)',borderRadius:'20px 20px 0 0',padding:'28px 24px 40px',boxShadow:'0 -8px 40px rgba(0,0,0,.25)'}}>
+            <div style={{width:40,height:4,background:'var(--primary)',borderRadius:999,margin:'0 auto 20px',opacity:0.5}}></div>
             <div style={{fontSize:24,textAlign:'center',marginBottom:8}}>📲</div>
-            <h3 style={{textAlign:'center',color:'#fff',fontSize:18,fontWeight:900,margin:'0 0 6px'}}>Save your picks + get local deals</h3>
-            <p style={{textAlign:'center',color:'rgba(255,255,255,.6)',fontSize:14,margin:'0 0 20px',lineHeight:1.5}}>
+            <h3 style={{textAlign:'center',color:'var(--text)',fontSize:18,fontWeight:900,margin:'0 0 6px'}}>Save your picks + get local deals</h3>
+            <p style={{textAlign:'center',color:'var(--text2)',fontSize:14,margin:'0 0 20px',lineHeight:1.5}}>
               Drop your number to save your likes and get same-day specials texted to you while you're here.
             </p>
             <input
@@ -844,7 +908,7 @@ export default function Swipe() {
               placeholder="+1 (555) 000-0000"
               value={smsPhone}
               onChange={e => setSmsPhone(e.target.value)}
-              style={{width:'100%',boxSizing:'border-box',background:'#1e293b',border:'1px solid #334155',borderRadius:10,padding:'14px 16px',fontSize:16,color:'#fff',marginBottom:12}}
+              style={{width:'100%',boxSizing:'border-box',background:'var(--bg)',border:'1px solid var(--border)',borderRadius:10,padding:'14px 16px',fontSize:16,color:'var(--text)',marginBottom:12}}
             />
             <button
               onClick={async () => {
@@ -864,13 +928,13 @@ export default function Swipe() {
                 setSmsSubmitting(false)
               }}
               disabled={smsSubmitting}
-              style={{width:'100%',background:'linear-gradient(135deg,#0ea5e9,#0369a1)',color:'#fff',border:'none',borderRadius:10,padding:'14px',fontSize:16,fontWeight:800,cursor:'pointer',marginBottom:10}}
+              style={{width:'100%',background:'linear-gradient(135deg, var(--primary), var(--primary-dark))',color:'#fff',border:'none',borderRadius:10,padding:'14px',fontSize:16,fontWeight:800,cursor:'pointer',marginBottom:10}}
             >
               {smsSubmitting ? 'Saving…' : 'Yes, text me deals 🎉'}
             </button>
             <button
               onClick={() => { setSmsPrompt(false); localStorage.setItem('gcr_sms_opted','skip') ; setSmsDone(true) }}
-              style={{width:'100%',background:'none',color:'rgba(255,255,255,.4)',border:'none',fontSize:13,cursor:'pointer',padding:'8px'}}
+              style={{width:'100%',background:'none',color:'var(--text3)',border:'none',fontSize:13,cursor:'pointer',padding:'8px'}}
             >
               No thanks
             </button>
@@ -1001,13 +1065,18 @@ function SocialCard({ post, isTop, onDetail, swipingDir }) {
   )
 }
 
-function BusinessCard({ business, isTop, onDetail, userLocation, swipingDir }) {
+function BusinessCard({ business, isTop, onDetail, userLocation, swipingDir, savedPlaces, onToggleSave }) {
   const [photoIdx, setPhotoIdx] = useState(0)
   const ptrRef = useRef(null)
   const distMiles = userLocation
     ? calcDistance(userLocation.lat, userLocation.lng, business.latitude, business.longitude)
     : null
   const distLabel = formatDistance(distMiles)
+  // Sponsored cards save under their real business id (_sponsorSlug), not
+  // this card instance's own display id — same remap toggleSavePlace's
+  // resolveReal() does — so the saved-state check has to match that.
+  const realId = business._isSponsored ? business._sponsorSlug : business.id
+  const isSaved = (savedPlaces || []).some(p => p.id === realId)
 
   const allPhotos = [
     business.hero_image_url,
@@ -1031,13 +1100,19 @@ function BusinessCard({ business, isTop, onDetail, userLocation, swipingDir }) {
     }
   }
 
-  const displayedTags = (business.tags || []).slice(0, 4)
-  const desc = business.subtitle || (business.description ? business.description.slice(0, 90) + (business.description.length > 90 ? '…' : '') : '')
+  const extraTags = []
+  if (business.live_music) extraTags.push('Live Music')
+  if (business.happy_hour) extraTags.push('Happy Hour')
+  const displayedTags = [...extraTags, ...(business.tags || [])].slice(0, 3)
+  const desc = business.subtitle || (business.description ? business.description.slice(0, 140) + (business.description.length > 140 ? '…' : '') : '')
   const status = computeStatus(business.hours || [])
+  const categoryInfo = CATEGORIES.find(c => c.id === business.category)
+  const badgeLabel = business.type ? titleCase(business.type) : (categoryInfo?.label || 'Place')
+  const badgeEmoji = categoryInfo?.emoji || '📍'
 
   return (
-    <div className={`business-card ${isTop ? 'top' : ''}`}>
-      {/* Image */}
+    <div className={`business-card ${business._isSponsored ? 'sponsored-card' : ''} ${isTop ? 'top' : ''}`}>
+      {/* Photo */}
       <div
         className="card-image-wrap"
         style={!photo ? {background:'linear-gradient(135deg,#1a3a5c,#0ea5e9)'} : undefined}
@@ -1048,7 +1123,6 @@ function BusinessCard({ business, isTop, onDetail, userLocation, swipingDir }) {
           <img src={photo} alt={business.name} className="card-image"
             onError={e => { try { e.target.style.display='none'; if (e.target.parentNode) e.target.parentNode.style.background='linear-gradient(135deg,#1a3a5c,#0ea5e9)' } catch {} }} />
         )}
-        <div className="card-image-overlay" />
 
         {/* Drag direction tint + stamp */}
         {swipingDir === 'right' && (
@@ -1062,29 +1136,36 @@ function BusinessCard({ business, isTop, onDetail, userLocation, swipingDir }) {
           </div>
         )}
 
+        {/* Sponsored disclosure takes the primary top-left badge slot instead
+            of the category type badge — an ad label has to stay visible and
+            unambiguous, not compete with/get buried under other badging. */}
+        {business._isSponsored ? (
+          <div className="card-sponsored-badge">⭐ Sponsored</div>
+        ) : (
+          <div className="card-type-badge">{badgeEmoji} {badgeLabel}</div>
+        )}
+
         {business.verified && (
-          <div className="card-featured-badge">⭐ Featured</div>
+          <div className="card-featured-badge card-badge-stacked">⭐ Featured</div>
         )}
-
         {!business.verified && business._matchScore >= 15 && (
-          <div className="card-match-badge">⚡ Your Vibe</div>
+          <div className="card-match-badge card-badge-stacked">⚡ Your Vibe</div>
         )}
 
+        <button
+          className={`card-save-btn ${isSaved ? 'saved' : ''}`}
+          onClick={e => { e.stopPropagation(); onToggleSave?.(business) }}
+          aria-label={isSaved ? 'Remove from saved' : 'Save'}
+        >
+          {isSaved ? '❤️' : '🤍'}
+        </button>
         {allPhotos.length > 1 && (
-          <div className="card-photo-counter">{photoIdx + 1}/{allPhotos.length}</div>
+          <div className="card-photo-counter card-photo-counter-stacked">{photoIdx + 1}/{allPhotos.length}</div>
         )}
       </div>
 
-      {/* Info overlaid at bottom of image */}
-      <div className="card-overlay-info">
-        {/* Tags above name — no longer collide with top-left badges */}
-        {displayedTags.length > 0 && (
-          <div className="card-tags-overlay-bottom">
-            {displayedTags.slice(0,3).map(tag => (
-              <span key={tag} className={`card-tag ${tagColor(tag)}`}>{tag}</span>
-            ))}
-          </div>
-        )}
+      {/* Info panel — solid, below the photo (not overlaid on it) */}
+      <div className="card-info-panel">
         <div className="card-name-row">
           <h3 className="card-name">{business.name}</h3>
           {business.rating ? (
@@ -1094,46 +1175,64 @@ function BusinessCard({ business, isTop, onDetail, userLocation, swipingDir }) {
             </div>
           ) : null}
         </div>
+        {/* Price up top, large — but only for a bookable activity/experience,
+            where price_per_person is one exact figure for the whole thing
+            (parasailing, charters, tours). A restaurant doesn't have a
+            single price — it has a menu — so it keeps the $$ range in the
+            meta row below instead of a fabricated "exact" number up top. */}
+        {business.price_per_person && business.category !== 'food' && (
+          <div className="card-price-hero">💵 {business.price_per_person}</div>
+        )}
         <div className="card-meta-row">
           {business.city && <span>📍 {business.city}</span>}
           {business.price_range && <><span className="dot">·</span><span>{business.price_range}</span></>}
           {distLabel && <><span className="dot">·</span><span>🚗 {distLabel}</span></>}
         </div>
         {desc && <p className="card-desc">{desc}</p>}
-        {(status || business.live_music || business.happy_hour || business.duration) && (
-          <div className="card-badges" style={{marginTop:6}}>
-            {status && <span className={`badge badge-status-${status.cls}`}>{status.label}</span>}
-            {business.live_music && <span className="badge badge-live">🎵 Live</span>}
-            {business.happy_hour && <span className="badge badge-happy">🍹 HH</span>}
-            {business.duration && <span className="badge badge-music">⏱ {business.duration}</span>}
+
+        {displayedTags.length > 0 && (
+          <div className="card-tag-row">
+            {displayedTags.map((tag, i) => (
+              <span key={tag} className="card-tag-item">
+                {i > 0 && <span className="card-tag-divider">|</span>}
+                {tagEmoji(tag) ? `${tagEmoji(tag)} ` : ''}{tag}
+              </span>
+            ))}
           </div>
         )}
-      </div>
 
-      {/* Body — CTAs only */}
-      {isTop && (
-        <div className="card-body"
-          onTouchStart={e => e.stopPropagation()}
-          onTouchMove={e => e.stopPropagation()}
-          onTouchEnd={e => e.stopPropagation()}
-          onPointerDown={e => e.stopPropagation()}
-          onPointerUp={e => e.stopPropagation()}
-        >
-          <div className="card-ctas" style={!business.booking_url ? {gridTemplateColumns:'1fr'} : undefined}>
-            {business.booking_url && (
-              <a className="cta-book pressable" href={business.booking_url} target="_blank" rel="noopener noreferrer"
-                onClick={e => e.stopPropagation()}>
-                📅 Book Now
-              </a>
-            )}
-            <button className="cta-detail pressable"
-              onPointerUp={e => { e.stopPropagation(); onDetail() }}
-              onClick={e => { e.stopPropagation(); onDetail() }}>
-              View Details →
-            </button>
-          </div>
+        <div className="card-bottom-row">
+          {status && (
+            <span className={`card-status-pill status-${status.cls}`}>
+              <span className="card-status-dot" />
+              {status.label}
+            </span>
+          )}
+          {isTop && (
+            <div className="card-bottom-actions"
+              onTouchStart={e => e.stopPropagation()}
+              onTouchMove={e => e.stopPropagation()}
+              onTouchEnd={e => e.stopPropagation()}
+              onPointerDown={e => e.stopPropagation()}
+              onPointerUp={e => e.stopPropagation()}
+            >
+              {business.booking_url && (
+                <a className="card-book-pill pressable" href={business.booking_url} target="_blank" rel="noopener noreferrer"
+                  onClick={e => e.stopPropagation()}>
+                  📅 Book Now
+                </a>
+              )}
+              <button className="card-chevron-btn pressable"
+                onPointerUp={e => { e.stopPropagation(); onDetail() }}
+                onClick={e => { e.stopPropagation(); onDetail() }}
+                aria-label="View details"
+              >
+                ›
+              </button>
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   )
 }
@@ -1146,135 +1245,45 @@ function PromoCard({ card, isTop, onDetail }) {
           <img src={card.hero_image_url} alt={card.name} className="card-image"
             onError={e => { try { e.target.style.display='none' } catch {} }} />
         )}
-        <div className="card-image-overlay" />
         <div className="card-promo-badge">📅 Tonight</div>
       </div>
 
-      <div className="card-body">
-        <div className="card-info">
+      <div className="card-info-panel">
+        <div className="card-name-row">
           <h3 className="card-name">{card.name}</h3>
-          {card.description && <div className="card-desc">{card.description}</div>}
-          {card.city && (
-            <div className="card-meta-row">
-              <span>📍 {card.city}</span>
-            </div>
-          )}
         </div>
-
-        {isTop && (
-          <div className="card-ctas"
-            onTouchStart={e => e.stopPropagation()}
-            onTouchMove={e => e.stopPropagation()}
-            onTouchEnd={e => e.stopPropagation()}
-            onPointerDown={e => e.stopPropagation()}
-            onPointerUp={e => e.stopPropagation()}
-          >
-            {card.cta_url && (
-              <a className="cta-book pressable" href={card.cta_url} target="_blank" rel="noopener noreferrer"
-                onClick={e => e.stopPropagation()}>
-                {card.cta_label || '📅 Learn More'}
-              </a>
-            )}
-            {card.linked_slug && (
-              <button className="cta-detail pressable"
-                onPointerUp={e => { e.stopPropagation(); onDetail() }}
-                onClick={e => { e.stopPropagation(); onDetail() }}>
-                View Place
-              </button>
-            )}
-          </div>
-        )}
-      </div>
-    </div>
-  )
-}
-
-function SponsoredCard({ business, isTop, onDetail, userLocation, swipingDir }) {
-  const [photoIdx, setPhotoIdx] = useState(0)
-  const ptrRef = useRef(null)
-  const distMiles = userLocation
-    ? calcDistance(userLocation.lat, userLocation.lng, business.latitude, business.longitude)
-    : null
-  const distLabel = formatDistance(distMiles)
-
-  const allPhotos = [
-    business.hero_image_url,
-    ...(business.photos || []).filter(p => p !== business.hero_image_url)
-  ].filter(Boolean)
-
-  const photo = allPhotos[photoIdx] || null
-
-  function handleImgDown(e) { ptrRef.current = { x: e.clientX, y: e.clientY } }
-  function handleImgUp(e) {
-    if (!ptrRef.current) return
-    const dx = Math.abs(e.clientX - ptrRef.current.x)
-    const dy = Math.abs(e.clientY - ptrRef.current.y)
-    ptrRef.current = null
-    if (dx < 8 && dy < 8 && allPhotos.length > 1) {
-      e.stopPropagation()
-      setPhotoIdx(i => (i + 1) % allPhotos.length)
-    }
-  }
-
-  const desc = business.subtitle || (business.description ? business.description.slice(0, 90) + (business.description.length > 90 ? '…' : '') : '')
-
-  return (
-    <div className={`business-card sponsored-card ${isTop ? 'top' : ''}`}>
-      <div
-        className="card-image-wrap"
-        style={!photo ? {background:'linear-gradient(135deg,#92400e,#d97706)'} : undefined}
-        onPointerDown={handleImgDown}
-        onPointerUp={handleImgUp}
-      >
-        {photo && (
-          <img src={photo} alt={business.name} className="card-image"
-            onError={e => { try { e.target.style.display='none'; if (e.target.parentNode) e.target.parentNode.style.background='linear-gradient(135deg,#92400e,#d97706)' } catch {} }} />
-        )}
-        <div className="card-image-overlay" />
-        {swipingDir === 'right' && (
-          <div className="card-drag-tint like-tint">
-            <span className="drag-stamp like-stamp">LIKE ♥</span>
-          </div>
-        )}
-        {swipingDir === 'left' && (
-          <div className="card-drag-tint nope-tint">
-            <span className="drag-stamp nope-stamp">NOPE ✕</span>
-          </div>
-        )}
-        <div className="card-sponsored-badge">⭐ Sponsored</div>
-        {allPhotos.length > 1 && (
-          <div className="card-photo-counter">{photoIdx + 1}/{allPhotos.length}</div>
-        )}
-      </div>
-
-      <div className="card-body">
-        <div className="card-info">
-          <div className="card-name-row">
-            <h3 className="card-name">{business.name}</h3>
-            {business.rating ? <div className="rating">⭐ {business.rating}</div> : null}
-          </div>
-          {desc && <div className="card-desc">{desc}</div>}
+        {card.city && (
           <div className="card-meta-row">
-            {business.city && <span>📍 {business.city}</span>}
-            {business.city && business.price_range && <span className="dot">·</span>}
-            {business.price_range && <span>{business.price_range}</span>}
-            {distLabel && <><span className="dot">·</span><span className="card-distance">🚗 {distLabel}</span></>}
+            <span>📍 {card.city}</span>
           </div>
-        </div>
+        )}
+        {card.description && <p className="card-desc">{card.description}</p>}
 
         {isTop && (
-          <div className="card-ctas"
-            onTouchStart={e => e.stopPropagation()}
-            onTouchMove={e => e.stopPropagation()}
-            onTouchEnd={e => e.stopPropagation()}
-            onPointerDown={e => e.stopPropagation()}
-            onPointerUp={e => e.stopPropagation()}
-          >
-            <button className="cta-detail"
-              onPointerUp={e => { e.stopPropagation(); onDetail() }}
-              onClick={e => { e.stopPropagation(); onDetail() }}>
-              View Profile
-            </button>
+          <div className="card-bottom-row">
+            <div className="card-bottom-actions"
+              onTouchStart={e => e.stopPropagation()}
+              onTouchMove={e => e.stopPropagation()}
+              onTouchEnd={e => e.stopPropagation()}
+              onPointerDown={e => e.stopPropagation()}
+              onPointerUp={e => e.stopPropagation()}
+            >
+              {card.cta_url && (
+                <a className="card-book-pill pressable" href={card.cta_url} target="_blank" rel="noopener noreferrer"
+                  onClick={e => e.stopPropagation()}>
+                  {card.cta_label || '📅 Learn More'}
+                </a>
+              )}
+              {card.linked_slug && (
+                <button className="card-chevron-btn pressable"
+                  onPointerUp={e => { e.stopPropagation(); onDetail() }}
+                  onClick={e => { e.stopPropagation(); onDetail() }}
+                  aria-label="View place"
+                >
+                  ›
+                </button>
+              )}
+            </div>
           </div>
         )}
       </div>
@@ -1301,14 +1310,12 @@ function DealSwipeCard({ deal, isTop, onDetail }) {
 
   return (
     <div className={`business-card deal-swipe-card ${isTop ? 'top' : ''}`}>
-      {/* Full-bleed background */}
-      <div className="card-image-wrap" style={{ background: style.bg, minHeight: 150 }}>
+      <div className="card-image-wrap" style={{ background: style.bg }}>
         {deal.image_url && (
           <img src={deal.image_url} alt={deal.entity_name} className="card-image"
             style={{ opacity: 0.35 }}
             onError={e => { try { e.target.style.display = 'none' } catch {} }} />
         )}
-        <div className="card-image-overlay" />
 
         {/* Deal type badge top-left */}
         <div className="card-featured-badge" style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }}>
@@ -1319,68 +1326,71 @@ function DealSwipeCard({ deal, isTop, onDetail }) {
         {urgency && (
           <div className="deal-swipe-urgent">🔴 URGENT</div>
         )}
-
-        {/* Main content overlaid on image bottom */}
-        <div className="card-overlay-info deal-swipe-overlay">
-          <div className="deal-swipe-entity">{deal.entity_name}</div>
-          <h3 className="card-name deal-swipe-headline">{deal.headline}</h3>
-
-          {/* Spots bar */}
-          {spotsRemaining !== null && spotsTotal && (
-            <div className="deal-swipe-spots">
-              <div className="deal-swipe-spots-text">
-                {spotsRemaining === 0
-                  ? '🔴 Fully booked'
-                  : spotsRemaining === 1
-                  ? '🔴 Last spot!'
-                  : spotsRemaining <= 3
-                  ? `🟡 Only ${spotsRemaining} spot${spotsRemaining !== 1 ? 's' : ''} left`
-                  : `🟢 ${spotsRemaining} of ${spotsTotal} open`}
-              </div>
-              <div className="deal-swipe-bar">
-                <div
-                  className="deal-swipe-bar-fill"
-                  style={{ width: `${Math.min(100, ((spotsTotal - spotsRemaining) / spotsTotal) * 100)}%` }}
-                />
-              </div>
-            </div>
-          )}
-
-          {/* Price */}
-          {(deal.deal_price || deal.price_label) && (
-            <div className="deal-swipe-price">
-              {deal.price_label || `$${deal.deal_price}${deal.price_unit ? `/${deal.price_unit}` : ''}`}
-            </div>
-          )}
-
-          <div className="deal-swipe-hint">← Swipe right to save · Tap for details →</div>
-        </div>
       </div>
 
-      {/* CTA body */}
-      {isTop && (
-        <div className="card-body"
-          onTouchStart={e => e.stopPropagation()} onTouchMove={e => e.stopPropagation()}
-          onTouchEnd={e => e.stopPropagation()} onPointerDown={e => e.stopPropagation()}
-          onPointerUp={e => e.stopPropagation()}
-        >
-          <div className="card-ctas" style={!deal.claim_url ? { gridTemplateColumns: '1fr' } : undefined}>
-            {deal.claim_url && (
-              <a className="cta-book pressable" href={deal.claim_url} target="_blank" rel="noopener noreferrer"
-                onClick={e => e.stopPropagation()}>
-                {deal.deal_type === 'charter_opening' ? '🎣 Grab This Spot' :
-                 deal.deal_type === 'rental_gap' ? '🏠 Book Now' :
-                 '📅 Claim Deal'}
-              </a>
-            )}
-            <button className="cta-detail pressable"
-              onPointerUp={e => { e.stopPropagation(); onDetail() }}
-              onClick={e => { e.stopPropagation(); onDetail() }}>
-              View Details →
-            </button>
-          </div>
+      {/* Info panel — same dark panel BusinessCard uses, not overlaid on
+          the photo, so the deal's own gradient stays visible above it. */}
+      <div className="card-info-panel">
+        <div className="deal-swipe-entity">{deal.entity_name}</div>
+        <div className="card-name-row">
+          <h3 className="card-name">{deal.headline}</h3>
         </div>
-      )}
+
+        {(deal.deal_price || deal.price_label) && (
+          <div className="card-price-hero">
+            💵 {deal.price_label || `$${deal.deal_price}${deal.price_unit ? `/${deal.price_unit}` : ''}`}
+          </div>
+        )}
+
+        {/* Spots bar */}
+        {spotsRemaining !== null && spotsTotal && (
+          <div className="deal-swipe-spots">
+            <div className="deal-swipe-spots-text">
+              {spotsRemaining === 0
+                ? '🔴 Fully booked'
+                : spotsRemaining === 1
+                ? '🔴 Last spot!'
+                : spotsRemaining <= 3
+                ? `🟡 Only ${spotsRemaining} spot${spotsRemaining !== 1 ? 's' : ''} left`
+                : `🟢 ${spotsRemaining} of ${spotsTotal} open`}
+            </div>
+            <div className="deal-swipe-bar">
+              <div
+                className="deal-swipe-bar-fill"
+                style={{ width: `${Math.min(100, ((spotsTotal - spotsRemaining) / spotsTotal) * 100)}%` }}
+              />
+            </div>
+          </div>
+        )}
+
+        <div className="deal-swipe-hint">← Swipe right to save · Tap for details →</div>
+
+        {isTop && (
+          <div className="card-bottom-row">
+            <div className="card-bottom-actions"
+              onTouchStart={e => e.stopPropagation()} onTouchMove={e => e.stopPropagation()}
+              onTouchEnd={e => e.stopPropagation()} onPointerDown={e => e.stopPropagation()}
+              onPointerUp={e => e.stopPropagation()}
+            >
+              {deal.claim_url && (
+                <a className="card-book-pill pressable" href={deal.claim_url} target="_blank" rel="noopener noreferrer"
+                  onClick={e => e.stopPropagation()}>
+                  {deal.deal_type === 'charter_opening' ? '🎣 Grab This Spot' :
+                   deal.deal_type === 'rental_gap' ? '🏠 Book Now' :
+                   '📅 Claim Deal'}
+                </a>
+              )}
+              <button className="card-chevron-btn pressable"
+                onPointerUp={e => { e.stopPropagation(); onDetail() }}
+                onClick={e => { e.stopPropagation(); onDetail() }}
+                aria-label="View details"
+              >
+                ›
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   )
 }

@@ -10,9 +10,27 @@ function loadLS(k, fallback) {
 
 function getToken() { return localStorage.getItem('gcr_access_token') || '' }
 
+// A signed-out visitor still gets an identity: a random id minted once and
+// kept in localStorage, sent as X-Guest-Id on every request that doesn't
+// have a real login token. None of the tourist_swipe_events/tourist_seen/
+// tourist_saves/user_preference_scores tables have a foreign key back to a
+// real account, so the backend can safely record activity under this id
+// from a visitor's very first swipe — and merge it into their real account
+// the moment they sign up (see anonymousVisitorId() below, sent alongside
+// signup/signin so the backend can find and reassign it).
+export function anonymousVisitorId() {
+  let id = localStorage.getItem('gcr_guest_id')
+  if (!id) {
+    id = crypto.randomUUID()
+    localStorage.setItem('gcr_guest_id', id)
+  }
+  return id
+}
+
 function authHeaders() {
   const t = getToken()
-  return t ? { 'Authorization': 'Bearer ' + t, 'Content-Type': 'application/json' } : { 'Content-Type': 'application/json' }
+  if (t) return { 'Authorization': 'Bearer ' + t, 'Content-Type': 'application/json' }
+  return { 'X-Guest-Id': anonymousVisitorId(), 'Content-Type': 'application/json' }
 }
 
 async function apiGet(path) {
@@ -248,14 +266,14 @@ export function AppProvider({ children }) {
 
   async function flushSeen() {
     const toFlush = seenQueue.current
-    if (!toFlush.length || !getToken()) return
+    if (!toFlush.length) return
     seenQueue.current = []
     await apiSend('POST', '/api/tourist/seen', { slugs: toFlush })
   }
 
   async function flushSwipes() {
     const toFlush = swipeQueue.current
-    if (!toFlush.length || !getToken()) return
+    if (!toFlush.length) return
     swipeQueue.current = []
     await apiSend('POST', '/api/tourist/swipes', { events: toFlush })
   }
@@ -264,7 +282,7 @@ export function AppProvider({ children }) {
     setSeenSlugs([])
     seenQueue.current = []
     localStorage.removeItem('gcr_seen')
-    if (getToken()) await apiSend('DELETE', '/api/tourist/seen')
+    await apiSend('DELETE', '/api/tourist/seen')
   }
 
   async function saveTourist(data) {
@@ -294,6 +312,9 @@ export function AppProvider({ children }) {
       localStorage.setItem('gcr_saved', JSON.stringify(updated))
       return updated
     })
+    // tourist_saves.user_id has a real FK to auth.users — saves only
+    // persist server-side once signed in; guests keep this local-only
+    // until they sign up (matches existing device-local behavior).
     if (!userId) return
     await apiSend('POST', '/api/tourist/saves', {
       entity_slug: business.slug,

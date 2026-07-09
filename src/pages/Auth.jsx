@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useSearchParams, useLocation, Link } from 'react-router-dom'
-import { useApp } from '../context/AppContext'
+import { useApp, anonymousVisitorId } from '../context/AppContext'
 import { API_BASE as API } from '../config'
 // Firebase phone auth disabled - use email/password only
 // import { sendFirebaseOTP, confirmFirebaseOTP, resetRecaptcha, setupRecaptcha } from '../services/firebaseAuth'
@@ -78,7 +78,7 @@ export default function Auth() {
         const r = await fetch(`${API}/api/tourist-auth/phone-token`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ token: magicToken }),
+          body: JSON.stringify({ token: magicToken, anonymous_visitor_id: anonymousVisitorId() }),
         })
         const d = await r.json()
         if (!r.ok) { setError(d.error || 'This sign-in link is invalid or expired.'); return }
@@ -152,7 +152,7 @@ export default function Auth() {
       const r = await fetch(`${API}/api/tourist-auth/signin`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email.trim().toLowerCase(), password }),
+        body: JSON.stringify({ email: email.trim().toLowerCase(), password, anonymous_visitor_id: anonymousVisitorId() }),
       })
       const d = await r.json()
       if (!r.ok) { setError(d.error || 'Sign in failed'); return }
@@ -224,7 +224,7 @@ export default function Auth() {
       const r = await fetch(`${API}/api/tourist-auth/phone-verify`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: normalizePhone(phone), code }),
+        body: JSON.stringify({ phone: normalizePhone(phone), code, anonymous_visitor_id: anonymousVisitorId() }),
       })
       const d = await r.json()
       if (!r.ok) { setError(d.error || 'Invalid code — try again.'); return }
@@ -323,7 +323,7 @@ export default function Auth() {
       const r = await fetch(`${API}/api/tourist-auth/verify`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email.trim().toLowerCase(), code }),
+        body: JSON.stringify({ email: email.trim().toLowerCase(), code, anonymous_visitor_id: anonymousVisitorId() }),
       })
       const d = await r.json()
       if (!r.ok) { setError(d.error || 'Invalid code — check and try again.'); return }
