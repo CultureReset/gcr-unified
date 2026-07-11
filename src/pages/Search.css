@@ -284,6 +284,34 @@
   color: #0b6475;
 }
 
+.search-header-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.search-radius-select {
+  padding: 5px 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 999px;
+  background: #fff;
+  color: #446072;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.search-fuzzy-note {
+  padding: 8px 14px;
+  margin: 0 4px 10px;
+  background: #fff8e6;
+  border: 1px solid #f4dfa0;
+  border-radius: 10px;
+  font-size: 12.5px;
+  color: #8a6d1f;
+}
+
 .sr-dist {
   color: #0b7a75;
   font-weight: 600;

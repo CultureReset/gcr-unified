@@ -261,6 +261,32 @@ export default function Events() {
     })
   }, [events, dateFilter, typeFilter, customDate, todayStr, tomorrowStr, weekendDates])
 
+  // Playing now / starting soon today first, later dates pushed to the bottom —
+  // within each group, earliest start time first. Previously this list had no
+  // sort at all and just rendered in API order.
+  const sorted = useMemo(() => {
+    const now = new Date()
+    const nowMins = now.getHours() * 60 + now.getMinutes()
+    const toMins = t => { if (!t) return null; const [h, m] = t.split(':').map(Number); return h * 60 + m }
+
+    const rank = ev => {
+      const isToday = ev.event_date === todayStr || (ev.recurring && dowToInt(ev.day_of_week) === now.getDay())
+      if (!isToday) return { group: 2, sortMins: toMins(ev.start_time) ?? 9999, dateStr: ev.event_date || '' }
+      const startMins = toMins(ev.start_time)
+      const endMins = toMins(ev.end_time)
+      const isLiveNow = startMins != null && nowMins >= startMins && (endMins != null ? nowMins < endMins : nowMins < startMins + 180)
+      if (isLiveNow) return { group: 0, sortMins: startMins }
+      if (startMins != null && startMins >= nowMins) return { group: 1, sortMins: startMins }
+      // Today but already ended (no end_time known, assumed 3hr window) — treat like a later listing, not top-ranked
+      return { group: 3, sortMins: startMins ?? 9999 }
+    }
+
+    return [...filtered]
+      .map(ev => ({ ev, r: rank(ev) }))
+      .sort((a, b) => a.r.group - b.r.group || a.r.sortMins - b.r.sortMins || (a.r.dateStr || '').localeCompare(b.r.dateStr || ''))
+      .map(x => x.ev)
+  }, [filtered, todayStr])
+
   const dateButtons = [
     { key: 'today', label: 'Today' },
     { key: 'tomorrow', label: 'Tomorrow' },
@@ -330,7 +356,7 @@ export default function Events() {
           {dateFilter === 'weekend' && <span>This Weekend</span>}
           {dateFilter === 'all' && <span>All Upcoming Events</span>}
           {dateFilter === 'custom' && customDate && <span>{fmtDate(customDate)}</span>}
-          {!loading && <span className="ev-count">{filtered.length} event{filtered.length !== 1 ? 's' : ''}</span>}
+          {!loading && <span className="ev-count">{sorted.length} event{sorted.length !== 1 ? 's' : ''}</span>}
         </div>
 
         {loading ? (
@@ -343,7 +369,7 @@ export default function Events() {
             <div>Couldn't load events</div>
             <button onClick={() => window.location.reload()}>Try Again</button>
           </div>
-        ) : filtered.length === 0 ? (
+        ) : sorted.length === 0 ? (
           <div className="ev-empty">
             <div style={{ fontSize: 40 }}>🎸</div>
             <div style={{ fontWeight: 700, marginTop: 12 }}>No events found</div>
@@ -358,7 +384,7 @@ export default function Events() {
           </div>
         ) : (
           <div className="ev-grid">
-            {filtered.map(ev => (
+            {sorted.map(ev => (
               <EventCard key={ev.id} event={ev} navigate={navigate} />
             ))}
           </div>

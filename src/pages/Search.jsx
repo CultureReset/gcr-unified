@@ -163,6 +163,8 @@ export default function Search() {
   const [error, setError] = useState(null)
   const [searchInput, setSearchInput] = useState(query)
   const [sortByDist, setSortByDist] = useState(false)
+  const [radius, setRadius] = useState('')
+  const [fuzzyMatch, setFuzzyMatch] = useState(false)
   const [toast, setToast] = useState(null)
   const debounceRef = useRef(null)
 
@@ -192,6 +194,7 @@ export default function Search() {
         setError(null)
         const body = { query, limit: 100 }
         if (userLocation) { body.lat = userLocation.lat; body.lng = userLocation.lng }
+        if (radius) body.radius = radius
         const res = await fetch(`${API_BASE}/api/gcr/search`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -200,6 +203,7 @@ export default function Search() {
         if (!res.ok) throw new Error('Search failed')
         const data = await res.json()
         setResults(data.results || [])
+        setFuzzyMatch(!!data.fuzzy_match)
       } catch (err) {
         setError(err.message)
       } finally {
@@ -207,7 +211,7 @@ export default function Search() {
       }
     }
     load()
-  }, [query, userLocation])
+  }, [query, userLocation, radius])
 
   const handleInputChange = (e) => {
     const val = e.target.value
@@ -387,14 +391,33 @@ export default function Search() {
                   {' '}for &ldquo;{query}&rdquo;
                 </span>
                 {userLocation && (
-                  <button
-                    className={`search-sort-btn ${sortByDist ? 'active' : ''}`}
-                    onClick={() => setSortByDist(s => !s)}
-                  >
-                    📍 {sortByDist ? 'Nearest first' : 'Sort: Nearest'}
-                  </button>
+                  <div className="search-header-controls">
+                    <button
+                      className={`search-sort-btn ${sortByDist ? 'active' : ''}`}
+                      onClick={() => setSortByDist(s => !s)}
+                    >
+                      📍 {sortByDist ? 'Nearest first' : 'Sort: Nearest'}
+                    </button>
+                    <select
+                      className="search-radius-select"
+                      value={radius}
+                      onChange={e => setRadius(e.target.value)}
+                      aria-label="Limit results to a distance"
+                    >
+                      <option value="">Any distance</option>
+                      <option value="5">Within 5 mi</option>
+                      <option value="10">Within 10 mi</option>
+                      <option value="25">Within 25 mi</option>
+                      <option value="50">Within 50 mi</option>
+                    </select>
+                  </div>
                 )}
               </div>
+              {fuzzyMatch && (
+                <div className="search-fuzzy-note">
+                  No exact match for &ldquo;{query}&rdquo; — showing the closest names instead
+                </div>
+              )}
               {[...results]
                 .sort((a, b) => sortByDist ? (a.distance_miles ?? 9999) - (b.distance_miles ?? 9999) : 0)
                 .map(biz => <SearchResultCard key={biz.slug} biz={biz} navigate={navigate} />)
