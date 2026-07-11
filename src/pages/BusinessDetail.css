@@ -12,7 +12,11 @@
 .detail-page {
   min-height: 100vh;
   background: #f6f8fb;
-  padding-bottom: 80px;
+  /* Clears BottomNav + the "Ask a local" FAB + the install banner, which
+     stack above it at up to ~200px from the viewport bottom (see
+     InstallBanner.jsx / AiChat.css) — without this the last section on
+     the page sits behind those floating overlays. */
+  padding-bottom: 210px;
 }
 
 /* Back Button Header */

@@ -1,7 +1,9 @@
 .category-page {
   min-height: 100vh;
   background: #f5f7fb;
-  padding-bottom: 80px;
+  /* Clears BottomNav + the "Ask a local" FAB + the install banner (see
+     InstallBanner.jsx / AiChat.css) so the last card isn't hidden behind them. */
+  padding-bottom: 210px;
 }
 
 /* ── Hero ── */

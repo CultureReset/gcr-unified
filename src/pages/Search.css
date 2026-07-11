@@ -1,7 +1,9 @@
 .search-page {
   background: #f7f9fc;
   min-height: 100vh;
-  padding-bottom: 90px;
+  /* Clears BottomNav + the "Ask a local" FAB + the install banner (see
+     InstallBanner.jsx / AiChat.css) so the last result isn't hidden behind them. */
+  padding-bottom: 210px;
 }
 
 .search-hero {

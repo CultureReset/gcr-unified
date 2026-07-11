@@ -6,6 +6,15 @@ export default function InstallBanner() {
   const [dismissed, setDismissed] = useState(false)
   const [installed, setInstalled] = useState(false)
   const [showInstructions, setShowInstructions] = useState(false)
+  const [collapsed, setCollapsed] = useState(false)
+
+  // Shrink to a small tappable icon after a few seconds so it stops
+  // competing with the "Ask a local" FAB and page content below it —
+  // still reachable (tap to re-expand), still fully dismissible via ×.
+  useEffect(() => {
+    const t = setTimeout(() => setCollapsed(true), 6000)
+    return () => clearTimeout(t)
+  }, [])
 
   useEffect(() => {
     if (window.matchMedia('(display-mode: standalone)').matches) {
@@ -42,39 +51,67 @@ export default function InstallBanner() {
 
   if (installed || dismissed || (!prompt && !isIOS)) return null
 
+  // Sits above the "Ask a local" FAB (which owns the bottom-right corner at
+  // bottom:76px) instead of overlapping it — see AiChat.css .ai-chat-fab.
+  const bannerBottom = 'calc(148px + env(safe-area-inset-bottom))'
+
+  if (collapsed) {
+    return (
+      <button
+        onClick={() => setCollapsed(false)}
+        aria-label="Add Gulf Coast Radar to your home screen"
+        style={{
+          position: 'fixed', bottom: bannerBottom, left: 16,
+          width: 44, height: 44, borderRadius: '50%',
+          background: 'linear-gradient(135deg, #0b5e5a, #0b7a75)',
+          border: 'none', boxShadow: '0 6px 20px rgba(0,0,0,0.35)',
+          zIndex: 200, padding: 0, cursor: 'pointer',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+        <img
+          src="/gcr-logo.png"
+          alt=""
+          style={{ width: 26, height: 26, borderRadius: 6, objectFit: 'cover' }}
+          onError={e => { e.target.style.display = 'none' }}
+        />
+      </button>
+    )
+  }
+
   return (
     <>
       <div
         onClick={isIOS ? () => setShowInstructions(true) : undefined}
         style={{
-          position: 'fixed', bottom: 'calc(80px + env(safe-area-inset-bottom))',
+          position: 'fixed', bottom: bannerBottom,
           left: '50%', transform: 'translateX(-50%)',
-          width: 'calc(100% - 32px)', maxWidth: 398,
+          width: 'calc(100% - 32px)', maxWidth: 360,
           background: 'linear-gradient(135deg, #0b5e5a, #0b7a75)',
           backdropFilter: 'blur(20px)',
-          borderRadius: 18, padding: '14px 16px',
-          display: 'flex', alignItems: 'center', gap: 12,
+          borderRadius: 14, padding: '10px 12px',
+          display: 'flex', alignItems: 'center', gap: 10,
           boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
           zIndex: 200,
           cursor: isIOS ? 'pointer' : 'default',
+          transition: 'transform 0.2s ease, opacity 0.2s ease',
         }}>
         <img
           src="/gcr-logo.png"
           alt="GCR"
-          style={{ width: 44, height: 44, borderRadius: 10, objectFit: 'cover', flexShrink: 0 }}
+          style={{ width: 34, height: 34, borderRadius: 8, objectFit: 'cover', flexShrink: 0 }}
           onError={e => { e.target.style.display = 'none' }}
         />
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontWeight: 800, color: '#fff', fontSize: 14 }}>Add Gulf Coast Radar</div>
-          <div style={{ fontSize: 12, color: 'rgba(255,255,255,.75)', marginTop: 2 }}>
+          <div style={{ fontWeight: 800, color: '#fff', fontSize: 13 }}>Add Gulf Coast Radar</div>
+          <div style={{ fontSize: 11, color: 'rgba(255,255,255,.75)', marginTop: 1 }}>
             {isIOS ? 'Tap for instructions' : 'Install the app — free, no App Store needed'}
           </div>
         </div>
         {!isIOS && (
           <button onClick={install} style={{
             background: 'white', color: '#0b5e5a',
-            fontWeight: 800, fontSize: 13,
-            padding: '8px 14px', borderRadius: 10,
+            fontWeight: 800, fontSize: 12,
+            padding: '7px 12px', borderRadius: 9,
             border: 'none', cursor: 'pointer', flexShrink: 0,
           }}>
             Install
@@ -82,7 +119,7 @@ export default function InstallBanner() {
         )}
         <button onClick={e => { e.stopPropagation(); dismiss() }} style={{
           background: 'none', color: 'rgba(255,255,255,.6)',
-          fontSize: 20, padding: '0 4px', flexShrink: 0, border: 'none', cursor: 'pointer',
+          fontSize: 18, padding: '0 2px', flexShrink: 0, border: 'none', cursor: 'pointer',
         }}>×</button>
       </div>
 
