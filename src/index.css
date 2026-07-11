@@ -5,6 +5,15 @@
   -webkit-tap-highlight-color: transparent;
 }
 
+html {
+  /* Without this, WebKit/Blink can auto-boost font sizes in narrow flex
+     columns ("text inflation") independent of any font-size the CSS
+     actually specifies — every font-size in this app is an intentional
+     px value, never let the browser override it. */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
 :root {
   --bg: #f7f9fc;
   --bg1: #ffffff;
