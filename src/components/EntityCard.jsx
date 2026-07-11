@@ -13,12 +13,6 @@ export default function EntityCard({ entity, category }) {
       <div className="card-image" style={imageUrl ? { backgroundImage: `url(${imageUrl})` } : { display: 'grid', placeItems: 'center', fontSize: 42, background: 'linear-gradient(135deg,#eef6fb,#fdf3ea)' }}>
         {!imageUrl && <span>{entity.icon || '📍'}</span>}
         {entity.is_active === false && <div className="card-badge closed">Closed</div>}
-        {category === 'artists' && entity.is_performing_today && (
-          <div className="card-badge live">🔴 Live Now</div>
-        )}
-        {category === 'events' && entity.is_today && (
-          <div className="card-badge today">Today</div>
-        )}
       </div>
 
       {/* Content */}
@@ -64,8 +58,12 @@ export default function EntityCard({ entity, category }) {
           </p>
         )}
 
-        {/* Restaurants, Coffee, Services, Public Spots, Shopping, Happy Hours */}
-        {['restaurants', 'coffee', 'services', 'public-spots', 'shopping', 'happy-hours'].includes(category) && (
+        {/* Food, Shopping, Nightlife — categories mapCategory() actually produces
+            (see services/gcrApi.js); the previous list here ('restaurants',
+            'coffee', 'services', 'public-spots', 'happy-hours') never matched
+            anything real, so restaurant/bar children of a hub silently lost
+            their description and happy-hour badge. */}
+        {['food', 'shopping', 'nightlife'].includes(category) && (
           <>
             {entity.description && (
               <p className="description">{entity.description.slice(0, 100)}...</p>
@@ -86,29 +84,12 @@ export default function EntityCard({ entity, category }) {
           </>
         )}
 
-        {/* Events */}
-        {category === 'events' && (
-          <>
-            {entity.event_date && <p className="event-date">📅 {entity.event_date}</p>}
-            {entity.start_time && <p className="event-time">🕐 {entity.start_time}</p>}
-            {entity.venue_name && <p className="venue-name">{entity.venue_name}</p>}
-          </>
-        )}
-
-        {/* Staying */}
-        {category === 'staying' && (
+        {/* Stay */}
+        {category === 'stay' && (
           <>
             {entity.unit_count && (
               <p className="units-badge">{entity.unit_count} Unit Types</p>
             )}
-          </>
-        )}
-
-        {/* Artists */}
-        {category === 'artists' && (
-          <>
-            {entity.performance_time && <p className="performance-time">🎸 {entity.performance_time}</p>}
-            {entity.venue_name && <p className="venue-name">@ {entity.venue_name}</p>}
           </>
         )}
       </div>
