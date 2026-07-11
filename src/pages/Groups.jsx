@@ -117,7 +117,6 @@ export default function Groups() {
                       {g.arrival && ` · ${new Date(g.arrival).toLocaleDateString('en-US',{month:'short',day:'numeric'})}`}
                     </div>
                   </div>
-                  <div style={{fontSize:11,color:'rgba(255,255,255,.45)',fontFamily:'monospace'}}>{g.invite_code}</div>
                 </div>
               ))}
             </div>
