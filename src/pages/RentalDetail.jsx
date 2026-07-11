@@ -544,7 +544,7 @@ export default function RentalDetail() {
           </div>
         )}
 
-        <button className="back-btn" onClick={() => navigate('/staying')}>← Back to Rentals</button>
+        <button className="rd-back-btn" onClick={() => navigate('/staying')}>← Back to Rentals</button>
       </div>
 
       {/* Lightbox */}

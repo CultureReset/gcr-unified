@@ -190,7 +190,7 @@ export default function BookRental() {
           </p>
         </form>
 
-        <button className="back-btn" onClick={() => navigate(`/rental/${slug}`)}>
+        <button className="br-back-btn" onClick={() => navigate(`/rental/${slug}`)}>
           ← Back
         </button>
       </div>
