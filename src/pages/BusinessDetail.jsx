@@ -291,6 +291,17 @@ export default function RestaurantDetail() {
     .map(s => ({ ...s, items: [...s.items].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0)) }))
   const hasOfferings = flexSections.length > 0
 
+  // Rich offerings come from real entity_sections (uuid string ids) and already
+  // present each priced item in an organized, grouped way. Offerings synthesized
+  // from the `offerings`/marina tables use negative numeric ids instead. When a
+  // business has rich sections that already show its priced items, the separate
+  // flat pricing_items list is a redundant duplicate (e.g. Coyote's 6 rental
+  // sections vs its 11 identical pricing_items) -- so suppress the flat list.
+  // A business whose only structured pricing IS the flat list (a charter's trip
+  // tiers, etc.) keeps it.
+  const hasRichOfferingSections = flexSections.some(s => typeof s.id === 'string' && (s.items || []).length > 0)
+  const showFlatPricing = pricing.length > 0 && !hasRichOfferingSections
+
   // Rich menu data
   const rotating = business.rotating_sections || business.rotatingSections || []
   const foodRotating = rotating.filter(r => r.type !== 'drinks')
@@ -474,7 +485,7 @@ export default function RestaurantDetail() {
   const sections = [
     // Data-driven — show if data exists regardless of type
     ...(hasOfferings                     ? [{ id: 'offerings',   label: 'Offerings',    icon: '🎟️' }] : []),
-    ...((pricing.length || whatsIncluded.length || requirements.length || whatToBring.length) ? [{ id: 'pricing', label: 'Pricing', icon: '💰' }] : []),
+    ...((showFlatPricing || whatsIncluded.length || requirements.length || whatToBring.length) ? [{ id: 'pricing', label: showFlatPricing ? 'Pricing' : 'Details', icon: showFlatPricing ? '💰' : '📋' }] : []),
     ...(schedules.length                 ? [{ id: 'schedule',    label: 'Schedule',     icon: '🗓️' }] : []),
     // Food tabs
     ...((isFood || hasMenu)   ? (hasMenu    ? [{ id: 'menu',       label: 'Menu',        icon: '🍽️' }] : []) : []),
@@ -514,19 +525,24 @@ export default function RestaurantDetail() {
   // rooms & amenities, services → service list, shops → products, parks →
   // park info. Tabs not named in a priority list keep their relative order
   // after the prioritized ones.
+  // Yelp-style top-down flow: lead with what the visitor came for, put the
+  // "about" overview right after it (not buried at the bottom), then the
+  // supporting detail, social proof (reviews), photos, and finally the
+  // logistics (hours, location). 'overview' and 'location' are explicitly
+  // placed so they no longer fall to the very end by default.
   const TAB_PRIORITY = isFood
-    ? ['menu', 'specials', 'happy-hour', 'drinks', 'offerings', 'pricing', 'events', 'hours', 'reviews', 'gallery']
+    ? ['menu', 'specials', 'happy-hour', 'drinks', 'overview', 'offerings', 'pricing', 'events', 'reviews', 'gallery', 'hours', 'location']
     : isActivity
-    ? ['offerings', 'pricing', 'schedule', 'experience', 'fish', 'meeting', 'faqs', 'reviews', 'gallery', 'hours']
+    ? ['offerings', 'pricing', 'overview', 'schedule', 'experience', 'fish', 'meeting', 'faqs', 'reviews', 'gallery', 'hours', 'location']
     : isStay
-    ? ['rooms', 'amenities', 'offerings', 'book-stay', 'policies', 'faqs', 'reviews', 'gallery']
+    ? ['rooms', 'amenities', 'overview', 'offerings', 'book-stay', 'policies', 'faqs', 'reviews', 'gallery', 'hours', 'location']
     : isService
-    ? ['services', 'offerings', 'pricing', 'team', 'reviews', 'hours', 'gallery']
+    ? ['services', 'offerings', 'pricing', 'overview', 'team', 'faqs', 'reviews', 'hours', 'gallery', 'location']
     : isShopping
-    ? ['products', 'offerings', 'specials', 'hours', 'gallery', 'reviews']
+    ? ['products', 'offerings', 'specials', 'overview', 'hours', 'gallery', 'reviews', 'location']
     : isPark
-    ? ['park-info', 'offerings', 'events', 'gallery', 'reviews']
-    : []
+    ? ['park-info', 'offerings', 'overview', 'events', 'gallery', 'hours', 'reviews', 'location']
+    : ['overview', 'offerings', 'pricing', 'faqs', 'reviews', 'gallery', 'hours', 'location']
   const tabRank = (id, idx) => {
     const i = TAB_PRIORITY.indexOf(id)
     return i === -1 ? 1000 + idx : i
@@ -1332,10 +1348,10 @@ export default function RestaurantDetail() {
             </section>
           )}
 
-          {(pricing.length > 0 || whatsIncluded.length > 0 || requirements.length > 0 || whatToBring.length > 0 || activityDetails) && (
+          {(showFlatPricing || whatsIncluded.length > 0 || requirements.length > 0 || whatToBring.length > 0 || activityDetails) && (
                       <section className="content-section" ref={el => { sectionRefs.current["pricing"] = el }} id="section-pricing">
-              <h2>💰 Pricing</h2>
-              {pricing.length > 0 && (
+              <h2>{showFlatPricing ? '💰 Pricing' : '📋 Details'}</h2>
+              {showFlatPricing && (
                 <div className="pricing-list">
                   {pricing.map((item, i) => {
                     // Support both real DB schema (item_name, price) and extended schema (tier_name, price_from/to)
