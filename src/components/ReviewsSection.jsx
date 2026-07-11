@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { API_BASE } from '../config'
 import { useApp, authFetch } from '../context/AppContext'
 
-export default function ReviewsSection({ slug }) {
+export default function ReviewsSection({ slug, googleRating, googleReviewCount }) {
   const navigate = useNavigate()
   const { userId } = useApp()
   const loggedIn = !!userId || !!localStorage.getItem('gcr_access_token')
@@ -102,7 +102,7 @@ export default function ReviewsSection({ slug }) {
     <section className="content-section reviews-section">
       <h2>⭐ Reviews</h2>
 
-      {stats && (
+      {stats && stats.total > 0 ? (
         <div className="reviews-stats">
           <div className="rating-summary">
             <div className="rating-large">{stats.average}</div>
@@ -127,7 +127,19 @@ export default function ReviewsSection({ slug }) {
             ))}
           </div>
         </div>
-      )}
+      ) : googleRating ? (
+        /* No on-platform reviews yet, but we have the business's aggregate
+           Google rating — show that instead of an empty all-zero widget that
+           contradicts the star rating shown in the page header. */
+        <div className="reviews-stats reviews-stats-google">
+          <div className="rating-summary">
+            <div className="rating-large">{Number(googleRating).toFixed(1)}</div>
+            <div className="rating-stars">{renderStars(Math.round(googleRating))}</div>
+            <div className="rating-count">{googleReviewCount || 0} Google reviews</div>
+          </div>
+          <p className="rating-source-note">Aggregate rating from Google. Be the first to leave a review here on Gulf Coast Radar.</p>
+        </div>
+      ) : null}
 
       <div className="reviews-actions">
         {loggedIn ? (
@@ -193,7 +205,7 @@ export default function ReviewsSection({ slug }) {
       {loading ? (
         <p className="loading">Loading reviews...</p>
       ) : reviews.length === 0 ? (
-        <p className="no-data">No reviews yet. Be the first to review!</p>
+        <p className="no-data">{googleRating ? 'No Gulf Coast Radar reviews yet — be the first to write one!' : 'No reviews yet. Be the first to review!'}</p>
       ) : (
         <>
           <div className="reviews-list">

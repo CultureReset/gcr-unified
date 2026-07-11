@@ -1666,7 +1666,7 @@ export default function RestaurantDetail() {
           )}
 
           {/* Reviews */}
-          <div ref={el => { sectionRefs.current["reviews"] = el }} id="section-reviews"><ReviewsSection slug={slug} /></div>
+          <div ref={el => { sectionRefs.current["reviews"] = el }} id="section-reviews"><ReviewsSection slug={slug} googleRating={business.rating} googleReviewCount={business.review_count} /></div>
 
           {/* Team / Blog / Policies — only render when there's actually
               something to show. These flags are already computed from the
