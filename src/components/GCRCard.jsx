@@ -295,7 +295,7 @@ export default function GCRCard({ entity, category, onSave, savedSlugs }) {
 
         <button
           className={`gcr-save-btn ${isSaved ? 'saved' : ''}`}
-          onClick={e => { e.stopPropagation(); onSave?.(entity) }}
+          onClick={e => { e.stopPropagation(); onSave?.({ ...entity, category }) }}
         >
           {isSaved ? '❤️' : '🤍'}
         </button>

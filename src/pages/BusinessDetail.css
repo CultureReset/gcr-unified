@@ -361,6 +361,19 @@
   color: var(--muted);
 }
 
+.avail-badge-inline {
+  font-weight: 700;
+  color: #0b7a75;
+}
+.avail-badge-inline.avail-critical {
+  color: #dc2626;
+}
+.avail-updated {
+  font-weight: 400;
+  color: var(--muted);
+  font-size: 12px;
+}
+
 .badge-row {
   display: flex;
   flex-wrap: wrap;

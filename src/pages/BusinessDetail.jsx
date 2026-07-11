@@ -382,6 +382,16 @@ export default function RestaurantDetail() {
     return `${(h % 12 || 12)}:${String(m).padStart(2, '0')}${h >= 12 ? 'pm' : 'am'}`
   }
 
+  const timeAgo = (iso) => {
+    if (!iso) return ''
+    const mins = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60000))
+    if (mins < 1) return 'just now'
+    if (mins < 60) return `${mins}m ago`
+    const hrs = Math.round(mins / 60)
+    if (hrs < 24) return `${hrs}h ago`
+    return `${Math.round(hrs / 24)}d ago`
+  }
+
   // Open/closed status
   const todayHours = hours.find(h => h.day_of_week === todayIdx)
   const openStatus = (() => {
@@ -695,6 +705,20 @@ export default function RestaurantDetail() {
 
         {business.city && <p className="meta">📍 {business.city}, {business.state}</p>}
         {business.rating && <p className="meta">⭐ {business.rating} ({business.review_count || 0} reviews)</p>}
+
+        {/* Live availability — only shows if the owner has it enabled (visible_on_profile) */}
+        {business.availability_today && (
+          <p className={`meta avail-badge-inline ${business.availability_today.remaining_spots <= 2 ? 'avail-critical' : ''}`}>
+            {business.availability_today.last_minute_deal
+              ? `⚡ ${business.availability_today.last_minute_deal}`
+              : business.availability_today.remaining_spots != null
+                ? `🎟️ ${business.availability_today.remaining_spots} left today`
+                : `${business.availability_today.status === 'available' ? '✅ Available today' : business.availability_today.status === 'booked' ? '🔴 Fully booked today' : ''}`}
+            {business.availability_today.last_updated && (
+              <span className="avail-updated"> · updated {timeAgo(business.availability_today.last_updated)}</span>
+            )}
+          </p>
+        )}
 
         {/* Connected parent — child profiles link back to their property hub */}
         {business.parent && (
