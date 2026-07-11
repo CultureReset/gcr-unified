@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useApp } from '../context/AppContext'
 import { useNavigate } from 'react-router-dom'
+import AvailabilityCalendar from '../components/AvailabilityCalendar'
 import './Dashboard.css'
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'https://gcr-api-clean.vercel.app'
@@ -279,7 +280,145 @@ function BookingsSection({ business }) {
 }
 
 function CalendarSection({ business }) {
-  return <div className="section"><h2>Calendar</h2><p>Manage availability</p></div>
+  const token = localStorage.getItem('gcr_access_token')
+  const authHeaders = { Authorization: `Bearer ${token}` }
+  const [units, setUnits] = useState([])
+  const [feeds, setFeeds] = useState([])
+  const [feedUrl, setFeedUrl] = useState('')
+  const [selectedUnit, setSelectedUnit] = useState('')
+  const [form, setForm] = useState({ source_label: '', ical_url: '', provider: 'airbnb', resource_id: '' })
+  const [busy, setBusy] = useState(false)
+  const [msg, setMsg] = useState(null)
+  const [copied, setCopied] = useState(false)
+
+  async function loadAll() {
+    try {
+      const [u, f, fu] = await Promise.all([
+        fetch(`${API_BASE}/api/dashboard/units`, { headers: authHeaders }).then(r => (r.ok ? r.json() : [])),
+        fetch(`${API_BASE}/api/dashboard/ical/external`, { headers: authHeaders }).then(r => (r.ok ? r.json() : [])),
+        fetch(`${API_BASE}/api/dashboard/ical/feed-url`, { headers: authHeaders }).then(r => (r.ok ? r.json() : {})),
+      ])
+      const ulist = Array.isArray(u) ? u : []
+      setUnits(ulist)
+      setFeeds(Array.isArray(f) ? f : [])
+      setFeedUrl(fu.feed_url || '')
+      setSelectedUnit(prev => prev || (ulist[0]?.id ?? ''))
+    } catch { /* ignore */ }
+  }
+  useEffect(() => { loadAll() }, [business?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const connect = async () => {
+    if (!form.ical_url) { setMsg('Paste your calendar link first.'); return }
+    setBusy(true); setMsg(null)
+    try {
+      const res = await fetch(`${API_BASE}/api/dashboard/ical/external`, {
+        method: 'POST',
+        headers: { ...authHeaders, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          source_label: form.source_label || form.provider,
+          ical_url: form.ical_url,
+          provider: form.provider,
+          resource_id: form.resource_id || undefined,
+        }),
+      })
+      if (!res.ok) throw new Error()
+      setForm({ source_label: '', ical_url: '', provider: 'airbnb', resource_id: '' })
+      setMsg('Calendar connected — booked dates will sync in shortly.')
+      loadAll()
+    } catch { setMsg('Could not connect that calendar. Double-check the link.') }
+    finally { setBusy(false) }
+  }
+
+  const syncNow = async (id) => {
+    setBusy(true)
+    try { await fetch(`${API_BASE}/api/dashboard/ical/external/${id}/sync-now`, { method: 'POST', headers: authHeaders }); await loadAll() }
+    finally { setBusy(false) }
+  }
+  const removeFeed = async (id) => {
+    setBusy(true)
+    try { await fetch(`${API_BASE}/api/dashboard/ical/external/${id}`, { method: 'DELETE', headers: authHeaders }); await loadAll() }
+    finally { setBusy(false) }
+  }
+  const copyUrl = () => { navigator.clipboard?.writeText(feedUrl); setCopied(true); setTimeout(() => setCopied(false), 1800) }
+
+  const unitName = (id) => units.find(u => u.id === id)?.name
+  const selUnit = units.find(u => u.id === selectedUnit)
+
+  return (
+    <div className="section cal-editor">
+      <h2>📅 Calendar &amp; Availability</h2>
+      <p className="cal-sub">Connect the calendars you already use — GCR pulls your booked dates in automatically so nothing double-books.</p>
+
+      <div className="cal-card">
+        <h3>Connect a calendar</h3>
+        <div className="cal-form">
+          <select value={form.provider} onChange={e => setForm(f => ({ ...f, provider: e.target.value }))}>
+            <option value="airbnb">Airbnb</option>
+            <option value="vrbo">Vrbo</option>
+            <option value="track">Track</option>
+            <option value="google">Google Calendar</option>
+            <option value="other">Other</option>
+          </select>
+          {units.length > 1 && (
+            <select value={form.resource_id} onChange={e => setForm(f => ({ ...f, resource_id: e.target.value }))}>
+              <option value="">Whole property</option>
+              {units.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+            </select>
+          )}
+          <input placeholder="Paste your .ics calendar link" value={form.ical_url}
+            onChange={e => setForm(f => ({ ...f, ical_url: e.target.value }))} />
+          <button className="cal-btn" onClick={connect} disabled={busy}>Connect</button>
+        </div>
+        {msg && <div className="cal-msg">{msg}</div>}
+      </div>
+
+      {feeds.length > 0 && (
+        <div className="cal-card">
+          <h3>Connected calendars</h3>
+          <div className="cal-feeds">
+            {feeds.map(fd => (
+              <div key={fd.id} className="cal-feed">
+                <div className="cal-feed-main">
+                  <strong>{fd.source_label || fd.provider || 'Calendar'}</strong>
+                  <span className="cal-feed-unit">{fd.resource_id ? (unitName(fd.resource_id) || 'Unit') : 'Whole property'}</span>
+                  <span className="cal-feed-status">{fd.last_sync_status || 'not synced yet'}</span>
+                </div>
+                <div className="cal-feed-actions">
+                  <button onClick={() => syncNow(fd.id)} disabled={busy}>Sync now</button>
+                  <button className="danger" onClick={() => removeFeed(fd.id)} disabled={busy}>Remove</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {feedUrl && (
+        <div className="cal-card">
+          <h3>Share your GCR calendar</h3>
+          <p className="cal-sub">Paste this into Airbnb/Vrbo’s “import calendar” so GCR bookings block those platforms too.</p>
+          <div className="cal-url-row">
+            <input readOnly value={feedUrl} onFocus={e => e.target.select()} />
+            <button className="cal-btn" onClick={copyUrl}>{copied ? 'Copied!' : 'Copy'}</button>
+          </div>
+        </div>
+      )}
+
+      <div className="cal-card">
+        <div className="cal-cal-head">
+          <h3>Availability</h3>
+          {units.length > 1 && (
+            <select value={selectedUnit} onChange={e => setSelectedUnit(e.target.value)}>
+              {units.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+            </select>
+          )}
+        </div>
+        {selUnit
+          ? <AvailabilityCalendar key={selUnit.id} resourceId={selUnit.id} mode="view" />
+          : <p className="cal-sub">No bookable units found for this listing yet.</p>}
+      </div>
+    </div>
+  )
 }
 
 function AnalyticsSection({ business }) {

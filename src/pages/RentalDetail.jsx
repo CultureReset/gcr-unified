@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import AvailabilityCalendar from '../components/AvailabilityCalendar'
 import './RentalDetail.css'
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'https://gcr-api-clean.vercel.app'
@@ -23,7 +24,6 @@ export default function RentalDetail() {
   const [checkIn, setCheckIn] = useState('')
   const [checkOut, setCheckOut] = useState('')
   const [available, setAvailable] = useState(null)
-  const [checkingAvail, setCheckingAvail] = useState(false)
   const [booking, setBooking] = useState({ name: '', email: '', phone: '', guests: 1, notes: '' })
   const [bookingStatus, setBookingStatus] = useState(null)
   const [lightboxIdx, setLightboxIdx] = useState(null)
@@ -79,20 +79,6 @@ export default function RentalDetail() {
     }
     loadReviews()
   }, [rental, slug])
-
-  const handleCheckAvailability = async () => {
-    if (!checkIn || !checkOut) return
-    setCheckingAvail(true)
-    try {
-      const res = await fetch(`${API_BASE}/api/rentals/${slug}/availability?check_in=${checkIn}&check_out=${checkOut}`)
-      const data = await res.json()
-      setAvailable(data.available)
-    } catch {
-      setAvailable(null)
-    } finally {
-      setCheckingAvail(false)
-    }
-  }
 
   const handleBook = async () => {
     if (!checkIn || !checkOut || !booking.name || !booking.email) return
@@ -306,26 +292,15 @@ export default function RentalDetail() {
           <div className="rental-section">
             <h2>Book Your Stay</h2>
             <div className="booking-form">
-              <div className="date-row">
-                <div className="date-field">
-                  <label>Check-in</label>
-                  <input type="date" value={checkIn} min={new Date().toISOString().split('T')[0]} onChange={e => { setCheckIn(e.target.value); setAvailable(null) }} />
-                </div>
-                <div className="date-field">
-                  <label>Check-out</label>
-                  <input type="date" value={checkOut} min={checkIn || new Date().toISOString().split('T')[0]} onChange={e => { setCheckOut(e.target.value); setAvailable(null) }} />
-                </div>
-              </div>
-
-              <button className="check-avail-btn" onClick={handleCheckAvailability} disabled={!checkIn || !checkOut || checkingAvail}>
-                {checkingAvail ? 'Checking...' : 'Check Availability'}
-              </button>
-
-              {available !== null && (
-                <div className={`avail-status ${available ? 'available' : 'unavailable'}`}>
-                  {available ? '✓ Available for those dates' : '✗ Not available — try different dates'}
-                </div>
-              )}
+              <AvailabilityCalendar
+                resourceId={rental.id}
+                minNights={rental.min_nights || 1}
+                onSelect={({ checkIn: ci, checkOut: co, quote }) => {
+                  setCheckIn(ci)
+                  setCheckOut(co)
+                  setAvailable(co ? (quote ? !!quote.bookable : null) : null)
+                }}
+              />
 
               {available && !bookingStatus && (
                 <>
