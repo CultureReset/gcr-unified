@@ -91,10 +91,18 @@
 
 /* ── Listings ── */
 .listings-stack {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 14px;
   padding: 14px;
+}
+
+@media (max-width: 900px) {
+  .listings-stack { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 580px) {
+  .listings-stack { grid-template-columns: 1fr; }
 }
 
 /* States */

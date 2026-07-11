@@ -131,7 +131,7 @@ export default function RestaurantMenu() {
                         <h3>{item.name}</h3>
                         {item.description && <p className="item-desc">{item.description}</p>}
                         <div className="item-footer">
-                          <span className="price">${item.price.toFixed(2)}</span>
+                          {item.price > 0 && <span className="price">${item.price.toFixed(2)}</span>}
                           <button className="add-btn">+</button>
                         </div>
                       </div>
