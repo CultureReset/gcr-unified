@@ -84,10 +84,14 @@ export default function HubTemplate({ business, slug }) {
         </section>
       )}
 
-      {/* Offerings & marina facts — hubs with their own bookable trips,
-          rentals or dock services show them here (template: price table) */}
+      {/* Marina facts always show (slips, fuel dock, etc. — facility info, not
+          per-item, so there's no duplication risk). Offerings (trip/rental price
+          rows) only show here when this hub has NO real child entity pages yet —
+          once each item (boat, unit, etc.) has its own standalone profile page
+          via parent_entity_slug, that child directory below is the single source
+          of truth and the price-list here would just repeat it. */}
       {(business.sections || [])
-        .filter(s => s.section_type === 'offerings' || s.section_type === 'marina')
+        .filter(s => s.section_type === 'marina' || (s.section_type === 'offerings' && !(business.child_count > 0)))
         .map(sec => (
           <section className="hub-section" key={sec.id}>
             <h2>{sec.section_type === 'marina' ? '⚓' : '🎟️'} {sec.section_name}</h2>
