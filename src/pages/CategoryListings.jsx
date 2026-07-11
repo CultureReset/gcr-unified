@@ -78,6 +78,24 @@ export default function CategoryListings() {
           // standalone card here — same fix as CategoryPage.jsx.
           ents = all.filter(e => subtypeToCategory(e) === category && !e.parent_slug)
         }
+
+        // Deduplicate: same name → keep the one with a proper subtype / no hash slug
+        // (same rule as CategoryPage.jsx — kept identical so the two pages agree
+        // on which of a duplicate pair "wins")
+        const seen = new Map()
+        const hasHashSlug = s => /[-_][A-Za-z0-9]{6,}$/.test(s || '') || /[-]\d+$/.test(s || '')
+        for (const e of ents) {
+          const key = (e.name || '').trim().toLowerCase()
+          if (!seen.has(key)) { seen.set(key, e); continue }
+          const prev = seen.get(key)
+          const prevHash = hasHashSlug(prev.slug)
+          const curHash = hasHashSlug(e.slug)
+          if (prevHash && !curHash) seen.set(key, e)
+          else if (!prevHash && curHash) { /* keep prev */ }
+          else if (e.entity_subtype && !prev.entity_subtype) seen.set(key, e)
+        }
+        ents = Array.from(seen.values())
+
         setEntities(ents)
         const SKIP_CATEGORIES = new Set(['google_type', 'google_primary_type', 'google_secondary_type'])
         const tagsSet = new Set()

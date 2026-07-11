@@ -5,6 +5,26 @@ import GCRHeader from '../components/GCRHeader'
 import { API_BASE } from '../config'
 import './Landing.css'
 
+// Same duplicate-entity-row problem CategoryPage.jsx guards against — a
+// business scraped from more than one source can end up as multiple entity
+// rows with slightly different name strings. Without this, the homepage
+// rails could feature the same business twice among only ~10-12 slots.
+function dedupeByName(entities) {
+  const hasHashSlug = s => /[-_][A-Za-z0-9]{6,}$/.test(s || '') || /[-]\d+$/.test(s || '')
+  const seen = new Map()
+  for (const e of entities) {
+    const key = (e.name || '').trim().toLowerCase()
+    if (!seen.has(key)) { seen.set(key, e); continue }
+    const prev = seen.get(key)
+    const prevHash = hasHashSlug(prev.slug)
+    const curHash = hasHashSlug(e.slug)
+    if (prevHash && !curHash) seen.set(key, e)
+    else if (!prevHash && curHash) { /* keep prev */ }
+    else if (e.entity_subtype && !prev.entity_subtype) seen.set(key, e)
+  }
+  return Array.from(seen.values())
+}
+
 const HERO_IMG = 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1400&q=80'
 const SUPABASE_URL = 'https://mkepugvdlktfsossumox.supabase.co/storage/v1/object/public/entity-photos'
 
@@ -552,7 +572,7 @@ export default function Landing() {
     fetch(`${API_BASE}/api/gcr/entities?type=restaurants&limit=50`)
       .then(r => r.json())
       .then(d => {
-        const all = d.entities || []
+        const all = dedupeByName(d.entities || [])
         // sort by rating desc, prefer those with photos
         const sorted = all
           .filter(e => e.hero_image_url)
@@ -567,7 +587,7 @@ export default function Landing() {
     fetch(`${API_BASE}/api/gcr/entities?type=things-to-do&limit=50`)
       .then(r => r.json())
       .then(d => {
-        const all = d.entities || []
+        const all = dedupeByName(d.entities || [])
         const sorted = all
           .filter(e => e.hero_image_url && e.city && ['Gulf Shores','Orange Beach'].includes(e.city))
           .sort((a, b) => (b.rating || 0) - (a.rating || 0))
@@ -582,7 +602,7 @@ export default function Landing() {
     fetch(`${API_BASE}/api/gcr/entities?type=staying&limit=50`)
       .then(r => r.json())
       .then(d => {
-        const all = d.entities || []
+        const all = dedupeByName(d.entities || [])
         const sorted = all
           .filter(e => e.hero_image_url && e.hero_image_url.startsWith('https://'))
           .filter(e => e.city && ['Gulf Shores','Orange Beach'].includes(e.city))
