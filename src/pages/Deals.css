@@ -211,13 +211,14 @@
 }
 
 /* ── GRID ── */
-.deals-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 1rem;
-}
-.deals-grid--featured {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+/* Single centered column of large cards, consistent with every other listing
+   surface — cards flow straight down the page at any screen size. */
+.deals-grid, .deals-grid--featured {
+  display: flex;
+  flex-direction: column;
+  gap: 1.15rem;
+  max-width: 620px;
+  margin: 0 auto;
 }
 
 /* ── DEAL CARD ── */
@@ -545,12 +546,9 @@
 /* ── RESPONSIVE ── */
 @media (max-width: 960px) {
   .deals-hero-inner { grid-template-columns: 1fr; }
-  .deals-grid { grid-template-columns: repeat(2, 1fr); }
-  .deals-grid--featured { grid-template-columns: repeat(2, 1fr); }
 }
 @media (max-width: 600px) {
   .deals-title { font-size: 2.5rem; }
-  .deals-grid, .deals-grid--featured { grid-template-columns: 1fr; }
   .modal-row { grid-template-columns: 1fr 1fr; }
   .modal-row > :last-child { grid-column: span 2; }
   .modal-type-grid { grid-template-columns: 1fr; }

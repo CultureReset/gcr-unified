@@ -135,9 +135,10 @@
 
 /* Directory grid — reuses EntityCard, this just controls the grid */
 .hub-directory-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 620px;
 }
 
 /* Events */
