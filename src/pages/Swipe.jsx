@@ -4,9 +4,113 @@ import TinderCard from 'react-tinder-card'
 import { useApp } from '../context/AppContext'
 import { CATEGORIES } from '../data/categories'
 import { TAG_EMOJI } from '../components/GCRCard'
-import { fetchBusinesses, calcDistance, formatDistance, fetchPreferences, personalizeAndSort, searchProperties } from '../services/gcrApi'
+import { fetchBusinesses, calcDistance, formatDistance, fetchPreferences, personalizeAndSort, searchProperties, fetchHomeFeed } from '../services/gcrApi'
 import { API_BASE } from '../config'
 import './Swipe.css'
+
+function formatEventTime(t) {
+  if (!t) return ''
+  const [h, m] = t.split(':').map(Number)
+  const ampm = h >= 12 ? 'PM' : 'AM'
+  const hour = h % 12 || 12
+  return `${hour}:${String(m).padStart(2, '0')} ${ampm}`
+}
+
+// Live music/concerts, events tonight, happy hours right now, and daily
+// specials — same source the Home page's slide rows use (fetchHomeFeed),
+// reshaped into swipeable cards. Synthetic id/slug, same convention as the
+// promo/deal cards above: resolveReal() doesn't remap these, so swiping
+// right saves the card object itself, matching existing precedent.
+async function fetchFeedCards() {
+  try {
+    const feed = await fetchHomeFeed()
+    const cards = []
+
+    // 🎸 Live music / concerts — artist photo, name, venue, set time
+    const musicEventIds = new Set()
+    ;(feed.liveMusic || []).slice(0, 8).forEach(ev => {
+      musicEventIds.add(ev.id)
+      const ent = ev.entity || {}
+      cards.push({
+        id: 'music-' + ev.id,
+        slug: 'music-' + ev.id,
+        _isEvent: true,
+        _eventKind: 'music',
+        _artistSlug: ev.artist?.slug || null,
+        entity_slug: ev.entity_slug,
+        name: ev.artist_name || ev.event_name,
+        hero_image_url: ev.artist?.image_url || ev.image_url || ent.hero_image_url || null,
+        photos: [],
+        city: ent.city || '',
+        category: 'all',
+        _venueName: ent.name || '',
+        _timeLabel: ev.start_time ? formatEventTime(ev.start_time) : '',
+      })
+    })
+
+    // 🎉 Events tonight (skip ones already shown above as live music)
+    ;(feed.events || []).filter(ev => !musicEventIds.has(ev.id)).slice(0, 8).forEach(ev => {
+      const ent = ev.entity || {}
+      cards.push({
+        id: 'event-' + ev.id,
+        slug: 'event-' + ev.id,
+        _isEvent: true,
+        _eventKind: 'event',
+        entity_slug: ev.entity_slug,
+        name: ev.event_name,
+        hero_image_url: ev.image_url || ent.hero_image_url || null,
+        photos: [],
+        city: ent.city || '',
+        category: 'all',
+        _venueName: ent.name || '',
+        _timeLabel: ev.start_time ? formatEventTime(ev.start_time) : '',
+        _coverCharge: ev.cover_charge,
+      })
+    })
+
+    // 🍺 Happy hours active right now
+    ;(feed.happyHours || []).slice(0, 8).forEach(b => {
+      cards.push({
+        id: 'hh-' + b.id,
+        slug: 'hh-' + b.id,
+        _isEvent: true,
+        _eventKind: 'happyhour',
+        entity_slug: b.slug,
+        name: b.name,
+        hero_image_url: b.hero_image_url || null,
+        photos: [],
+        city: b.city || '',
+        category: 'all',
+        _venueName: b.name,
+        _timeLabel: b.hh_end ? `Until ${formatEventTime(b.hh_end)}` : '',
+        _subtitle: b.hh_description || '',
+      })
+    })
+
+    // ⭐ Daily specials
+    ;(feed.specials || []).slice(0, 8).forEach(sp => {
+      const ent = sp.entity || {}
+      cards.push({
+        id: 'special-' + sp.id,
+        slug: 'special-' + sp.id,
+        _isEvent: true,
+        _eventKind: 'special',
+        entity_slug: sp.entity_slug,
+        name: sp.title || sp.special_name,
+        hero_image_url: sp.image_url || ent.hero_image_url || null,
+        photos: [],
+        city: ent.city || '',
+        category: 'all',
+        _venueName: ent.name || '',
+        _discountText: sp.discount_text || '',
+      })
+    })
+
+    return cards.filter(c => c.hero_image_url) // deck already drops cards w/o an image, so don't bother injecting ones that would just get filtered right back out
+  } catch {
+    return []
+  }
+}
 
 // Same Twilio number used across the app (GCRHeader/Auth/Landing) — texting
 // SWIPE here (vs BEACH elsewhere) just tells the inbound webhook this signup
@@ -37,10 +141,11 @@ async function fetchSocialCards() {
 // actually produce (stay/food/nightlife/shopping/activities) — a tab whose id
 // never matches any card's category always renders an empty deck. "Drinks"
 // had no distinct category (bars/cocktail spots already come through under
-// Nightlife) so it's dropped rather than left as a dead end. "Events" isn't a
-// swipeable entity at all — events live in a separate feed — so that tab
-// links out to the real Events page instead of filtering the (always-empty)
-// swipe deck.
+// Nightlife) so it's dropped rather than left as a dead end. Events/live-music/
+// happy-hour/special cards (see fetchFeedCards) are always tagged category:'all'
+// and interleaved into the "All" deck like the promo/deal/social cards, not
+// filterable by tab — so the "Events" tab still links out to the full Events
+// page instead of a (still nonexistent) events-only filter.
 const CAT_TABS = [
   { id: 'all',        label: 'All',        emoji: '🌟' },
   { id: 'food',       label: 'Food',       emoji: '🍽️' },
@@ -282,18 +387,26 @@ export default function Swipe() {
   useEffect(() => {
     let cancelled = false
     setLoading(true)
-    Promise.all([fetchBusinesses(), fetchPreferences(), fetchSocialCards()])
-      .then(([all, prefs, social]) => {
+    Promise.all([fetchBusinesses(), fetchPreferences(), fetchSocialCards(), fetchFeedCards()])
+      .then(([all, prefs, social, feed]) => {
         if (cancelled) return
         setPrefMap(prefs)
-        // Inject social cards every 5th position in the pool
-        const withSocial = [...all]
-        social.forEach((card, i) => {
+        // Interleave social posts with the events/live-music/happy-hour/
+        // specials cards so neither type dominates a stretch of the deck,
+        // then inject the combined list every 5th position in the pool.
+        const extras = []
+        const maxLen = Math.max(social.length, feed.length)
+        for (let i = 0; i < maxLen; i++) {
+          if (social[i]) extras.push(social[i])
+          if (feed[i]) extras.push(feed[i])
+        }
+        const withExtras = [...all]
+        extras.forEach((card, i) => {
           const insertAt = (i + 1) * 5
-          if (insertAt <= withSocial.length) withSocial.splice(insertAt, 0, card)
-          else withSocial.push(card)
+          if (insertAt <= withExtras.length) withExtras.splice(insertAt, 0, card)
+          else withExtras.push(card)
         })
-        setAllBusinesses(withSocial)
+        setAllBusinesses(withExtras)
         setLoading(false)
       })
       .catch(e => { if (!cancelled) { setError(e.message); setLoading(false) } })
@@ -839,7 +952,9 @@ export default function Swipe() {
                       ? <SocialCard post={business} isTop={index === cards.length - 1} onDetail={() => navigate(`/business/${business.entity_slug}`)} swipingDir={index === cards.length - 1 ? swipingDir : null} />
                       : business._isDeal
                         ? <DealSwipeCard deal={business._dealData} isTop={index === cards.length - 1} onDetail={() => business.entity_slug ? navigate(`/business/${business.entity_slug}`) : navigate('/deals')} />
-                        : <BusinessCard business={business} isTop={index === cards.length - 1} onDetail={() => navigate(`/business/${business._isSponsored ? business._sponsorSlug : business.slug}`)} userLocation={userLocation} swipingDir={index === cards.length - 1 ? swipingDir : null} savedPlaces={savedPlaces} onToggleSave={toggleSavePlace} />
+                        : business._isEvent
+                          ? <EventSwipeCard card={business} isTop={index === cards.length - 1} onDetail={() => navigate(business._artistSlug ? `/artist/${business._artistSlug}` : business.entity_slug ? `/business/${business.entity_slug}` : '#')} />
+                          : <BusinessCard business={business} isTop={index === cards.length - 1} onDetail={() => navigate(`/business/${business._isSponsored ? business._sponsorSlug : business.slug}`)} userLocation={userLocation} swipingDir={index === cards.length - 1 ? swipingDir : null} savedPlaces={savedPlaces} onToggleSave={toggleSavePlace} />
                   }
                 </TinderCard>
               ))
@@ -1365,6 +1480,80 @@ function DealSwipeCard({ deal, isTop, onDetail }) {
                    '📅 Claim Deal'}
                 </a>
               )}
+              <button className="card-chevron-btn pressable"
+                onPointerUp={e => { e.stopPropagation(); onDetail() }}
+                onClick={e => { e.stopPropagation(); onDetail() }}
+                aria-label="View details"
+              >
+                ›
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// Live music/concerts, events tonight, happy hours right now, and daily
+// specials — one card, four looks (KIND_STYLE), so they all reuse the same
+// business-card/deal-swipe-card CSS DealSwipeCard already relies on.
+function EventSwipeCard({ card, isTop, onDetail }) {
+  if (!card) return null
+
+  const KIND_STYLE = {
+    music:     { bg: 'linear-gradient(135deg,#4c1d95,#8b5cf6)', badge: '🎸 Live Music' },
+    event:     { bg: 'linear-gradient(135deg,#0e5f8a,#0ea5e9)', badge: '🎉 Event Tonight' },
+    happyhour: { bg: 'linear-gradient(135deg,#92400e,#d97706)', badge: '🍺 Happy Hour' },
+    special:   { bg: 'linear-gradient(135deg,#065f46,#34d399)', badge: '⭐ Daily Special' },
+  }
+  const style = KIND_STYLE[card._eventKind] || KIND_STYLE.event
+
+  return (
+    <div className={`business-card deal-swipe-card ${isTop ? 'top' : ''}`}>
+      <div className="card-image-wrap" style={{ background: style.bg }}>
+        {card.hero_image_url && (
+          <img src={card.hero_image_url} alt={card.name} className="card-image"
+            onError={e => { try { e.target.style.display = 'none' } catch {} }} />
+        )}
+        <div className="card-featured-badge" style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }}>
+          {style.badge}
+        </div>
+        {card._timeLabel && (
+          <div className="deal-swipe-urgent" style={{ background: 'rgba(0,0,0,.55)' }}>🕒 {card._timeLabel}</div>
+        )}
+      </div>
+
+      <div className="card-info-panel" onClick={onDetail} role="button" tabIndex={0}>
+        {card._venueName && <div className="deal-swipe-entity">📍 {card._venueName}</div>}
+        <div className="card-name-row">
+          <h3 className="card-name">{card.name}</h3>
+        </div>
+
+        {card._eventKind === 'event' && card._coverCharge > 0 && (
+          <div className="card-price-hero">💵 ${card._coverCharge} cover</div>
+        )}
+        {card._eventKind === 'event' && card._coverCharge === 0 && (
+          <div className="card-price-hero">🎟️ Free</div>
+        )}
+        {card._eventKind === 'happyhour' && card._subtitle && (
+          <div className="deal-swipe-spots-text">{card._subtitle}</div>
+        )}
+        {card._discountText && (
+          <div className="card-price-hero">💵 {card._discountText}</div>
+        )}
+
+        <div className="deal-swipe-hint">
+          {card._artistSlug ? '← Swipe right to save · Tap to see the artist →' : '← Swipe right to save · Tap for details →'}
+        </div>
+
+        {isTop && (
+          <div className="card-bottom-row">
+            <div className="card-bottom-actions"
+              onTouchStart={e => e.stopPropagation()} onTouchMove={e => e.stopPropagation()}
+              onTouchEnd={e => e.stopPropagation()} onPointerDown={e => e.stopPropagation()}
+              onPointerUp={e => e.stopPropagation()}
+            >
               <button className="card-chevron-btn pressable"
                 onPointerUp={e => { e.stopPropagation(); onDetail() }}
                 onClick={e => { e.stopPropagation(); onDetail() }}
