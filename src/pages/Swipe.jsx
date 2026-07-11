@@ -8,6 +8,12 @@ import { fetchBusinesses, calcDistance, formatDistance, fetchPreferences, person
 import { API_BASE } from '../config'
 import './Swipe.css'
 
+// Same Twilio number used across the app (GCRHeader/Auth/Landing) — texting
+// SWIPE here (vs BEACH elsewhere) just tells the inbound webhook this signup
+// came from the swipe-deck prompt.
+const SMS_SIGNUP_NUMBER = '+12513135464'
+const SMS_SIGNUP_LINK = `sms:${SMS_SIGNUP_NUMBER}?body=${encodeURIComponent('SWIPE')}`
+
 // Fetch social post cards (IG Reels, FB videos) to inject into the swipe deck
 async function fetchSocialCards() {
   try {
@@ -205,8 +211,6 @@ export default function Swipe() {
   const [showBackTop, setShowBackTop] = useState(false)
   const [locPrompt, setLocPrompt] = useState(false)
   const [smsPrompt, setSmsPrompt] = useState(false)
-  const [smsPhone, setSmsPhone] = useState('')
-  const [smsSubmitting, setSmsSubmitting] = useState(false)
   const [smsDone, setSmsDone] = useState(() => !!localStorage.getItem('gcr_sms_opted'))
   const [prefMap, setPrefMap] = useState({})
   const [swipingDir, setSwipingDir] = useState(null)
@@ -893,52 +897,28 @@ export default function Swipe() {
         </button>
       )}
 
-      {/* ── SMS Opt-in Bottom Sheet ── */}
+      {/* ── SMS Opt-in Card: one-tap "Text SWIPE" (autofills Messages, they just hit send) ── */}
       {smsPrompt && !smsDone && (
-        <div style={{position:'fixed',inset:0,zIndex:9000,display:'flex',alignItems:'flex-end',background:'rgba(0,0,0,.5)'}}
+        <div style={{position:'fixed',inset:0,zIndex:9000,display:'flex',alignItems:'flex-end',justifyContent:'center',background:'rgba(0,0,0,.5)'}}
              onClick={e => { if(e.target===e.currentTarget) setSmsPrompt(false) }}>
-          <div style={{width:'100%',background:'var(--card)',borderRadius:'20px 20px 0 0',padding:'28px 24px 40px',boxShadow:'0 -8px 40px rgba(0,0,0,.25)'}}>
-            <div style={{width:40,height:4,background:'var(--primary)',borderRadius:999,margin:'0 auto 20px',opacity:0.5}}></div>
-            <div style={{fontSize:24,textAlign:'center',marginBottom:8}}>📲</div>
-            <h3 style={{textAlign:'center',color:'var(--text)',fontSize:18,fontWeight:900,margin:'0 0 6px'}}>Save your picks + get local deals</h3>
-            <p style={{textAlign:'center',color:'var(--text2)',fontSize:14,margin:'0 0 20px',lineHeight:1.5}}>
-              Drop your number to save your likes and get same-day specials texted to you while you're here.
+          <div style={{position:'relative',width:'calc(100% - 32px)',maxWidth:400,margin:'0 0 100px',background:'var(--card)',borderRadius:18,padding:'16px 20px 18px',boxShadow:'0 -8px 40px rgba(0,0,0,.3)'}}>
+            <button
+              onClick={() => { setSmsPrompt(false); localStorage.setItem('gcr_sms_opted','skip'); setSmsDone(true) }}
+              style={{position:'absolute',top:8,right:10,background:'none',border:'none',color:'var(--text3)',fontSize:20,lineHeight:1,cursor:'pointer',padding:6}}
+              aria-label="Dismiss"
+            >×</button>
+            <div style={{fontSize:20,textAlign:'center',marginBottom:2}}>📲</div>
+            <h3 style={{textAlign:'center',color:'var(--text)',fontSize:16,fontWeight:900,margin:'0 0 4px'}}>Save your picks + get local deals</h3>
+            <p style={{textAlign:'center',color:'var(--text2)',fontSize:13,margin:'0 0 14px',lineHeight:1.4}}>
+              One tap texts us — we'll set up your account and send same-day specials your way.
             </p>
-            <input
-              type="tel"
-              placeholder="+1 (555) 000-0000"
-              value={smsPhone}
-              onChange={e => setSmsPhone(e.target.value)}
-              style={{width:'100%',boxSizing:'border-box',background:'var(--bg)',border:'1px solid var(--border)',borderRadius:10,padding:'14px 16px',fontSize:16,color:'var(--text)',marginBottom:12}}
-            />
-            <button
-              onClick={async () => {
-                if (!smsPhone.trim()) return
-                setSmsSubmitting(true)
-                const token = localStorage.getItem('gcr_access_token')
-                try {
-                  await fetch(`${API_BASE}/api/tourist/sms-optin`, {
-                    method: 'POST',
-                    headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ phone: smsPhone.trim() })
-                  })
-                } catch {}
-                localStorage.setItem('gcr_sms_opted', '1')
-                setSmsDone(true)
-                setSmsPrompt(false)
-                setSmsSubmitting(false)
-              }}
-              disabled={smsSubmitting}
-              style={{width:'100%',background:'linear-gradient(135deg, var(--primary), var(--primary-dark))',color:'#fff',border:'none',borderRadius:10,padding:'14px',fontSize:16,fontWeight:800,cursor:'pointer',marginBottom:10}}
+            <a
+              href={SMS_SIGNUP_LINK}
+              onClick={() => { localStorage.setItem('gcr_sms_opted', '1'); setSmsDone(true); setSmsPrompt(false) }}
+              style={{display:'block',width:'100%',boxSizing:'border-box',textAlign:'center',textDecoration:'none',background:'linear-gradient(135deg, var(--primary), var(--primary-dark))',color:'#fff',borderRadius:10,padding:'13px',fontSize:15,fontWeight:800}}
             >
-              {smsSubmitting ? 'Saving…' : 'Yes, text me deals 🎉'}
-            </button>
-            <button
-              onClick={() => { setSmsPrompt(false); localStorage.setItem('gcr_sms_opted','skip') ; setSmsDone(true) }}
-              style={{width:'100%',background:'none',color:'var(--text3)',border:'none',fontSize:13,cursor:'pointer',padding:'8px'}}
-            >
-              No thanks
-            </button>
+              Text SWIPE to sign up
+            </a>
           </div>
         </div>
       )}
