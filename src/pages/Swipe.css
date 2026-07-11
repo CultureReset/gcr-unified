@@ -440,22 +440,22 @@
 }
 
 .swipe-card-wrapper {
-  position: absolute !important;
   /* react-tinder-card only ever sets an inline `transform` for the drag
-     gesture — it never touches top/left/height, so it's safe to fully
-     constrain this box to .cards-container's real (flex-computed) height
-     instead of letting it size to its own content and overflow. That
-     overflow used to reach past .swipe-actions and cover the button row.
-     NOTE: inset ignores .cards-container's own `padding` — an absolutely
-     positioned child's containing block is the parent's padding box, so
-     padding never insets it. The 10px horizontal margin has to be set here
-     directly (was full-bleed edge-to-edge without it).
-     width is intentionally NOT 100% here — with explicit left+right insets,
+     gesture — it never touches top/left/width/height.
+     left/right only — no top/bottom. Vertically centering an auto-height
+     absolute box normally means a CSS `transform`, which would fight with
+     the drag gesture's own inline transform. Leaving top/bottom unset
+     instead lets .cards-container's align-items:center resolve this box's
+     "static position" per the flexbox spec — centered, no transform of
+     its own, nothing to conflict with the drag.
+     width is intentionally NOT 100% — with explicit left+right insets,
      percentage width resolves against the full containing block and
      overflows past the right inset; leaving it auto is what makes the box
      correctly fill just the gap between the two insets. max-width still
      caps it (and re-engages margin:auto to center) on very wide viewports. */
-  inset: 0 8px;
+  position: absolute !important;
+  left: 8px;
+  right: 8px;
   margin: 0 auto;
   max-width: 470px;
 }
@@ -469,7 +469,10 @@
   user-select: none;
   cursor: grab;
   width: 100%;
-  height: 100%;
+  /* Content-sized (square photo + however tall the info panel needs to be),
+     not stretched to fill the deck area -- that's what let it overlap
+     .swipe-actions below, and made the photo an oddly tall rectangle. */
+  height: auto;
   display: flex;
   flex-direction: column;
 }
@@ -478,19 +481,25 @@
 
 .card-image-wrap {
   position: relative;
-  /* .business-card is now a column flexbox filling .cards-container's real
-     (flex-computed) height, so this can size to "whatever's left after
-     .card-body" instead of guessing a dvh-relative constant — the old
-     approach couldn't account for conditional siblings above the card
-     (location prompt, category tabs, etc.) and regularly overflowed enough
-     to cover .swipe-actions below it. min-height is just a floor so a tall
-     .card-body doesn't crush the image on a short viewport. */
-  flex: 1;
-  min-height: 110px;
+  /* Square, not "however much space is left" -- a fixed 1:1 shape reads as
+     a real photo, not a stretched rectangle, and makes the card's overall
+     height predictable (square photo + however tall the info panel's own
+     content is) instead of forcibly filling 100% of the deck area. */
+  aspect-ratio: 1 / 1;
+  flex-shrink: 0;
   background: linear-gradient(135deg, #1a1a2e 0%, #12121f 100%);
 }
 
 .card-image {
+  /* absolute + inset:0, not width/height:100% -- percentage heights on an
+     <img> depend on the parent having a "definite" computed height, which
+     is fragile across mobile Safari especially with svh ancestors in the
+     chain, and was the actual cause of the dark card-image-wrap gradient
+     (its own placeholder background) showing through as a gap below the
+     photo instead of the photo reaching all the way to the info panel.
+     inset:0 pins all four edges directly, no percentage resolution needed. */
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -755,7 +764,11 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 6px 20px calc(12px + env(safe-area-inset-bottom));
+  /* Sits close to the card now, not a separate floating row far below it --
+     the card is content-sized (square photo + info panel) rather than
+     stretched to fill the whole deck area, so there's real space here to
+     close instead of a gap the card used to occupy. */
+  padding: 4px 20px calc(10px + env(safe-area-inset-bottom));
 }
 
 .swipe-actions-row {

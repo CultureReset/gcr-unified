@@ -672,10 +672,11 @@ export default function Swipe() {
 
   return (
     <div className="swipe-page page safe-top" ref={pageRef}>
-      {/* Header — wrapped with the location prompt so the prompt can float
-          just below it (position:absolute) instead of pushing the deck down.
-          It shows for any first-time visitor with no location yet (not an
-          edge case), so it was permanently eating ~40px of card space. */}
+      {/* Header + category tabs share this wrapper so the location prompt
+          (position:absolute, top:100%) floats below BOTH of them instead of
+          pushing the deck down -- it used to be scoped to just the header,
+          which meant it floated over the exact spot the category tabs sit,
+          blocking taps on them the whole time it was showing. */}
       <div className="swipe-header-wrap">
         <div className="swipe-header">
           <div className="swipe-header-left">
@@ -704,6 +705,20 @@ export default function Swipe() {
           </div>
         </div>
 
+        {/* Category tabs */}
+        <div className="cat-tabs">
+          {CAT_TABS.map(tab => (
+            <button
+              key={tab.id}
+              className={`cat-tab ${category === tab.id ? 'active' : ''}`}
+              onClick={() => navigate(tab.to || `/swipe/${tab.id}`)}
+            >
+              <span>{tab.emoji}</span>
+              <span>{tab.label}</span>
+            </button>
+          ))}
+        </div>
+
         {locPrompt && (
           <div className="loc-prompt">
             <span>📍 Share location for distances</span>
@@ -716,20 +731,6 @@ export default function Swipe() {
             <button className="loc-no" onClick={() => setLocPrompt(false)}>✕</button>
           </div>
         )}
-      </div>
-
-      {/* Category tabs */}
-      <div className="cat-tabs">
-        {CAT_TABS.map(tab => (
-          <button
-            key={tab.id}
-            className={`cat-tab ${category === tab.id ? 'active' : ''}`}
-            onClick={() => navigate(tab.to || `/swipe/${tab.id}`)}
-          >
-            <span>{tab.emoji}</span>
-            <span>{tab.label}</span>
-          </button>
-        ))}
       </div>
 
       <div className="swipe-dest">
