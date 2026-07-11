@@ -181,6 +181,7 @@ export default function RentalListings() {
         }
 
         const stays = all.filter(e => {
+          if (e.parent_slug) return false // hub children belong in their parent's own directory, not here
           const et = (e.entity_type || '').toLowerCase()
           const es = (e.entity_subtype || '').toLowerCase()
           if (STAY_TYPES.includes(et)) return true

@@ -110,10 +110,14 @@ export default function CategoryPage() {
             if (batch.length < BATCH) break
             offset += BATCH
           }
-          // feed = show everything; otherwise filter by subtype
+          // feed = show everything; otherwise filter by subtype. Hub children
+          // (entity.parent_slug set — e.g. a marina's individual charter
+          // boats, a complex's individual restaurants) are meant to be found
+          // by drilling into their parent hub, not as their own standalone
+          // card on the main category grid — without this they'd show twice.
           ents = category === 'feed'
             ? all
-            : all.filter(e => subtypeToCategory(e) === category)
+            : all.filter(e => subtypeToCategory(e) === category && !e.parent_slug)
         }
 
         // Deduplicate: same name → keep the one with a proper subtype / no hash slug

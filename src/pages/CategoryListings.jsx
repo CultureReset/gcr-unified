@@ -73,7 +73,10 @@ export default function CategoryListings() {
             if (batch.length < 1000) break
             offset += 1000
           }
-          ents = all.filter(e => subtypeToCategory(e) === category)
+          // Hub children (e.g. a marina's individual charter boats) belong
+          // inside their parent hub's own directory, not as a duplicate
+          // standalone card here — same fix as CategoryPage.jsx.
+          ents = all.filter(e => subtypeToCategory(e) === category && !e.parent_slug)
         }
         setEntities(ents)
         const SKIP_CATEGORIES = new Set(['google_type', 'google_primary_type', 'google_secondary_type'])
