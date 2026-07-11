@@ -49,9 +49,11 @@
 }
 
 .artists-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  max-width: 620px;
+  margin: 0 auto;
 }
 
 .artist-card {
@@ -173,7 +175,6 @@
   }
 
   .artists-grid {
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
     gap: 16px;
   }
 

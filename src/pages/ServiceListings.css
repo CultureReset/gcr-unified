@@ -50,7 +50,7 @@
 
 /* Grid */
 .services-content { max-width:1220px; margin:0 auto; padding:0 1.25rem 2rem; }
-.svc-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:1rem; margin-top:.5rem; }
+.svc-grid { display:flex; flex-direction:column; gap:1.15rem; margin:.5rem auto 0; max-width:620px; }
 
 /* Cards */
 .svc-card { 
@@ -102,5 +102,3 @@
 }
 @keyframes svcspin { to { transform:rotate(360deg); } }
 
-@media(max-width:900px) { .svc-grid { grid-template-columns:repeat(2,1fr); } }
-@media(max-width:580px) { .svc-grid { grid-template-columns:1fr; } }

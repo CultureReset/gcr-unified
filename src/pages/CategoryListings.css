@@ -129,18 +129,22 @@
 
 /* Grid */
 .listings-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 16px;
-  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 18px;
+  max-width: 620px;
+  margin: 0 auto;
 }
 
 /* States */
 .listings-loading { padding: 16px; }
 .skeleton-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  max-width: 620px;
+  margin: 0 auto;
 }
 .skeleton-card {
   height: 380px;
