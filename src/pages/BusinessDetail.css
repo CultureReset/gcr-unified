@@ -624,7 +624,7 @@
   display: none;
 }
 
-.tab {
+.bd-tab {
   white-space: nowrap;
   padding: 8px 14px;
   border: 1px solid var(--border);
@@ -649,16 +649,16 @@
   }
 }
 
-.tab:focus {
+.bd-tab:focus {
   outline: none;
 }
 
-.tab:focus-visible {
+.bd-tab:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
 
-.tab.active {
+.bd-tab.active {
   background: var(--accent);
   border-color: var(--accent);
   color: #fff;

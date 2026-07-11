@@ -838,7 +838,7 @@ export default function RestaurantDetail() {
           {orderedSections.map(sec => (
             <button
               key={sec.id}
-              className={`tab ${activeTab === sec.id ? 'active' : ''}`}
+              className={`bd-tab ${activeTab === sec.id ? 'active' : ''}`}
               onClick={() => {
                 setActiveTab(sec.id)
                 setActiveSubSection(null)
