@@ -306,9 +306,14 @@ export default function RestaurantMenu() {
             {menu.specials && menu.specials.length > 0 ? (
               menu.specials.map((special, idx) => (
                 <div key={idx} className="special-card">
-                  <h3>{special.name}</h3>
+                  <h3>{special.special_name || special.name}</h3>
                   {special.description && <p>{special.description}</p>}
-                  {special.price && <span className="price">${special.price}</span>}
+                  {special.discount_text
+                    ? <span className="price">{special.discount_text}</span>
+                    : special.discount_value != null
+                      ? <span className="price">{special.discount_value}{special.discount_type === 'percent' ? '% off' : special.discount_type === 'fixed' ? ' off' : ''}</span>
+                      : special.price ? <span className="price">${special.price}</span> : null}
+                  {(special.days || special.day_of_week) && <p className="special-days">{special.days || special.day_of_week}</p>}
                 </div>
               ))
             ) : (

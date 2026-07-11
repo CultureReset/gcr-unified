@@ -344,11 +344,18 @@ export default function RestaurantDetail() {
   const menuGroups = groupByMealPeriod(flatMenuSections)
 
   const renderMenuItem = (item, i) => {
-    const name = item.item_name || item.name
+    // entity_specials rows use a different shape (special_name / discount_*)
+    // than menu/side/daily-feature items (item_name / price) — without this
+    // fallback, every special rendered through this shared renderer showed a
+    // blank name and no discount.
+    const name = item.item_name || item.name || item.special_name
     const price = item.price != null ? item.price : null
+    const discountStr = item.discount_text || (item.discount_value != null
+      ? `${item.discount_value}${item.discount_type === 'percent' ? '% off' : item.discount_type === 'fixed' ? ' off' : ''}`
+      : null)
     const priceStr = price != null
       ? (typeof price === 'string' ? price : (price % 1 === 0 ? `$${price}` : `$${parseFloat(price).toFixed(2)}`))
-      : null
+      : discountStr
     // image_url is returned flat from the API — item.images[] was the old shape, never matched
     const imgSrc = item.image_url || item.image_path || (item.images && item.images[0]?.url) || null
     return (
@@ -362,7 +369,7 @@ export default function RestaurantDetail() {
             {priceStr && <span className="item-price">{priceStr}</span>}
           </div>
           {item.description && <p className="item-desc">{item.description}</p>}
-          {item.available_days && <p className="item-days">{item.available_days}</p>}
+          {(item.available_days || item.days || item.day_of_week) && <p className="item-days">{item.available_days || item.days || item.day_of_week}</p>}
         </div>
       </div>
     )
@@ -795,7 +802,7 @@ export default function RestaurantDetail() {
                 <a href={business.booking_url} onClick={e => trackAndOpen(e, business.booking_url, 'book')} target="_blank" rel="noopener noreferrer" className="btn-primary-cta">{bookLabel}</a>
               )}
               {showGcrReserve && (
-                <button onClick={() => trackAndNavigate(`/reserve/${business.slug}`, 'reserve')} className="btn-primary-cta">📅 Reserve a Table</button>
+                <button onClick={() => trackAndNavigate(`/reserve/${business.slug}`, 'reserve')} className="btn-primary-cta">{reserveLabel}</button>
               )}
               {business.offers_transportation && (
                 <button onClick={() => trackAndNavigate(`/transportation/${business.slug}`, 'transportation')} className="btn-primary-cta">🚗 Request Pickup</button>
@@ -2185,7 +2192,7 @@ export default function RestaurantDetail() {
 
           {/* FISH SPECIES — Charter / Fishing */}
           {hasFishSpecies && (
-                      <section className="content-section">
+                      <section className="content-section" ref={el => { sectionRefs.current["fish"] = el }} id="section-fish">
               <h2>🐟 Fish Species</h2>
               <div className="fish-grid">
                 {fishSpecies.map((f, i) => (
