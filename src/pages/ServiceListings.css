@@ -82,6 +82,7 @@
 .svc-card-desc { font-size:.82rem; color:#64748b; line-height:1.45; margin:0; }
 .svc-card-rating { font-size:.82rem; font-weight:900; color:#1a2433; display:flex; gap:.3rem; }
 .svc-card-rating span { font-weight:600; color:#64748b; }
+.svc-card-price { font-size:.82rem; font-weight:700; color:#0b7a75; }
 .svc-view-btn { 
   margin-top:auto; background:#0b2d42; color:#fff; border:none; 
   border-radius:10px; padding:.65rem; font-weight:900; font-size:.82rem; 

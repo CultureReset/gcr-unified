@@ -49,7 +49,7 @@ export const SUBTYPE_TO_CATEGORY = {
   boat_rentals:'things-to-do', fishing_charter:'things-to-do', tour:'things-to-do',
   attraction:'things-to-do', attractions:'things-to-do', tourist_attraction:'things-to-do',
   jet_ski:'things-to-do', watersports:'things-to-do',
-  snorkeling:'things-to-do', kayak_rental:'things-to-do', marina:'things-to-do',
+  snorkeling:'things-to-do', kayak_rental:'things-to-do',
   golf_course:'things-to-do', sunset_cruise:'things-to-do', dolphin_tour:'things-to-do',
   glass_bottom_boat:'things-to-do', wildlife_tour:'things-to-do', charter:'things-to-do',
   'amusement-park':'things-to-do', amusement_park:'things-to-do', amusement_center:'things-to-do',
@@ -117,6 +117,8 @@ export const SUBTYPE_TO_CATEGORY = {
   premise:'services', 'online-gaming':'services', banquet_hall:'services',
   bridge:'services', point_of_interest:'services', 'domain-for-sale':'services',
   travel_agency:'services',
+  // --- marinas ---
+  marina:'marinas',
   // --- shopping (additional) ---
   farmers_market:'shopping', cell_phone_store:'shopping', toy_store:'shopping',
   market:'shopping', food_store:'shopping', building_materials_store:'shopping',

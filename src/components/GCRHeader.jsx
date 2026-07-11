@@ -37,6 +37,7 @@ const CATEGORIES = [
   { id: 'happy-hours', label: 'Happy Hours', emoji: '🍻' },
   { id: 'events', label: 'Events', emoji: '🎉' },
   { id: 'things-to-do', label: 'Things To Do', emoji: '🎯' },
+  { id: 'marinas', label: 'Marinas', emoji: '⚓' },
   { id: 'services', label: 'Services', emoji: '🛠️' },
   { id: 'public-spots', label: 'Public Spots', emoji: '✨' },
   { id: 'deals', label: '🔥 Deals', emoji: '🔥' },

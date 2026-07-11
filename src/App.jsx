@@ -176,6 +176,7 @@ function AppRoutes() {
         <Route path="/shopping" element={<CategoryPage />} />
         <Route path="/nightlife" element={<CategoryPage />} />
         <Route path="/wellness" element={<CategoryPage />} />
+        <Route path="/marinas" element={<CategoryPage />} />
 
         <Route path="*" element={<NotFound />} />
       </Routes>

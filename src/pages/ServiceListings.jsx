@@ -80,6 +80,11 @@ function ServiceCard({ entity, navigate }) {
             {entity.review_count > 0 && <span>({entity.review_count.toLocaleString()})</span>}
           </div>
         )}
+        {entity.price_from != null && (
+          <div className="svc-card-price">
+            💵 {entity.price_from === 0 || entity.price_from === '0' ? 'Free' : `From $${entity.price_from}${entity.price_unit ? `/${entity.price_unit}` : ''}`}
+          </div>
+        )}
         <button className="svc-view-btn">
           {platform ? platform.label : 'View →'}
         </button>
@@ -110,6 +115,7 @@ export default function ServiceListings() {
           offset += 1000
         }
         const svcs = all.filter(e => {
+          if (e.parent_slug) return false // hub children belong in their parent's own directory
           const et = (e.entity_type || '').toLowerCase()
           const es = (e.entity_subtype || '').toLowerCase()
           if (et === 'service') return true
@@ -147,8 +153,9 @@ export default function ServiceListings() {
     )
   }
 
-  // Sort: rated first, then with images
+  // Sort: featured pinned first, then rated, then with images
   filtered = [...filtered].sort((a,b) =>
+    (b.featured?1:0) - (a.featured?1:0) ||
     (parseFloat(b.rating)||0) - (parseFloat(a.rating)||0) ||
     (b.hero_image_url?1:0) - (a.hero_image_url?1:0)
   )

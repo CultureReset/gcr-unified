@@ -18,6 +18,7 @@ const CATEGORY_CONFIG = {
   feed:           { label: 'Live Feed',         emoji: '📡' },
   nightlife:      { label: 'Bars & Nightlife',  emoji: '🍸' },
   wellness:       { label: 'Health & Wellness', emoji: '💆' },
+  marinas:        { label: 'Marinas',           emoji: '⚓' },
 }
 
 
@@ -37,6 +38,7 @@ const HERO_GRADIENTS = {
   wellness:     'linear-gradient(135deg, #0d9488, #134e4a)',
   shopping: 'linear-gradient(135deg, #be185d, #831843)',
   staying: 'linear-gradient(135deg, #0369a1, #0c4a6e)',
+  marinas: 'linear-gradient(135deg, #0c4a6e, #0891b2)',
 }
 
 export default function CategoryPage() {
