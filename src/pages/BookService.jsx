@@ -150,7 +150,7 @@ export default function BookService() {
           </p>
         </form>
 
-        <button className="back-btn" onClick={() => navigate(`/service/${slug}`)}>
+        <button className="bs-back-btn" onClick={() => navigate(`/service/${slug}`)}>
           ← Back
         </button>
       </div>

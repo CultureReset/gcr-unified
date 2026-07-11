@@ -84,6 +84,10 @@ export default function CategoryPage() {
       try {
         setLoading(true)
         setError(null)
+        // A tag selected on one category page (e.g. Restaurants) doesn't apply
+        // to another (e.g. Happy Hours) -- reset it on every category change so
+        // it can't silently filter out results that should show.
+        setSelectedTag(null)
 
         let ents = []
 

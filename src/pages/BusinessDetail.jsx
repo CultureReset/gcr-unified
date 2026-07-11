@@ -13,6 +13,27 @@ import { fetchChildRentals } from '../services/gcrApi'
 import './BusinessDetail.css'
 import '../components/MiniSiteComponents.css'
 
+// Same mapping used in Deals.jsx — keeps the hero icon type-aware instead of
+// defaulting every business without its own icon to the restaurant emoji.
+const ENTITY_ICONS = {
+  restaurant:       '🍽️',
+  activity:         '🎯',
+  fishing_charter:  '🎣',
+  marina:           '⚓',
+  condo:            '🏠',
+  'vacation-rental':'🏖️',
+  hotel:            '🏨',
+  service:          '🛠️',
+  photographer:     '📸',
+  spa:              '💆',
+  hair_salon:       '💇',
+  nail_salon:       '💅',
+  massage:          '💆',
+  tour_agency:      '🚤',
+  'Boat Rentals':   '🚤',
+  'Dolphin Cruises & Tours': '🐬',
+}
+
 export default function RestaurantDetail() {
   const { slug } = useParams()
   const navigate = useNavigate()
@@ -149,11 +170,11 @@ export default function RestaurantDetail() {
           fetch(`${API_BASE}/api/faqs/${encodeURIComponent(slug)}?category=cancellation`).then(r => r.ok ? r.json() : null).catch(() => null),
           fetch(`${API_BASE}/api/email-parser/availability/${encodeURIComponent(slug)}`).then(r => r.ok ? r.json() : null).catch(() => null),
         ]).then(([reviewStats, teamData, blogData, policiesData, availData]) => {
-          if (reviewStats?.total) setReviewCount(reviewStats.total)
-          if ((teamData?.team || []).length > 0) setHasTeam(true)
-          if ((blogData?.posts || []).length > 0) setHasBlog(true)
-          if ((policiesData?.faqs || []).length > 0 || (data.policies || []).length > 0) setHasPolicies(true)
-          if (availData?.availability?.length > 0) setAvailability(availData)
+          setReviewCount(reviewStats?.total || 0)
+          setHasTeam((teamData?.team || []).length > 0)
+          setHasBlog((blogData?.posts || []).length > 0)
+          setHasPolicies((policiesData?.faqs || []).length > 0 || (data.policies || []).length > 0)
+          setAvailability(availData?.availability?.length > 0 ? availData : null)
         })
       } catch (err) {
         setError(err.message)
@@ -564,7 +585,7 @@ export default function RestaurantDetail() {
       {/* Photo Carousel */}
       {(() => {
       const allFailed = slides.length > 0 && slides.every((p, idx) => failedSlides[idx] || !(p.image_url || p.url))
-      const heroEmoji = business.icon || '🍽️'
+      const heroEmoji = business.icon || ENTITY_ICONS[business.entity_subtype] || ENTITY_ICONS[entityType] || '📍'
       return (
       <div className={`carousel-wrap${allFailed ? ' carousel-wrap-empty' : ''}`}>
         <div className="carousel">
@@ -817,7 +838,7 @@ export default function RestaurantDetail() {
           {orderedSections.map(sec => (
             <button
               key={sec.id}
-              className={`tab ${activeTab === sec.id ? 'active' : ''}`}
+              className={`bd-tab ${activeTab === sec.id ? 'active' : ''}`}
               onClick={() => {
                 setActiveTab(sec.id)
                 setActiveSubSection(null)

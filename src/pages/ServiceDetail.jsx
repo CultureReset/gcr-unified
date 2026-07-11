@@ -437,7 +437,7 @@ export default function ServiceDetail() {
           </div>
         )}
 
-        <button className="back-btn" onClick={() => navigate('/services')}>← Back to Services</button>
+        <button className="sd-back-btn" onClick={() => navigate('/services')}>← Back to Services</button>
       </div>
 
       {/* Lightbox */}

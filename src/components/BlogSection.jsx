@@ -8,6 +8,11 @@ export default function BlogSection({ slug }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    setPage(1)
+    setSelectedPost(null)
+  }, [slug])
+
+  useEffect(() => {
     loadPosts()
   }, [slug, page])
 

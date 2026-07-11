@@ -686,7 +686,7 @@
 }
 
 /* Back button */
-.back-btn {
+.rd-back-btn {
   display: inline-block;
   margin-top: 20px;
   padding: 10px 20px;
@@ -700,7 +700,7 @@
   transition: background 0.15s;
 }
 
-.back-btn:hover {
+.rd-back-btn:hover {
   background: #e0e0e0;
 }
 

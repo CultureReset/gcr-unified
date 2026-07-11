@@ -10,6 +10,9 @@ export default function GallerySection({ slug }) {
   const [selectedPhoto, setSelectedPhoto] = useState(null)
 
   useEffect(() => {
+    setSelectedCategory(null)
+    setPage(1)
+    setSelectedPhoto(null)
     loadCategories()
     loadPhotos()
   }, [slug])

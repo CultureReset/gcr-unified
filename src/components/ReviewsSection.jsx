@@ -19,6 +19,12 @@ export default function ReviewsSection({ slug }) {
   })
   const [message, setMessage] = useState('')
 
+  // Reset to page 1 whenever the business changes so a new business isn't
+  // queried at whatever page the previous business had scrolled to.
+  useEffect(() => {
+    setPage(1)
+  }, [slug])
+
   useEffect(() => {
     loadReviews()
     loadStats()

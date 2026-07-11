@@ -160,7 +160,7 @@ export default function BookRental() {
             <section className="pricing-summary">
               <h2>Estimated Price</h2>
               <div className="price-row">
-                <span>${rental.nightly_price} × {pricing.nights} nights</span>
+                <span>${rental.nightly_price || 100} × {pricing.nights} nights</span>
                 <span>${pricing.subtotal}</span>
               </div>
               {parseFloat(pricing.cleaning) > 0 && (
@@ -190,7 +190,7 @@ export default function BookRental() {
           </p>
         </form>
 
-        <button className="back-btn" onClick={() => navigate(`/rental/${slug}`)}>
+        <button className="br-back-btn" onClick={() => navigate(`/rental/${slug}`)}>
           ← Back
         </button>
       </div>

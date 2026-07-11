@@ -16,6 +16,9 @@ export default function RestaurantMenu() {
   const [requestTargetId, setRequestTargetId] = useState(null);
 
   useEffect(() => {
+    setLoading(true);
+    setMenu(null);
+    setActiveTab('menu');
     const fetchMenu = async () => {
       try {
         const res = await fetch(`${API_BASE}/api/public/menu?slug=${slug}`);
@@ -24,6 +27,7 @@ export default function RestaurantMenu() {
         setMenu(data);
       } catch (err) {
         console.error('Error loading menu:', err);
+        setMenu(null);
       } finally {
         setLoading(false);
       }
@@ -70,6 +74,22 @@ export default function RestaurantMenu() {
         >
           🍽️ Menu
         </button>
+        {menu.sections?.drink?.length > 0 && (
+          <button
+            className={`tab ${activeTab === 'drinks' ? 'active' : ''}`}
+            onClick={() => setActiveTab('drinks')}
+          >
+            🍹 Drinks
+          </button>
+        )}
+        {menu.sections?.happy_hour?.length > 0 && (
+          <button
+            className={`tab ${activeTab === 'happy-hour' ? 'active' : ''}`}
+            onClick={() => setActiveTab('happy-hour')}
+          >
+            🕐 Happy Hour
+          </button>
+        )}
         {menu.live_artist && (
           <button
             className={`tab ${activeTab === 'live-music' ? 'active' : ''}`}
@@ -122,6 +142,52 @@ export default function RestaurantMenu() {
             ) : (
               <p>No menu items available</p>
             )}
+          </div>
+        )}
+
+        {activeTab === 'drinks' && (
+          <div className="menu-items">
+            {menu.sections.drink.map((section, idx) => (
+              <div key={idx} className="menu-section">
+                <h2>{section.name}</h2>
+                <div className="items-grid">
+                  {section.items.map((item, itemIdx) => (
+                    <div key={itemIdx} className="menu-item">
+                      {item.image_url && <img src={item.image_url} alt={item.name} />}
+                      <h3>{item.name}</h3>
+                      {item.description && <p className="item-desc">{item.description}</p>}
+                      <div className="item-footer">
+                        <span className="price">${item.price.toFixed(2)}</span>
+                        <button className="add-btn">+</button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {activeTab === 'happy-hour' && (
+          <div className="menu-items">
+            {menu.sections.happy_hour.map((section, idx) => (
+              <div key={idx} className="menu-section">
+                <h2>{section.name}</h2>
+                <div className="items-grid">
+                  {section.items.map((item, itemIdx) => (
+                    <div key={itemIdx} className="menu-item">
+                      {item.image_url && <img src={item.image_url} alt={item.name} />}
+                      <h3>{item.name}</h3>
+                      {item.description && <p className="item-desc">{item.description}</p>}
+                      <div className="item-footer">
+                        <span className="price">${item.price.toFixed(2)}</span>
+                        <button className="add-btn">+</button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
           </div>
         )}
 

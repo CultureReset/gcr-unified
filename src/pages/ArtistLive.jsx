@@ -16,11 +16,31 @@ export default function ArtistLive() {
   const [msg, setMsg]         = useState('')
 
   useEffect(() => {
+    // Reset everything on artist change -- this previously only set state on
+    // success, so a failed/slow fetch for a new artist left the prior
+    // artist's name, live badge, and Cash App/Venmo payment handles on
+    // screen under the new URL (a real risk of paying the wrong artist).
+    setLoading(true)
+    setData(null)
+    setScreen('home')
+    setAmount(10)
+    setSong('')
+    setName('')
+    setMsg('')
     fetch(`${API_BASE}/api/gcr/artist/${slug}/live`)
       .then(r => r.json())
-      .then(d => { setData(d); setLoading(false) })
-      .catch(() => setLoading(false))
+      .then(d => {
+        setData(d)
+        setLoading(false)
+        if (d?.artist?.default_min) setAmount(d.artist.default_min)
+      })
+      .catch(() => { setData(null); setLoading(false) })
   }, [slug])
+
+  // Presets built around this artist's configured minimum instead of a fixed
+  // $5/$10/$20/$50 that ignores what the artist actually set.
+  const min = data?.artist?.default_min
+  const amounts = min ? [min, min * 2, min * 4, min * 10] : AMOUNTS
 
   if (loading) return (
     <div className="al-loading">
@@ -204,7 +224,7 @@ export default function ArtistLive() {
       <div className="al-field-wrap">
         <div className="al-field-label">AMOUNT</div>
         <div className="al-amounts">
-          {AMOUNTS.map(a => (
+          {amounts.map(a => (
             <button
               key={a}
               className={`al-amount-btn ${amount === a ? 'al-amount-active' : ''}`}

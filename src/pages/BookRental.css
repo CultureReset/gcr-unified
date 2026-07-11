@@ -117,7 +117,7 @@
   margin: -4px 0 12px;
 }
 
-.back-btn {
+.br-back-btn {
   width: 100%;
   padding: 12px;
   background: #f0f0f0;
@@ -127,7 +127,7 @@
   cursor: pointer;
 }
 
-.back-btn:hover {
+.br-back-btn:hover {
   background: #e0e0e0;
 }
 

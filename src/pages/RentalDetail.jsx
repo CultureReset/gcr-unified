@@ -36,6 +36,18 @@ export default function RentalDetail() {
   const [reviewMsg, setReviewMsg] = useState(null)
 
   useEffect(() => {
+    setLoading(true)
+    setRental(null)
+    setActiveTab('overview')
+    setSaved(false)
+    setCheckIn('')
+    setCheckOut('')
+    setAvailable(null)
+    setBooking({ name: '', email: '', phone: '', guests: 1, notes: '' })
+    setBookingStatus(null)
+    setGalleryPage(0)
+    setLightboxIdx(null)
+    setLightboxOpen(false)
     async function load() {
       try {
         const res = await fetch(`${API_BASE}/api/rentals/${slug}`)
@@ -60,7 +72,10 @@ export default function RentalDetail() {
         ])
         setReviews(rv.reviews || [])
         setReviewStats(st)
-      } catch {}
+      } catch {
+        setReviews([])
+        setReviewStats(null)
+      }
     }
     loadReviews()
   }, [rental, slug])
@@ -93,6 +108,9 @@ export default function RentalDetail() {
           check_in_date: checkIn,
           check_out_date: checkOut,
           notes: booking.notes,
+          nightly_rate: rental.nightly_price,
+          cleaning_fee: rental.cleaning_fee,
+          service_fee: rental.service_fee,
         }),
       })
       const data = await res.json()
@@ -526,7 +544,7 @@ export default function RentalDetail() {
           </div>
         )}
 
-        <button className="back-btn" onClick={() => navigate('/staying')}>← Back to Rentals</button>
+        <button className="rd-back-btn" onClick={() => navigate('/staying')}>← Back to Rentals</button>
       </div>
 
       {/* Lightbox */}

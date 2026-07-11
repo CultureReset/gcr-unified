@@ -14,6 +14,8 @@ export default function PoliciesSection({ slug, policies: entityPolicies }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    setLoading(true)
+    setFaqPolicies([])
     async function load() {
       try {
         const res = await fetch(`${API_BASE}/api/faqs/${encodeURIComponent(slug)}`)

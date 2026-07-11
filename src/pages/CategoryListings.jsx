@@ -145,7 +145,7 @@ export default function CategoryListings() {
     <div className="category-listings">
       {/* Hero */}
       <div className="listings-hero">
-        <button className="back-btn" onClick={() => navigate(-1)}>←</button>
+        <button className="cl-back-btn" onClick={() => navigate(-1)}>←</button>
         <div className="hero-text">
           <h1>{meta.emoji} {meta.label}</h1>
           <p>{meta.desc} · <strong>{entities.length}</strong> spots</p>
