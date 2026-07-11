@@ -1270,6 +1270,12 @@ export default function RestaurantDetail() {
               {flexSections.map((sec) => (
                 <div key={sec.id} className="offering-section">
                   <h2>{sec.section_name}</h2>
+                  {sec.subtitle && <p className="section-subtitle">{sec.subtitle}</p>}
+                  {sec.image_url && (
+                    <div className="section-banner">
+                      <img src={sec.image_url} alt={sec.section_name} loading="lazy" />
+                    </div>
+                  )}
                   <div className="offering-grid">
                     {sec.items.map((item) => {
                       const m = item.metadata || {}
