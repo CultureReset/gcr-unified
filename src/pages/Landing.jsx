@@ -641,8 +641,11 @@ export default function Landing() {
 
           {/* Weather inline */}
           <div className="hn-wx-bar">
-            <span>{wxIcon} {weather ? `${weather.temp}°F` : '...'}</span>
-            <span className="hn-wx-cond">{wxLabel}</span>
+            {/* Only show temp/condition once weather actually loads — otherwise
+                the bar printed a literal "... ..." placeholder. The beach
+                status has a sensible default and always shows. */}
+            {weather && <span>{wxIcon} {weather.temp}°F</span>}
+            {weather && <span className="hn-wx-cond">{wxLabel}</span>}
             {weather?.hi > 0 && <span className="hn-wx-hi-lo">↑{weather.hi}° ↓{weather.lo}°</span>}
             {weather?.wind > 0 && <span className="hn-wx-wind">💨 {weather.wind}mph</span>}
             <span className="hn-wx-beach" style={weather?.beachStatus?.color ? {color: weather.beachStatus.color} : {}}>

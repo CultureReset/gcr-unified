@@ -141,6 +141,20 @@
   gap: 20px;
 }
 
+.ev-loadmore-wrap { display: flex; justify-content: center; margin: 24px 0 8px; }
+.ev-loadmore {
+  background: #fff;
+  border: 1.5px solid var(--card-border, #e2e8f0);
+  color: var(--text, #1e293b);
+  border-radius: 999px;
+  padding: 12px 28px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background .15s, border-color .15s;
+}
+.ev-loadmore:hover { background: #f1f5f9; border-color: #cbd5e1; }
+
 /* ── Event Card ── */
 .ev-card {
   background: #fff;

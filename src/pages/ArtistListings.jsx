@@ -10,6 +10,7 @@ export default function ArtistListings() {
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [filteredArtists, setFilteredArtists] = useState([])
+  const [visibleCount, setVisibleCount] = useState(24)
 
   useEffect(() => {
     async function loadArtists() {
@@ -38,6 +39,7 @@ export default function ArtistListings() {
       artist.bio?.toLowerCase().includes(searchTerm.toLowerCase())
     )
     setFilteredArtists(filtered)
+    setVisibleCount(24) // reset the window whenever the search changes
   }, [searchTerm, artists])
 
   if (loading) return <div className="artist-listings-loading">Loading artists...</div>
@@ -64,7 +66,7 @@ export default function ArtistListings() {
           <div className="no-artists">No artists found</div>
         ) : (
           <div className="artists-grid">
-            {filteredArtists.map((artist) => (
+            {filteredArtists.slice(0, visibleCount).map((artist) => (
               <div key={artist.id} className="artist-card">
                 {artist.photo_url && (
                   <img src={artist.photo_url} alt={artist.artist_name} className="artist-image" />
@@ -106,6 +108,13 @@ export default function ArtistListings() {
                 </div>
               </div>
             ))}
+            {filteredArtists.length > visibleCount && (
+              <div className="artist-loadmore-wrap">
+                <button className="artist-loadmore" onClick={() => setVisibleCount(c => c + 24)}>
+                  Show more artists ({filteredArtists.length - visibleCount} more)
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>

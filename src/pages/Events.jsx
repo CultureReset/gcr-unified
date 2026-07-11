@@ -200,6 +200,10 @@ export default function Events() {
   const [dateFilter, setDateFilter] = useState('today')
   const [typeFilter, setTypeFilter] = useState('All')
   const [customDate, setCustomDate] = useState('')
+  const [visibleCount, setVisibleCount] = useState(24)
+  // Reset the visible window whenever the filters change so a new filter
+  // doesn't inherit a large expanded count from the previous view.
+  useEffect(() => { setVisibleCount(24) }, [dateFilter, typeFilter, customDate])
 
   const { todayStr, tomorrowStr, weekendDates } = useMemo(() => getDateFilters(), [])
 
@@ -383,11 +387,20 @@ export default function Events() {
             )}
           </div>
         ) : (
-          <div className="ev-grid">
-            {sorted.map(ev => (
-              <EventCard key={ev.id} event={ev} navigate={navigate} />
-            ))}
-          </div>
+          <>
+            <div className="ev-grid">
+              {sorted.slice(0, visibleCount).map(ev => (
+                <EventCard key={ev.id} event={ev} navigate={navigate} />
+              ))}
+            </div>
+            {sorted.length > visibleCount && (
+              <div className="ev-loadmore-wrap">
+                <button className="ev-loadmore" onClick={() => setVisibleCount(c => c + 24)}>
+                  Show more events ({sorted.length - visibleCount} more)
+                </button>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>

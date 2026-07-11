@@ -182,3 +182,17 @@
     height: 160px;
   }
 }
+
+.artist-loadmore-wrap { display: flex; justify-content: center; margin: 22px 0 8px; }
+.artist-loadmore {
+  background: #fff;
+  border: 1.5px solid #e2e8f0;
+  color: #1e293b;
+  border-radius: 999px;
+  padding: 12px 28px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background .15s, border-color .15s;
+}
+.artist-loadmore:hover { background: #f1f5f9; border-color: #cbd5e1; }
