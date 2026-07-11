@@ -140,20 +140,29 @@ export default function CategoryPage() {
         setEntities(ents)
         setHasMore(false)
 
-        // Extract unique curated tags for filter chips (skip raw Google Place types)
-        const SKIP_CATEGORIES = new Set(['google_type', 'google_primary_type', 'google_secondary_type'])
-        const tagsSet = new Set()
+        // Extract unique curated tags for filter chips (skip raw Google Place
+        // types and machine slugs). Dedup on a normalized key (lowercase,
+        // alphanumeric only) so trivial variants collapse into one chip —
+        // "1950s themed" / "1950s-themed" become a single chip, "American" /
+        // "American " don't both show. First spelling seen wins as the label.
+        const SKIP_CATEGORIES = new Set(['google_type', 'google_primary_type', 'google_secondary_type', 'google_types'])
+        const isMachineSlug = (s) => (/_/.test(s) && s === s.toLowerCase()) || (/^[a-z]+[A-Z]/.test(s) && !/\s/.test(s))
+        const norm = (s) => s.toLowerCase().replace(/[^a-z0-9]/g, '')
+        const chipByKey = new Map()
+        const addTag = (tag) => {
+          if (!tag || isMachineSlug(tag)) return
+          const k = norm(tag)
+          if (k && !chipByKey.has(k)) chipByKey.set(k, tag)
+        }
         ents.forEach(e => {
-          // Use curated entity_subtype as a chip if present
-          if (e.entity_subtype) tagsSet.add(formatSubtypeLabel(e.entity_subtype))
+          if (e.entity_subtype) addTag(formatSubtypeLabel(e.entity_subtype))
           ;(Array.isArray(e.tags) ? e.tags : []).forEach(t => {
             const cat = typeof t === 'object' ? (t.tag_category || '') : ''
             if (SKIP_CATEGORIES.has(cat)) return
-            const tag = typeof t === 'string' ? t : (t.tag_name || t.tag || '')
-            if (tag) tagsSet.add(tag)
+            addTag(typeof t === 'string' ? t : (t.tag_name || t.tag || ''))
           })
         })
-        setAllTags(['All', ...Array.from(tagsSet).sort()])
+        setAllTags(['All', ...Array.from(chipByKey.values()).sort()])
       } catch (err) {
         console.error('Error loading entities:', err)
         setError(err.message)

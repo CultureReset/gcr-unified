@@ -269,8 +269,14 @@ export default function RestaurantDetail() {
     'insurance_agency','real_estate_agency','finance','financial',
   ])
   const seen = new Set()
+  const GOOGLE_TYPE_CATS = new Set(['google_type','google_types','google_primary_type','google_secondary_type'])
+  const isMachineSlug = (s = '') =>
+    (/_/.test(s) && s === s.toLowerCase()) || (/^[a-z]+[A-Z]/.test(s) && !/\s/.test(s))
   const tags = (business.tags || []).filter(t => {
-    const name = (t.tag_name || '').toLowerCase().replace(/[\s-]+/g, '_')
+    const raw = t.tag_name || ''
+    if (GOOGLE_TYPE_CATS.has(t.tag_category)) return false
+    if (isMachineSlug(raw)) return false
+    const name = raw.toLowerCase().replace(/[\s-]+/g, '_')
     if (GOOGLE_TYPE_NOISE.has(name)) return false
     if (seen.has(name)) return false
     seen.add(name)

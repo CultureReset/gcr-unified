@@ -158,8 +158,14 @@ export default function GCRCard({ entity, category, onSave, savedSlugs }) {
   // Hours line
   const hoursLine = computeHoursLine(entity.hours || [])
 
-  // Tags — fully dynamic: display whatever is in the DB, use tag_category from API
-  const SKIP_CATS = new Set(['location'])
+  // Tags — fully dynamic: display whatever is in the DB, use tag_category from API.
+  // Skip the raw Google Places taxonomy categories (machine tokens, not
+  // consumer copy) and any label that's still a machine slug (snake_case
+  // like point_of_interest, or camelCase like wheelchairAccessibleParking).
+  const SKIP_CATS = new Set(['location', 'google_type', 'google_types', 'google_primary_type', 'google_secondary_type'])
+  const isMachineSlug = (s) =>
+    (/_/.test(s) && s === s.toLowerCase()) ||   // snake_case: point_of_interest
+    (/^[a-z]+[A-Z]/.test(s) && !/\s/.test(s))    // camelCase: acceptsDebitCards
   const sections = { food: [], drink: [], vibe: [], service: [], other: [] }
   const seenLabels = new Set()
 
@@ -178,6 +184,7 @@ export default function GCRCard({ entity, category, onSave, savedSlugs }) {
     if (!label) return
     const apiCat = typeof t === 'object' ? (t.tag_category || '') : ''
     if (SKIP_CATS.has(apiCat)) return
+    if (isMachineSlug(label)) return
     const cat = API_CAT_MAP[apiCat] || null
     addChip(label, cat)
   })
