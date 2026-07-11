@@ -1050,11 +1050,12 @@ function SocialCard({ post, isTop, onDetail, swipingDir }) {
         </div>
       )}
 
-      {/* Bottom info bar */}
-      <div className="social-card-info">
+      {/* Bottom info bar — tapping anywhere here opens the profile, same as
+          the other card types, not just the explicit button. */}
+      <div className="social-card-info" onClick={onDetail} role="button" tabIndex={0}>
         {post.entity_name && <div className="social-card-biz">{post.entity_name}</div>}
         {post.caption && <div className="social-card-caption">{post.caption.slice(0, 80)}{post.caption.length > 80 ? '…' : ''}</div>}
-        <button className="social-card-view" onClick={onDetail}>View Profile →</button>
+        <button className="social-card-view" onClick={e => { e.stopPropagation(); onDetail() }}>View Profile →</button>
       </div>
 
       {/* Play indicator for videos */}
@@ -1164,8 +1165,11 @@ function BusinessCard({ business, isTop, onDetail, userLocation, swipingDir, sav
         )}
       </div>
 
-      {/* Info panel — solid, below the photo (not overlaid on it) */}
-      <div className="card-info-panel">
+      {/* Info panel — solid, below the photo (not overlaid on it). Tapping
+          anywhere here (not the photo — that cycles photos, not the buttons
+          below — those already stop propagation) opens the full profile,
+          same as tapping a Tinder card's info area. */}
+      <div className="card-info-panel" onClick={onDetail} role="button" tabIndex={0}>
         <div className="card-name-row">
           <h3 className="card-name">{business.name}</h3>
           {business.rating ? (
@@ -1248,7 +1252,7 @@ function PromoCard({ card, isTop, onDetail }) {
         <div className="card-promo-badge">📅 Tonight</div>
       </div>
 
-      <div className="card-info-panel">
+      <div className="card-info-panel" onClick={onDetail} role="button" tabIndex={0}>
         <div className="card-name-row">
           <h3 className="card-name">{card.name}</h3>
         </div>
@@ -1330,7 +1334,7 @@ function DealSwipeCard({ deal, isTop, onDetail }) {
 
       {/* Info panel — same dark panel BusinessCard uses, not overlaid on
           the photo, so the deal's own gradient stays visible above it. */}
-      <div className="card-info-panel">
+      <div className="card-info-panel" onClick={onDetail} role="button" tabIndex={0}>
         <div className="deal-swipe-entity">{deal.entity_name}</div>
         <div className="card-name-row">
           <h3 className="card-name">{deal.headline}</h3>
