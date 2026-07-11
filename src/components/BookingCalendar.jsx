@@ -14,9 +14,23 @@ export default function BookingCalendar({ slug }) {
   const [message, setMessage] = useState('')
   const [loading, setLoading] = useState(false)
 
+  // Reset everything when the business changes -- previously nothing here
+  // depended on slug at all, so a previously-picked date, guest count, and
+  // availability from one business carried straight into a different
+  // business's booking form when this component was reused.
+  useEffect(() => {
+    setSelectedDate(null)
+    setGuestCount(1)
+    setAvailability(null)
+    setBookingData({ guest_name: '', guest_email: '', guest_phone: '', special_requests: '' })
+    setMessage('')
+  }, [slug])
+
   useEffect(() => {
     if (selectedDate) {
       checkAvailability(selectedDate)
+    } else {
+      setAvailability(null)
     }
   }, [selectedDate])
 
