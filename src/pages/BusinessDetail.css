@@ -361,6 +361,14 @@
   color: var(--muted);
 }
 
+.lead-description {
+  margin: 12px 0 4px;
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--text);
+  max-width: 60ch;
+}
+
 .avail-badge-inline {
   font-weight: 700;
   color: #0b7a75;

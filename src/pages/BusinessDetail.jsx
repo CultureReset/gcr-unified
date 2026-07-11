@@ -713,6 +713,18 @@ export default function RestaurantDetail() {
         {business.city && <p className="meta">📍 {business.city}, {business.state}</p>}
         {business.rating && <p className="meta">⭐ {business.rating} ({business.review_count || 0} reviews)</p>}
 
+        {/* Short lead description up top — the "what is this" a visitor needs
+            before scrolling. The full copy still lives in the About section
+            below; this is a trimmed teaser (falls back through the same
+            source fields the About section uses). */}
+        {(() => {
+          const lead = (business.description || business.editorial_summary || business.ai_overview || '').trim()
+          if (!lead) return null
+          const MAX = 220
+          const short = lead.length > MAX ? lead.slice(0, MAX).replace(/\s+\S*$/, '') + '…' : lead
+          return <p className="lead-description">{short}</p>
+        })()}
+
         {/* Live availability — only shows if the owner has it enabled (visible_on_profile) */}
         {business.availability_today && (
           <p className={`meta avail-badge-inline ${business.availability_today.remaining_spots <= 2 ? 'avail-critical' : ''}`}>
@@ -1634,14 +1646,21 @@ export default function RestaurantDetail() {
           {/* Reviews */}
           <div ref={el => { sectionRefs.current["reviews"] = el }} id="section-reviews"><ReviewsSection slug={slug} /></div>
 
-          {/* Team */}
-          <div ref={el => { sectionRefs.current["team"] = el }} id="section-team"><TeamSection slug={slug} /></div>
+          {/* Team / Blog / Policies — only render when there's actually
+              something to show. These flags are already computed from the
+              same fetches that gate the tab nav, so an empty business no
+              longer shows "No team members listed" placeholder blocks. */}
+          {hasTeam && (
+            <div ref={el => { sectionRefs.current["team"] = el }} id="section-team"><TeamSection slug={slug} /></div>
+          )}
 
-          {/* Blog */}
-          <div ref={el => { sectionRefs.current["blog"] = el }} id="section-blog"><BlogSection slug={slug} /></div>
+          {hasBlog && (
+            <div ref={el => { sectionRefs.current["blog"] = el }} id="section-blog"><BlogSection slug={slug} /></div>
+          )}
 
-          {/* Policies */}
-          <div ref={el => { sectionRefs.current["policies"] = el }} id="section-policies"><PoliciesSection slug={slug} policies={business.policies} /></div>
+          {hasPolicies && (
+            <div ref={el => { sectionRefs.current["policies"] = el }} id="section-policies"><PoliciesSection slug={slug} policies={business.policies} /></div>
+          )}
 
           {/* Menu */}
           {hasMenu && (
