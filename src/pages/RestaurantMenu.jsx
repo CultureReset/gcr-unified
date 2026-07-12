@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { API_BASE } from '../config';
+import SectionRenderer from '../components/sections/SectionRenderers';
+import '../components/sections/SectionRenderers.css';
 import './RestaurantMenu.css';
 
 export default function RestaurantMenu() {
@@ -20,6 +22,13 @@ export default function RestaurantMenu() {
         if (!res.ok) throw new Error('Menu not found');
         const data = await res.json();
         setMenu(data);
+        // Restaurants keep defaulting to the Menu tab (unchanged). A
+        // non-restaurant business has no food menu items, so default to its
+        // first real entity_sections tab instead of an empty "Menu" tab.
+        if (!(data.menu && data.menu.length > 0)) {
+          const firstSectionIdx = (data.entity_sections || []).findIndex(s => s.items?.length > 0);
+          if (firstSectionIdx !== -1) setActiveTab(`section-${firstSectionIdx}`);
+        }
       } catch (err) {
         console.error('Error loading menu:', err);
         setMenu(null);
@@ -94,6 +103,17 @@ export default function RestaurantMenu() {
             ⭐ Specials
           </button>
         )}
+        {(menu.entity_sections || []).map((section, idx) => (
+          section.items?.length > 0 && (
+            <button
+              key={`section-tab-${idx}`}
+              className={`tab ${activeTab === `section-${idx}` ? 'active' : ''}`}
+              onClick={() => setActiveTab(`section-${idx}`)}
+            >
+              {section.icon ? `${section.icon} ` : ''}{section.section_name}
+            </button>
+          )
+        ))}
       </div>
 
       {/* Tab Content */}
@@ -225,6 +245,12 @@ export default function RestaurantMenu() {
             )}
           </div>
         )}
+
+        {(menu.entity_sections || []).map((section, idx) => (
+          activeTab === `section-${idx}` && section.items?.length > 0 && (
+            <SectionRenderer key={`section-content-${idx}`} section={section} />
+          )
+        ))}
       </div>
     </div>
   );

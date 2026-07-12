@@ -1,0 +1,61 @@
+/* Generic entity_sections rendering — layered on top of the shared
+   .menu-section / .items-grid / .menu-item / .item-desc / .price classes
+   already defined in RestaurantMenu.css so non-restaurant content looks
+   consistent with the existing restaurant tabs. */
+
+.entity-section-subtitle {
+  margin: -8px 0 16px;
+  font-size: 13px;
+  color: #666;
+}
+
+.entity-section-footer {
+  justify-content: flex-start;
+}
+
+.entity-section-duration {
+  color: #666;
+  font-weight: 500;
+  font-size: 12px;
+}
+
+.entity-section-tiers {
+  margin: 0;
+  padding: 0 12px 10px;
+  list-style: none;
+  font-size: 12px;
+  color: #666;
+}
+
+.entity-section-tiers li {
+  padding: 2px 0;
+}
+
+/* Chips */
+.entity-section-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 0 0 4px;
+}
+
+.entity-section-chip {
+  background: #f0f0f0;
+  color: #1a1a1a;
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+/* Bullets */
+.entity-section-bullet-list {
+  margin: 0;
+  padding: 0 0 0 20px;
+}
+
+.entity-section-bullet-list li {
+  margin-bottom: 8px;
+  font-size: 13px;
+  color: #1a1a1a;
+}
