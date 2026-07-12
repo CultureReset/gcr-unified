@@ -441,13 +441,18 @@
 
 .swipe-card-wrapper {
   /* react-tinder-card only ever sets an inline `transform` for the drag
-     gesture — it never touches top/left/width/height.
-     left/right only — no top/bottom. Vertically centering an auto-height
-     absolute box normally means a CSS `transform`, which would fight with
-     the drag gesture's own inline transform. Leaving top/bottom unset
-     instead lets .cards-container's align-items:center resolve this box's
-     "static position" per the flexbox spec — centered, no transform of
-     its own, nothing to conflict with the drag.
+     gesture — it never touches top/left/width/height/bottom, so pinning
+     all four sides here doesn't conflict with it (only a CSS transform of
+     our own, e.g. for vertical centering, would fight the drag's inline
+     transform — plain inset positioning never does).
+     top:0/bottom:0 gives this box a DEFINITE height matching
+     .cards-container exactly. Content-sizing this box (no top/bottom) let
+     a square photo + full info panel add up to taller than the space
+     .swipe-actions needs below, pushing the button row off-screen on
+     shorter phones — a real overflow bug, not just a visual preference.
+     Filling the container's height and letting .business-card shrink to
+     fit inside it (see below) is what actually guarantees the Nope/Must
+     Do/Like row stays visible no matter the photo's natural size.
      width is intentionally NOT 100% — with explicit left+right insets,
      percentage width resolves against the full containing block and
      overflows past the right inset; leaving it auto is what makes the box
@@ -456,6 +461,8 @@
   position: absolute !important;
   left: 8px;
   right: 8px;
+  top: 0;
+  bottom: 0;
   margin: 0 auto;
   max-width: 470px;
 }
@@ -469,10 +476,15 @@
   user-select: none;
   cursor: grab;
   width: 100%;
-  /* Content-sized (square photo + however tall the info panel needs to be),
-     not stretched to fill the deck area -- that's what let it overlap
-     .swipe-actions below, and made the photo an oddly tall rectangle. */
+  /* height:auto (not 100%) so the card is exactly as tall as its content
+     when that content fits -- no dead space inside the card's own
+     background. max-height:100% is the actual overflow guard: only when
+     square-photo + info-panel would exceed .swipe-card-wrapper's bounded
+     height does this clip in, which is what forces the flex column below
+     to redistribute (shrinking .card-image-wrap, since .card-info-panel
+     stays flex-shrink:0) instead of pushing .swipe-actions off-screen. */
   height: auto;
+  max-height: 100%;
   display: flex;
   flex-direction: column;
 }
@@ -482,16 +494,30 @@
 .card-image-wrap {
   position: relative;
   /* Square, not "however much space is left" -- a fixed 1:1 shape reads as
-     a real photo, not a stretched rectangle, and makes the card's overall
-     height predictable (square photo + however tall the info panel's own
-     content is) instead of forcibly filling 100% of the deck area. */
+     a real photo, not a stretched rectangle. flex-shrink is deliberately
+     NOT 0: .business-card now has a definite height (fills .swipe-card-
+     wrapper), so if a square at full card width would be taller than the
+     space left after .card-info-panel's own content, the browser shrinks
+     this box -- still perfectly square, just smaller -- instead of
+     overflowing past .swipe-actions. min-height:0 is required for that
+     shrink to actually take effect inside a flex column. */
   aspect-ratio: 1 / 1;
-  flex-shrink: 0;
+  min-height: 0;
   background: linear-gradient(135deg, #1a1a2e 0%, #12121f 100%);
 }
 
-.card-image {
-  /* absolute + inset:0, not width/height:100% -- percentage heights on an
+.swipe-card-photo {
+  /* Renamed from .card-image -- that name collided with an unrelated
+     .card-image in src/styles/EntityCard.css (a hub-directory thumbnail,
+     nothing to do with the swipe deck). Vite bundles all CSS globally with
+     no scoping, so whichever rule landed later in the built bundle won for
+     the shared width/height/position properties -- EntityCard.css's
+     height:200px; position:relative silently overrode this rule in
+     production, which is what actually caused the "gap and rectangle
+     instead of square photo" bug, not anything wrong with the rule itself.
+     A unique class name makes this impossible to collide with again.
+
+     absolute + inset:0, not width/height:100% -- percentage heights on an
      <img> depend on the parent having a "definite" computed height, which
      is fragile across mobile Safari especially with svh ancestors in the
      chain, and was the actual cause of the dark card-image-wrap gradient
@@ -648,10 +674,10 @@
 }
 
 .card-info-panel {
-  /* .card-image-wrap is flex:1 and takes whatever height this panel
-     doesn't use, so trimming this panel's own padding is what actually
-     makes the photo above it taller -- there's no separate "photo height"
-     lever, the two are complementary shares of the same fixed card. */
+  /* flex-shrink:0 -- this panel always gets its full natural content
+     height first; .card-image-wrap (shrinkable, see its own comment) only
+     gets whatever's left, which is what keeps the card's total height
+     from ever exceeding .business-card's own bounded height. */
   background: #10233a;
   color: white;
   padding: 12px 18px 10px;

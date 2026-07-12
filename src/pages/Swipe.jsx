@@ -387,7 +387,16 @@ export default function Swipe() {
   useEffect(() => {
     let cancelled = false
     setLoading(true)
-    Promise.all([fetchBusinesses(), fetchPreferences(), fetchSocialCards(), fetchFeedCards()])
+    // fetchBusinesses() defaults to limit:50 -- fine for a quick preview list
+    // elsewhere, but the swipe deck is the ONE place meant to draw from the
+    // platform's real full catalog (270+ restaurants alone, before nightlife/
+    // shopping/activities/stay). At the old default, every swipe session --
+    // no matter how much you swiped or how many times you reloaded -- only
+    // ever pulled the same first 50 entities the API happened to return,
+    // split five ways across category tabs. That's the real cause of "same
+    // ~25 cards over and over no matter what" -- a fetch-size bug, not a
+    // shuffle bug (shuffle() itself is a correct Fisher-Yates).
+    Promise.all([fetchBusinesses({ limit: 2000 }), fetchPreferences(), fetchSocialCards(), fetchFeedCards()])
       .then(([all, prefs, social, feed]) => {
         if (cancelled) return
         setPrefMap(prefs)
@@ -1217,7 +1226,7 @@ function BusinessCard({ business, isTop, onDetail, userLocation, swipingDir, sav
         onPointerUp={handleImgUp}
       >
         {photo && (
-          <img src={photo} alt={business.name} className="card-image"
+          <img src={photo} alt={business.name} className="swipe-card-photo"
             onError={e => { try { e.target.style.display='none'; if (e.target.parentNode) e.target.parentNode.style.background='linear-gradient(135deg,#1a3a5c,#0ea5e9)' } catch {} }} />
         )}
 
@@ -1342,7 +1351,7 @@ function PromoCard({ card, isTop, onDetail }) {
     <div className={`business-card promo-card ${isTop ? 'top' : ''}`}>
       <div className="card-image-wrap" style={!card.hero_image_url ? {background:'linear-gradient(135deg,#4f46e5,#7c3aed)'} : undefined}>
         {card.hero_image_url && (
-          <img src={card.hero_image_url} alt={card.name} className="card-image"
+          <img src={card.hero_image_url} alt={card.name} className="swipe-card-photo"
             onError={e => { try { e.target.style.display='none' } catch {} }} />
         )}
         <div className="card-promo-badge">📅 Tonight</div>
@@ -1412,7 +1421,7 @@ function DealSwipeCard({ deal, isTop, onDetail }) {
     <div className={`business-card deal-swipe-card ${isTop ? 'top' : ''}`}>
       <div className="card-image-wrap" style={{ background: style.bg }}>
         {deal.image_url && (
-          <img src={deal.image_url} alt={deal.entity_name} className="card-image"
+          <img src={deal.image_url} alt={deal.entity_name} className="swipe-card-photo"
             style={{ opacity: 0.35 }}
             onError={e => { try { e.target.style.display = 'none' } catch {} }} />
         )}
@@ -1513,7 +1522,7 @@ function EventSwipeCard({ card, isTop, onDetail }) {
     <div className={`business-card deal-swipe-card ${isTop ? 'top' : ''}`}>
       <div className="card-image-wrap" style={{ background: style.bg }}>
         {card.hero_image_url && (
-          <img src={card.hero_image_url} alt={card.name} className="card-image"
+          <img src={card.hero_image_url} alt={card.name} className="swipe-card-photo"
             onError={e => { try { e.target.style.display = 'none' } catch {} }} />
         )}
         <div className="card-featured-badge" style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }}>
