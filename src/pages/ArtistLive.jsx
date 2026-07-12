@@ -3,264 +3,229 @@ import { useParams } from 'react-router-dom'
 import { API_BASE } from '../config'
 import './ArtistLive.css'
 
-const AMOUNTS = [5, 10, 20, 50]
-
+// Standalone live-artist page (headerless, QR/link-tree style). Reads the same
+// artist_profiles row the GCR directory profile does, but shows the live-show
+// money layer instead of the directory/booking layer. Every section is gated on
+// real data — nothing renders unless the artist actually has it filled in, and
+// every action writes to a real endpoint (no demo/fake sections).
 export default function ArtistLive() {
   const { slug } = useParams()
   const [data, setData]       = useState(null)
+  const [queue, setQueue]     = useState([])
   const [loading, setLoading] = useState(true)
-  const [screen, setScreen]   = useState('home') // home | request | shoutout | tip
-  const [amount, setAmount]   = useState(10)
+
+  // one form model shared across the three money actions
   const [song, setSong]       = useState('')
   const [name, setName]       = useState('')
   const [msg, setMsg]         = useState('')
+  const [amount, setAmount]   = useState(10)
+  const [active, setActive]   = useState(null)   // 'request' | 'shoutout' | 'tip' | null
+  const [sent, setSent]       = useState(false)
 
   useEffect(() => {
-    // Reset everything on artist change -- this previously only set state on
-    // success, so a failed/slow fetch for a new artist left the prior
-    // artist's name, live badge, and Cash App/Venmo payment handles on
-    // screen under the new URL (a real risk of paying the wrong artist).
-    setLoading(true)
-    setData(null)
-    setScreen('home')
-    setAmount(10)
-    setSong('')
-    setName('')
-    setMsg('')
+    setLoading(true); setData(null); setQueue([]); setActive(null); setSent(false)
+    setSong(''); setName(''); setMsg('')
     fetch(`${API_BASE}/api/gcr/artist/${slug}/live`)
       .then(r => r.json())
       .then(d => {
         setData(d)
-        setLoading(false)
         if (d?.artist?.default_min) setAmount(d.artist.default_min)
       })
-      .catch(() => { setData(null); setLoading(false) })
+      .catch(() => setData(null))
+      .finally(() => setLoading(false))
+    fetch(`${API_BASE}/api/artists/${slug}/queue`)
+      .then(r => r.ok ? r.json() : [])
+      .then(q => setQueue(Array.isArray(q) ? q : []))
+      .catch(() => setQueue([]))
   }, [slug])
 
-  // Presets built around this artist's configured minimum instead of a fixed
-  // $5/$10/$20/$50 that ignores what the artist actually set.
-  const min = data?.artist?.default_min
-  const amounts = min ? [min, min * 2, min * 4, min * 10] : AMOUNTS
-
-  if (loading) return (
-    <div className="al-loading">
-      <div className="al-spinner" />
-    </div>
-  )
-
+  if (loading) return <div className="al-loading"><div className="al-spinner" /></div>
   if (!data?.artist) return (
-    <div className="al-loading">
-      <div style={{ fontSize: 48 }}>🎵</div>
-      <p>Artist not found</p>
-    </div>
+    <div className="al-loading"><div style={{ fontSize: 48 }}>🎵</div><p>Artist not found</p></div>
   )
 
   const { artist, show } = data
+  const min = artist.default_min || 10
+  const amounts = [min, min * 2, min * 4, min * 10]
+  const hasPay = !!(artist.cashapp || artist.venmo)
 
-  // Cash App and Venmo deep links
-  function openCashApp() {
-    const handle = artist.cashapp?.replace(/^\$/, '')
-    if (!handle) return
-    logRequest()
-    window.open(`https://cash.app/$${handle}/${amount}`, '_blank')
-  }
+  const tags = [
+    ...(artist.genre ? String(artist.genre).split(/[,/]/).map(s => s.trim()).filter(Boolean) : []),
+    artist.hometown,
+  ].filter(Boolean).slice(0, 4)
 
-  function openVenmo() {
-    const handle = artist.venmo?.replace(/^@/, '')
-    if (!handle) return
-    logRequest()
-    window.open(`https://venmo.com/${handle}?txn=pay&amount=${amount}&note=${encodeURIComponent(song || msg || 'Tip')}`, '_blank')
-  }
-
-  async function logRequest() {
+  async function logRequest(type) {
     try {
       await fetch(`${API_BASE}/api/artists/${slug}/request`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          song_title: screen === 'request' ? song : undefined,
+          song_title: type === 'request' ? song : undefined,
           fan_name: name,
           note: msg,
           amount,
-          request_type: screen,
-        })
+          request_type: type,
+        }),
       })
     } catch {}
   }
 
-  // HOME SCREEN — three big buttons
-  if (screen === 'home') return (
-    <div className="al-page">
-      <div
-        className="al-hero"
-        style={{ backgroundImage: artist.photo_url ? `url(${artist.photo_url})` : undefined }}
-      >
-        <div className="al-hero-overlay" />
-        <div className="al-hero-content">
-          {show && (
-            <div className="al-live-badge">
-              <span className="al-dot" />
-              LIVE NOW
+  function pay(appType, type) {
+    logRequest(type)
+    setSent(true)
+    if (appType === 'cashapp' && artist.cashapp) {
+      const h = artist.cashapp.replace(/^\$/, '')
+      window.open(`https://cash.app/$${h}/${amount}`, '_blank')
+    } else if (appType === 'venmo' && artist.venmo) {
+      const h = artist.venmo.replace(/^@/, '')
+      const note = encodeURIComponent(song || msg || (type === 'tip' ? 'Tip' : 'Request'))
+      window.open(`https://venmo.com/${h}?txn=pay&amount=${amount}&note=${note}`, '_blank')
+    }
+  }
+
+  const share = () => {
+    if (navigator.share) navigator.share({ title: artist.name, url: window.location.href }).catch(() => {})
+  }
+
+  // reusable action panel (request / shoutout / tip)
+  function ActionPanel({ type, title, accent }) {
+    return (
+      <div className={`al-panel al-panel-${accent}`}>
+        <div className="al-panel-title">{title}</div>
+        {type === 'request' && (
+          <>
+            {Array.isArray(artist.songs) && artist.songs.length > 0 && (
+              <div className="al-songs">
+                {artist.songs.map((s, i) => {
+                  const t = typeof s === 'string' ? s : s.title
+                  return <button key={i} className={`al-song ${song === t ? 'on' : ''}`} onClick={() => setSong(t)}>{t}</button>
+                })}
+              </div>
+            )}
+            <input className="al-in" placeholder="Song name" value={song} onChange={e => setSong(e.target.value)} />
+          </>
+        )}
+        {type === 'shoutout' && (
+          <>
+            <div className="al-examples">
+              {['Happy Birthday! 🎂', 'Anniversary 💍', 'Roll Tide! 🐘', 'Bachelorette 🥂'].map(x => (
+                <button key={x} className="al-ex" onClick={() => setMsg(x)}>{x}</button>
+              ))}
             </div>
-          )}
-          <div className="al-artist-name">{artist.name}</div>
-          {show && (
-            <div className="al-venue">{show.venue}</div>
+            <textarea className="al-in al-ta" placeholder="Your shoutout message…" value={msg} onChange={e => setMsg(e.target.value)} />
+          </>
+        )}
+        <input className="al-in" placeholder="Your name or table #" value={name} onChange={e => setName(e.target.value)} />
+        <div className="al-amounts">
+          {amounts.map(a => (
+            <button key={a} className={`al-amt ${amount === a ? 'on' : ''}`} onClick={() => setAmount(a)}>${a}</button>
+          ))}
+        </div>
+        {hasPay ? (
+          <div className="al-pay">
+            {artist.cashapp && <button className="al-pay-btn al-cash" onClick={() => pay('cashapp', type)}>Cash App · ${amount}</button>}
+            {artist.venmo && <button className="al-pay-btn al-venmo" onClick={() => pay('venmo', type)}>Venmo · ${amount}</button>}
+          </div>
+        ) : (
+          <div className="al-nopay">This artist hasn't added a payment handle yet.</div>
+        )}
+        {sent && <div className="al-sent">Sent! Pay in the app you opened — {artist.name} gets it directly.</div>}
+      </div>
+    )
+  }
+
+  return (
+    <div className="al-page">
+      {/* HERO */}
+      <div className="al-hero" style={{ backgroundImage: artist.photo_url ? `url(${artist.photo_url})` : undefined }}>
+        <div className="al-hero-ov" />
+        <div className="al-hero-top">
+          <button className="al-icon" onClick={() => window.history.back()}>←</button>
+          <button className="al-icon" onClick={share}>↗</button>
+        </div>
+        <div className="al-hero-btm">
+          {show && <div className="al-live"><span className="al-dot" /> PLAYING NOW</div>}
+          <h1 className="al-name">{artist.name}</h1>
+          {tags.length > 0 && (
+            <div className="al-tags">{tags.map((t, i) => <span key={i} className="al-tag">{t}</span>)}</div>
           )}
         </div>
       </div>
 
+      {/* QUICK ACTIONS */}
       <div className="al-actions">
         {artist.request_enabled && (
-          <button className="al-action-btn al-action-request" onClick={() => setScreen('request')}>
-            <span className="al-action-icon">🎵</span>
-            <span className="al-action-label">Request a Song</span>
-            <span className="al-action-arrow">›</span>
+          <button className={`al-act al-act-req ${active === 'request' ? 'on' : ''}`} onClick={() => setActive(active === 'request' ? null : 'request')}>
+            <span>🎵</span> Request a Song
           </button>
         )}
         {artist.shoutout_enabled && (
-          <button className="al-action-btn al-action-shoutout" onClick={() => setScreen('shoutout')}>
-            <span className="al-action-icon">📢</span>
-            <span className="al-action-label">Send a Shoutout</span>
-            <span className="al-action-arrow">›</span>
+          <button className={`al-act al-act-sh ${active === 'shoutout' ? 'on' : ''}`} onClick={() => setActive(active === 'shoutout' ? null : 'shoutout')}>
+            <span>📢</span> Send a Shoutout
           </button>
         )}
-        <button className="al-action-btn al-action-tip" onClick={() => setScreen('tip')}>
-          <span className="al-action-icon">💸</span>
-          <span className="al-action-label">Tip the Artist</span>
-          <span className="al-action-arrow">›</span>
+        <button className={`al-act al-act-tip ${active === 'tip' ? 'on' : ''}`} onClick={() => setActive(active === 'tip' ? null : 'tip')}>
+          <span>💸</span> Tip the Artist
         </button>
       </div>
 
-      <div className="al-footer">
-        Powered by CyberCheck • Gulf Coast Radar
-      </div>
-    </div>
-  )
+      <div className="al-body">
+        {/* expanded action */}
+        {active === 'request'  && <ActionPanel type="request"  title="Request a Song"  accent="req" />}
+        {active === 'shoutout' && <ActionPanel type="shoutout" title="Send a Shoutout" accent="sh" />}
+        {active === 'tip'      && <ActionPanel type="tip"      title="Tip the Artist"  accent="tip" />}
 
-  // SHARED PAY SCREEN layout
-  const screenConfig = {
-    request:  { emoji: '🎵', title: 'Request a Song',   color: '#22c55e' },
-    shoutout: { emoji: '📢', title: 'Send a Shoutout',  color: '#8b5cf6' },
-    tip:      { emoji: '💸', title: 'Tip the Artist',   color: '#f59e0b' },
-  }
-  const cfg = screenConfig[screen]
-
-  return (
-    <div className="al-page al-pay-page">
-      {/* Back */}
-      <button className="al-back" onClick={() => setScreen('home')}>
-        ← Back
-      </button>
-
-      {/* Artist name stays visible */}
-      <div className="al-pay-artist">
-        <span className="al-pay-emoji">{cfg.emoji}</span>
-        <span>{artist.name}</span>
-      </div>
-
-      <div className="al-pay-title" style={{ color: cfg.color }}>
-        {cfg.title}
-      </div>
-
-      {/* Song input — only for requests */}
-      {screen === 'request' && (
-        <div className="al-field-wrap">
-          <div className="al-field-label">SONG</div>
-
-          {/* Artist's song list if they have one */}
-          {Array.isArray(artist.songs) && artist.songs.length > 0 ? (
-            <div className="al-song-list">
-              {artist.songs.map((s, i) => {
-                const title = typeof s === 'string' ? s : s.title
-                return (
-                  <button
-                    key={i}
-                    className={`al-song-pill ${song === title ? 'al-song-active' : ''}`}
-                    onClick={() => setSong(title)}
-                  >
-                    {title}
-                  </button>
-                )
-              })}
+        {/* NOW PLAYING (single real active show) */}
+        {show && (
+          <div className="al-card">
+            <div className="al-label">Playing Now</div>
+            <div className="al-show-venue">{show.venue}</div>
+            <div className="al-show-meta">
+              {[show.city, show.start_time && show.end_time ? `${show.start_time} – ${show.end_time}` : show.start_time].filter(Boolean).join(' · ')}
             </div>
-          ) : null}
-
-          <input
-            className="al-input"
-            placeholder="Song name"
-            value={song}
-            onChange={e => setSong(e.target.value)}
-          />
-        </div>
-      )}
-
-      {/* Shoutout message */}
-      {screen === 'shoutout' && (
-        <div className="al-field-wrap">
-          <div className="al-field-label">MESSAGE</div>
-          <div className="al-shoutout-examples">
-            {['Happy Birthday! 🎂', 'Happy Anniversary! 💍', 'Roll Tide! 🐘', 'Will you marry me? 💍'].map(ex => (
-              <button key={ex} className="al-example-pill" onClick={() => setMsg(ex)}>
-                {ex}
-              </button>
-            ))}
           </div>
-          <textarea
-            className="al-input al-textarea"
-            placeholder="Type your shoutout..."
-            value={msg}
-            onChange={e => setMsg(e.target.value)}
-          />
-        </div>
-      )}
-
-      {/* Name — all screens */}
-      <div className="al-field-wrap">
-        <div className="al-field-label">YOUR NAME</div>
-        <input
-          className="al-input"
-          placeholder="Table 12 or your name"
-          value={name}
-          onChange={e => setName(e.target.value)}
-        />
-      </div>
-
-      {/* Amount */}
-      <div className="al-field-wrap">
-        <div className="al-field-label">AMOUNT</div>
-        <div className="al-amounts">
-          {amounts.map(a => (
-            <button
-              key={a}
-              className={`al-amount-btn ${amount === a ? 'al-amount-active' : ''}`}
-              onClick={() => setAmount(a)}
-            >
-              ${a}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Pay buttons */}
-      <div className="al-pay-buttons">
-        {artist.cashapp && (
-          <button className="al-pay-btn al-cashapp" onClick={openCashApp}>
-            <span className="al-pay-app-name">Cash App</span>
-            <span className="al-pay-amount">${amount}</span>
-          </button>
         )}
-        {artist.venmo && (
-          <button className="al-pay-btn al-venmo" onClick={openVenmo}>
-            <span className="al-pay-app-name">Venmo</span>
-            <span className="al-pay-amount">${amount}</span>
-          </button>
+
+        {/* ABOUT */}
+        {artist.bio && (
+          <div className="al-card">
+            <div className="al-label">About</div>
+            <p className="al-bio">{artist.bio}</p>
+          </div>
+        )}
+
+        {/* LIVE QUEUE (real) */}
+        {queue.length > 0 && (
+          <div className="al-card">
+            <div className="al-label">Live Request Queue</div>
+            <div className="al-queue">
+              {queue.slice(0, 12).map((q, i) => (
+                <div key={q.id || i} className="al-q">
+                  <div className="al-q-rank">{i + 1}</div>
+                  <div className="al-q-song">
+                    <b>{q.song_title || (q.request_type === 'tip' ? 'Tip' : 'Shoutout')}</b>
+                    {q.fan_name && <span> · {q.fan_name}</span>}
+                  </div>
+                  {q.amount > 0 && <div className="al-q-amt">${q.amount}</div>}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* LINKS */}
+        {(artist.instagram_url || artist.spotify_url) && (
+          <div className="al-card">
+            <div className="al-label">Links</div>
+            <div className="al-links">
+              {artist.instagram_url && <a href={artist.instagram_url} target="_blank" rel="noopener noreferrer" className="al-link">📸 Instagram</a>}
+              {artist.spotify_url && <a href={artist.spotify_url} target="_blank" rel="noopener noreferrer" className="al-link">🎧 Spotify</a>}
+            </div>
+          </div>
         )}
       </div>
 
-      <div className="al-pay-note">
-        Tap a button to open the app. Pay {artist.name} directly — no fees.
-      </div>
+      <div className="al-footer">Powered by CyberCheck · Gulf Coast Radar</div>
     </div>
   )
 }
