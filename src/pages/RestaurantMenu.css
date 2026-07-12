@@ -196,6 +196,17 @@
   font-size: 22px;
 }
 
+.artist-card-preview {
+  cursor: pointer;
+}
+
+.artist-link-cta {
+  display: inline-block;
+  font-size: 13px;
+  font-weight: 700;
+  color: #1a8917;
+}
+
 .artist-bio {
   margin: 8px 0 16px;
   font-size: 13px;
