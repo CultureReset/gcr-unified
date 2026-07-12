@@ -137,24 +137,41 @@ async function fetchSocialCards() {
   }
 }
 
-// Every tab here must correspond to a value mapCategory() in gcrApi.js can
-// actually produce (stay/food/nightlife/shopping/activities) — a tab whose id
-// never matches any card's category always renders an empty deck. "Drinks"
-// had no distinct category (bars/cocktail spots already come through under
-// Nightlife) so it's dropped rather than left as a dead end. Events/live-music/
-// happy-hour/special cards (see fetchFeedCards) are always tagged category:'all'
-// and interleaved into the "All" deck like the promo/deal/social cards, not
-// filterable by tab — so the "Events" tab still links out to the full Events
-// page instead of a (still nonexistent) events-only filter.
+// Every real section on the platform (same split CategoryPage.jsx's nav
+// uses, via categoryMap.js's subtypeToCategory() — see gcrApi.js's toCard(),
+// which stamps this onto each card as `section`, separate from the older,
+// cruder `category` field EntityCard/HubTemplate/Home's category rails
+// already depend on elsewhere). "Activities" used to be one catch-all tab
+// covering marinas/wellness/public-spots/services/everything-else at once;
+// this is the actual breakdown. Happy Hours isn't a subtype at all (any
+// restaurant or bar can have one) so it's filtered on the `happy_hour` field
+// instead of `section` — see the businesses filters below. Events still
+// isn't a standalone swipeable entity (see fetchFeedCards' event/live-music/
+// happy-hour/special cards, always category:'all' and interleaved into every
+// tab instead), so that tab still links out to the full Events page.
 const CAT_TABS = [
-  { id: 'all',        label: 'All',        emoji: '🌟' },
-  { id: 'food',       label: 'Food',       emoji: '🍽️' },
-  { id: 'nightlife',  label: 'Nightlife',  emoji: '🎵' },
-  { id: 'activities', label: 'Activities', emoji: '🏄' },
-  { id: 'shopping',   label: 'Shopping',   emoji: '🛍️' },
-  { id: 'stay',       label: 'Stay',       emoji: '🏨' },
-  { id: 'events',     label: 'Events',     emoji: '🎪', to: '/events' },
+  { id: 'all',           label: 'All',          emoji: '🌟' },
+  { id: 'restaurants',   label: 'Restaurants',  emoji: '🍽️' },
+  { id: 'coffee',        label: 'Coffee',       emoji: '☕' },
+  { id: 'nightlife',     label: 'Nightlife',    emoji: '🎵' },
+  { id: 'things-to-do',  label: 'Things To Do', emoji: '🏄' },
+  { id: 'shopping',      label: 'Shopping',     emoji: '🛍️' },
+  { id: 'public-spots',  label: 'Public Spots', emoji: '✨' },
+  { id: 'wellness',      label: 'Wellness',     emoji: '💆' },
+  { id: 'marinas',       label: 'Marinas',      emoji: '⚓' },
+  { id: 'staying',       label: 'Stay',         emoji: '🏨' },
+  { id: 'happy-hours',   label: 'Happy Hours',  emoji: '🍹' },
+  { id: 'services',      label: 'Services',     emoji: '🧰' },
+  { id: 'events',        label: 'Events',       emoji: '🎪', to: '/events' },
 ]
+
+// Shared by every "which cards match this tab" filter below -- Happy Hours
+// isn't a section (any restaurant/bar can have one), so it checks the
+// happy_hour field directly instead of `section`.
+function matchesCategory(b, category) {
+  if (category === 'happy-hours') return !!b.happy_hour
+  return b.section === category
+}
 
 // Same options as /api/tourist/setup-questions' group_type question —
 // kept in sync manually since that endpoint returns a static, hardcoded list.
@@ -341,20 +358,22 @@ export default function Swipe() {
   const [editHotelName, setEditHotelName] = useState('')
   const [savingTrip, setSavingTrip] = useState(false)
 
-  const catInfo = CATEGORIES.find(c => c.id === category) || CATEGORIES[5]
+  // CAT_TABS is now the real, full section list (restaurants/coffee/nightlife/
+  // things-to-do/shopping/public-spots/wellness/marinas/staying/happy-hours/
+  // services/all) -- looking this up from CAT_TABS instead of the older,
+  // cruder CATEGORIES file (still used elsewhere for the unrelated `category`
+  // field) means every real section id resolves correctly here, not just
+  // whichever ones happened to overlap between the two lists.
+  const catInfo = CAT_TABS.find(c => c.id === category) || CAT_TABS[0]
 
-  // /swipe/events and /swipe/drinks aren't real swipeable categories (see
-  // CAT_TABS comment) — catch direct/bookmarked links to them too, not just
-  // the tab bar. Drinks has no dedicated page, so send it to the closest
-  // real category (bars/cocktails already surface under Nightlife).
-  // /swipe/restaurants isn't a real category either (the real id is "food")
-  // but it's hardcoded as the Swipe entry point in BottomNav, GCRHeader,
-  // Landing, and Browse — every one of those was a guaranteed dead end
-  // (0 cards, no matching filter) until this redirect existed.
+  // /swipe/events and /swipe/drinks aren't real swipeable sections — catch
+  // direct/bookmarked links to them too, not just the tab bar. Drinks has no
+  // dedicated page, so send it to the closest real section (bars/cocktails
+  // surface under Nightlife). /swipe/restaurants IS a real section id now
+  // (see CAT_TABS) so it's deliberately not redirected anymore.
   useEffect(() => {
     if (category === 'events') navigate('/events', { replace: true })
     else if (category === 'drinks') navigate('/swipe/nightlife', { replace: true })
-    else if (category === 'restaurants') navigate('/swipe/food', { replace: true })
   }, [category, navigate])
 
   const businesses = (category === 'all'
@@ -362,7 +381,7 @@ export default function Swipe() {
     // only exclude ones deliberately targeted at a specific tab, same rule deals/social
     // cards already follow (they're always category:'all' and always show here).
     ? allBusinesses.filter(b => !b._isPromo || b.category === 'all')
-    : allBusinesses.filter(b => b.category === category))
+    : allBusinesses.filter(b => matchesCategory(b, category)))
     .filter(b => !seenSlugs.includes(b.slug))
     .filter(b => b.hero_image_url) // Only show businesses with images
 
@@ -476,7 +495,7 @@ export default function Swipe() {
     // 15 cards always show regardless of prior localStorage state
     const visible = (category === 'all'
       ? allBusinesses.filter(b => !b._isPromo || b.category === 'all')
-      : allBusinesses.filter(b => b.category === category))
+      : allBusinesses.filter(b => matchesCategory(b, category)))
       .filter(b => isGuest ? true : !seenSlugs.includes(b.slug))
       .filter(b => b.hero_image_url) // Only show cards with images — no blank gradient placeholders
     setPool(visible)
@@ -517,7 +536,7 @@ export default function Swipe() {
     if (seenSlugs.length > 0) return
     const visible = (category === 'all'
       ? allBusinesses.filter(b => !b._isPromo || b.category === 'all')
-      : allBusinesses.filter(b => b.category === category))
+      : allBusinesses.filter(b => matchesCategory(b, category)))
       .filter(b => b.hero_image_url) // Only show cards with images — no blank gradient placeholders
     setPool(visible)
     const sorted = Object.keys(prefMap).length

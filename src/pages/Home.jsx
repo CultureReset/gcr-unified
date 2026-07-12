@@ -120,7 +120,7 @@ export default function Home() {
             <div className="stay-banner-title">Still need a place to stay?</div>
             <div className="stay-banner-sub">We'll show hotels & condos in your deck</div>
           </div>
-          <button className="stay-banner-btn" onClick={() => navigate('/swipe/stay')}>Browse →</button>
+          <button className="stay-banner-btn" onClick={() => navigate('/swipe/staying')}>Browse →</button>
         </div>
       )}
 

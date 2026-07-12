@@ -122,7 +122,7 @@ export default function Setup() {
     })
     // If tourist is looking for accommodation, show them rental properties
     if (answers.stay_status === 'looking' || answers.stay_status === 'no') {
-      navigate('/swipe/stay', { replace: true })
+      navigate('/swipe/staying', { replace: true })
     } else {
       navigate('/home', { replace: true })
     }

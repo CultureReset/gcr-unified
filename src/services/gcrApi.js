@@ -1,5 +1,6 @@
 import { API_BASE } from '../config'
 import { anonymousVisitorId } from '../context/AppContext'
+import { subtypeToCategory } from '../categoryMap'
 
 export function calcDistance(lat1, lng1, lat2, lng2) {
   if (lat1 == null || lng1 == null || lat2 == null || lng2 == null) return null
@@ -94,6 +95,13 @@ function toCard(entity, photos = []) {
     name: entity.name,
     subtitle: entity.subtitle || '',
     category: mapCategory(entity.entity_type, tags, entity.entity_subtype),
+    // Separate from `category` (the crude 5-bucket system EntityCard/HubTemplate/
+    // Home's category rails already depend on) -- this is the same real 9-way
+    // split CategoryPage.jsx's nav uses (Restaurants/Coffee/Nightlife/Things To
+    // Do/Shopping/Public Spots/Wellness/Marinas/Staying), so the swipe deck can
+    // offer every real section on the platform without touching what `category`
+    // means anywhere else it's already relied on.
+    section: subtypeToCategory(entity) || 'services',
     type: entity.entity_subtype || entity.entity_type || '',
     rating: entity.rating || null,
     review_count: entity.review_count || 0,

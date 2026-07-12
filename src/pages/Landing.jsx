@@ -58,7 +58,7 @@ const CATEGORIES = [
   { emoji:'🍻', label:'Happy Hours',   path:'/happy-hours' },
   { emoji:'🎸', label:'Live Music',    path:'/events' },
   { emoji:'🎣', label:'Charters',      path:'/things-to-do' },
-  { emoji:'🌊', label:'Water Fun',     path:'/swipe/activities' },
+  { emoji:'🌊', label:'Water Fun',     path:'/swipe/things-to-do' },
   { emoji:'☕', label:'Coffee',        path:'/coffee' },
   { emoji:'🛍️', label:'Shopping',     path:'/shopping' },
   { emoji:'🏖️', label:'Stays',        path:'/stays' },
