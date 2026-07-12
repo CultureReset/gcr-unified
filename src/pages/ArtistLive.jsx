@@ -74,10 +74,16 @@ export default function ArtistLive() {
 
   async function logRequest() {
     try {
-      await fetch(`${API_BASE}/api/gcr/artist/${slug}/request`, {
+      await fetch(`${API_BASE}/api/artists/${slug}/request`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ song, name, message: msg, amount, type: screen })
+        body: JSON.stringify({
+          song_title: screen === 'request' ? song : undefined,
+          fan_name: name,
+          note: msg,
+          amount,
+          request_type: screen,
+        })
       })
     } catch {}
   }
