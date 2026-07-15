@@ -43,7 +43,10 @@ const samplesToInsert = [
     address_line_1: '216 E 24th Ave, Gulf Shores, AL 36542, USA',
     rating: 4.5,
     review_count: 3351,
-    hero_image_url: 'https://xbptmkpbiqzvxptjkfoi.supabase.co/storage/v1/object/public/entity-images/entity-images/62e40976-cb7a-4742-806f-bb978a7a6019/62e40976-cb7a-4742-806f-bb978a7a6019_1779139716225.7056.jpg',
+    // NOTE: previously pointed at the stale "launch gcr" project
+    // (xbptmkpbiqzvxptjkfoi). Left null so this seed script can't write a
+    // dead-project image URL into the canonical DB. See CANONICAL_DATABASE.md.
+    hero_image_url: null,
     description: 'Lively New Orleans-based chain offering oysters, po\' boys, gumbo & other Cajun-Creole classics.',
     hh_days: null,
     hh_start: null,
