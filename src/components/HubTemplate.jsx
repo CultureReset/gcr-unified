@@ -11,6 +11,8 @@ const CATEGORY_LABELS = {
   activities: '🎯 Things To Do',
   nightlife: '🍹 Nightlife',
   shopping: '🛍️ Shopping',
+  services: '💼 Business & Local Services',
+  wellness: '💆 Salon & Spa',
 }
 
 export default function HubTemplate({ business, slug }) {

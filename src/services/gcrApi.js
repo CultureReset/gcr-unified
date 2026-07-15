@@ -27,6 +27,18 @@ function mapCategory(entityType, tags = [], entitySubtype = '') {
   const sub = check(entitySubtype)
   const tagStr = (tags || []).join(' ').toLowerCase()
   const combined = t + ' ' + sub
+  // Wellness (spa/salon/wax/massage) and professional/business services (title
+  // companies, property management, photography studios) need their own
+  // buckets checked FIRST — otherwise entity_type: 'service' subtypes like
+  // "vacation_rental_agency" get swept into 'stay' just because the word
+  // "vacation" appears, and a title company or spa falls through everything
+  // to the 'activities' catch-all with no bucket of its own at all.
+  if (combined.includes('spa') || combined.includes('salon') || combined.includes('wax') ||
+      combined.includes('massage') || combined.includes('wellness') || combined.includes('skincare'))
+    return 'wellness'
+  if (t === 'service' || combined.includes('title') || combined.includes('insurance') ||
+      combined.includes('photography') || combined.includes('management') || combined.includes('agency'))
+    return 'services'
   if (combined.includes('hotel') || combined.includes('resort') || combined.includes('rental') ||
       combined.includes('condo') || combined.includes('vacation') || combined.includes('accommodation') ||
       combined.includes('motel') || combined.includes('lodge') || combined.includes('cabin') ||
