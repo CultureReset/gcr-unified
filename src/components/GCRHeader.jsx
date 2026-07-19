@@ -3,7 +3,8 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import './GCRHeader.css'
 
-const LOYALTY_PHONE = '+12513135464'
+import { SMS_NUMBER } from '../config'
+const LOYALTY_PHONE = SMS_NUMBER
 const LOYALTY_KEYWORD = 'BEACH'
 
 function LoyaltyModal({ onClose }) {

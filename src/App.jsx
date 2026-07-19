@@ -2,7 +2,8 @@ import { useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { useApp } from './context/AppContext'
 import ErrorBoundary from './ErrorBoundary'
-import { DEFAULT_MODE } from './config'
+import { DEFAULT_MODE, API_BASE } from './config'
+import { hydrateTaxonomy } from './categoryMap'
 import Landing from './pages/Landing'
 import LinksPage from './pages/LinksPage'
 import CategoryListings from './pages/CategoryListings'
@@ -190,6 +191,7 @@ function AppRoutes() {
 }
 
 export default function App() {
+  useEffect(() => { hydrateTaxonomy(API_BASE) }, [])
   return (
     <ErrorBoundary>
       <BrowserRouter>

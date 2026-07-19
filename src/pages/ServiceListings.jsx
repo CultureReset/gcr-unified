@@ -25,22 +25,32 @@ const SERVICE_TABS = [
 // SERVICE_TABS so the fetch filter can never drift out of sync with the tab bar again.
 const ALL_SERVICE_SUBTYPES = new Set(SERVICE_TABS.flatMap(t => t.subtypes || []))
 
-const BOOKING_PLATFORMS = {
-  spa: { label: 'Book on Vagaro', color: '#7c3aed' },
-  massage: { label: 'Book on Vagaro', color: '#7c3aed' },
-  yoga_studio: { label: 'Book on MindBody', color: '#059669' },
-  fitness_center: { label: 'Book on MindBody', color: '#059669' },
-  hair_salon: { label: 'Book on StyleSeat', color: '#db2777' },
-  nail_salon: { label: 'Book on Vagaro', color: '#7c3aed' },
-  barber_shop: { label: 'Book on Booksy', color: '#1d4ed8' },
-  photographer: { label: 'Book on HoneyBook', color: '#d97706' },
+// The badge reflects where THIS business actually takes bookings — derived
+// from its real booking_url, never assumed from the business type.
+const PLATFORM_DOMAINS = {
+  'vagaro.com': { label: 'Book on Vagaro', color: '#7c3aed' },
+  'mindbodyonline.com': { label: 'Book on MindBody', color: '#059669' },
+  'styleseat.com': { label: 'Book on StyleSeat', color: '#db2777' },
+  'booksy.com': { label: 'Book on Booksy', color: '#1d4ed8' },
+  'honeybook.com': { label: 'Book on HoneyBook', color: '#d97706' },
+  'squareup.com': { label: 'Book Online', color: '#111827' },
+  'square.site': { label: 'Book Online', color: '#111827' },
+}
+function bookingPlatform(entity) {
+  const url = entity.booking_url || entity.reservation_url
+  if (!url) return null
+  try {
+    const host = new URL(url).hostname.replace(/^www\./, '')
+    const match = Object.keys(PLATFORM_DOMAINS).find(d => host === d || host.endsWith('.' + d))
+    return match ? PLATFORM_DOMAINS[match] : { label: 'Book Now', color: '#0f766e' }
+  } catch (e) { return { label: 'Book Now', color: '#0f766e' } }
 }
 
 function ServiceCard({ entity, navigate }) {
   const [imgFailed, setImgFailed] = useState(false)
   const img = entity.hero_image_url
   const subtype = (entity.entity_subtype || '').toLowerCase()
-  const platform = BOOKING_PLATFORMS[subtype]
+  const platform = bookingPlatform(entity)
   const rating = entity.rating ? parseFloat(entity.rating).toFixed(1) : null
 
   const LABELS = {

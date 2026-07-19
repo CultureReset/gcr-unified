@@ -5,7 +5,7 @@ import { useApp } from '../context/AppContext'
 import { CATEGORIES } from '../data/categories'
 import { TAG_EMOJI } from '../components/GCRCard'
 import { fetchBusinesses, calcDistance, formatDistance, fetchPreferences, personalizeAndSort, searchProperties, fetchHomeFeed } from '../services/gcrApi'
-import { API_BASE } from '../config'
+import { API_BASE, SMS_NUMBER } from '../config'
 import './Swipe.css'
 
 function formatEventTime(t) {
@@ -115,7 +115,7 @@ async function fetchFeedCards() {
 // Same Twilio number used across the app (GCRHeader/Auth/Landing) — texting
 // SWIPE here (vs BEACH elsewhere) just tells the inbound webhook this signup
 // came from the swipe-deck prompt.
-const SMS_SIGNUP_NUMBER = '+12513135464'
+const SMS_SIGNUP_NUMBER = SMS_NUMBER
 const SMS_SIGNUP_LINK = `sms:${SMS_SIGNUP_NUMBER}?body=${encodeURIComponent('SWIPE')}`
 
 // Fetch social post cards (IG Reels, FB videos) to inject into the swipe deck

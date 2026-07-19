@@ -137,6 +137,25 @@ export const SUBTYPE_TO_CATEGORY = {
 
 const LODGING_TYPES = new Set(['hotel', 'condo', 'motel', 'lodging', 'resort', 'cabin', 'cottage', 'inn', 'lodge'])
 
+// The database's subtype_taxonomy is the source of truth; the hardcoded map
+// above is the offline fallback. hydrateTaxonomy() merges server mappings in
+// at app start — server rows win, unknown subtypes stop vanishing silently.
+let _hydrated = false
+export async function hydrateTaxonomy(apiBase) {
+  if (_hydrated) return
+  try {
+    const res = await fetch(`${apiBase}/api/gcr/taxonomy`)
+    if (!res.ok) return
+    const { map } = await res.json()
+    if (map && typeof map === 'object') {
+      Object.entries(map).forEach(([subtype, section]) => {
+        SUBTYPE_TO_CATEGORY[subtype.toLowerCase()] = section
+      })
+      _hydrated = true
+    }
+  } catch (e) { /* offline/failed — hardcoded fallback map stays in effect */ }
+}
+
 export function subtypeToCategory(entity) {
   const sub = (entity.entity_subtype || '').toLowerCase()
   const type = (entity.entity_type || '').toLowerCase()

@@ -54,7 +54,7 @@ export default function EntityCard({ entity, category }) {
 
         {entity.rating && (
           <p className="rating">
-            ⭐ {entity.rating.toFixed(1)} ({entity.review_count || 0})
+            ⭐ {parseFloat(entity.rating).toFixed(1)} ({entity.review_count || 0})
           </p>
         )}
 

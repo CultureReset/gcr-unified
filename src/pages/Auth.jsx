@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useSearchParams, useLocation, Link } from 'react-router-dom'
 import { useApp, anonymousVisitorId } from '../context/AppContext'
-import { API_BASE as API } from '../config'
+import { API_BASE as API, SMS_NUMBER } from '../config'
 // Firebase phone auth disabled - use email/password only
 // import { sendFirebaseOTP, confirmFirebaseOTP, resetRecaptcha, setupRecaptcha } from '../services/firebaseAuth'
 import './Auth.css'
@@ -360,7 +360,7 @@ export default function Auth() {
 
             {/* One-tap SMS signup */}
             <a
-              href="sms:+12513135464?body=BEACH"
+              href={`sms:${SMS_NUMBER}?body=BEACH`}
               className="btn-sms-signup"
             >
               📱 Text BEACH to Sign Up / Sign In
