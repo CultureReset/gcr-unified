@@ -130,6 +130,22 @@
         <div class="acts"><button class="btn primary sm" onclick="addBlock()">Block</button></div>
         <div id="bl-list" style="margin-top:10px"></div>
       </div>
+      <div class="card">
+        <h3>🔄 Channel sync — Airbnb, VRBO, Booking.com</h3>
+        <p class="muted" style="font-size:13px">Paste a calendar export (.ics) link from another platform and its bookings automatically block your availability here — no double bookings. Feeds re-sync every hour.</p>
+        <div id="ch-list" style="margin-top:10px"></div>
+        <div class="row" style="margin-top:8px">
+          <div style="max-width:150px"><label>Platform</label><select id="ch-prov"><option>Airbnb</option><option>VRBO</option><option>Booking.com</option><option>Other</option></select></div>
+          <div><label>Calendar (.ics) URL</label><input id="ch-url" placeholder="https://www.airbnb.com/calendar/ical/…ics"></div>
+        </div>
+        <div class="row" id="ch-unit-row" style="display:none">
+          <div><label>Applies to</label><select id="ch-unit"></select></div>
+        </div>
+        <div class="acts"><button class="btn primary sm" onclick="addChannel()">Connect calendar</button></div>
+        <div class="err-note" id="ch-err"></div>
+        <label>Your calendar feed (import this INTO Airbnb/VRBO so they block your direct bookings too)</label>
+        <div class="linkbox"><input id="ch-feed" readonly placeholder="Loading…"><button class="btn sm" onclick="copyIt('ch-feed')">Copy</button></div>
+      </div>
     </div>
 
     <!-- OFFERINGS -->
@@ -293,7 +309,7 @@ function showTab(t) {
   cur = t;
   document.querySelectorAll('.tabs button').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-t') === t); });
   document.querySelectorAll('.view').forEach(function (v) { v.classList.toggle('on', v.id === 'v-' + t); });
-  if (t === 'calendar') loadCalendar();
+  if (t === 'calendar') { loadCalendar(); loadChannels(); }
   if (t === 'payments') loadPayStatus();
 }
 document.getElementById('tabs').innerHTML = TABS.map(function (t) {
@@ -434,6 +450,64 @@ function addBlock() {
 }
 function rmBlock(id) {
   CB.plat('/records/blocks/' + id, { method: 'DELETE' }).then(reloadRecords).then(loadCalendar).catch(function (e) { alert(e.message); });
+}
+
+/* ── channel sync (Airbnb / VRBO / Booking.com iCal feeds) ── */
+function chUnits() { return (ST.records.fleet_items || []).concat(ST.records.properties || []); }
+function loadChannels() {
+  // per-unit feeds only make sense when the business has bookable units
+  var units = chUnits();
+  document.getElementById('ch-unit-row').style.display = units.length ? 'flex' : 'none';
+  if (units.length) {
+    document.getElementById('ch-unit').innerHTML = '<option value="">Whole business</option>' + units.map(function (u) {
+      return '<option value="' + CB.esc(u._id) + '">' + CB.esc(u.name) + '</option>';
+    }).join('');
+  }
+  CB.api('/api/dashboard/ical/external').then(function (rows) {
+    var el = document.getElementById('ch-list');
+    if (!rows || !rows.length) { el.innerHTML = '<div class="muted" style="font-size:13px">No calendars connected yet.</div>'; return; }
+    var unitName = {};
+    units.forEach(function (u) { unitName[u._id] = u.name; });
+    el.innerHTML = rows.map(function (r) {
+      var st = r.last_sync_status || 'waiting for first sync';
+      var bad = /^error/.test(st);
+      return '<div class="bk"><div class="hd"><div><b>' + CB.esc(r.source_label || r.provider || 'Calendar') + '</b>' +
+        (r.resource_id && unitName[r.resource_id] ? ' <span class="muted">· ' + CB.esc(unitName[r.resource_id]) + '</span>' : '') +
+        '<div class="meta" style="color:' + (bad ? 'var(--bad)' : 'var(--muted)') + '">' + CB.esc(st) + (r.last_synced_at ? ' · ' + CB.esc(String(r.last_synced_at).slice(0, 16).replace('T', ' ')) : '') + '</div></div>' +
+        '<span><button class="btn sm" onclick="syncChannel(\'' + r.id + '\')">Sync now</button> <button class="btn sm danger" onclick="rmChannel(\'' + r.id + '\')">Remove</button></span></div></div>';
+    }).join('');
+  }).catch(function (e) { document.getElementById('ch-err').textContent = e.message; });
+  CB.api('/api/dashboard/ical/feed-url').then(function (d) {
+    if (d && d.feed_url) document.getElementById('ch-feed').value = d.feed_url;
+  }).catch(function () { document.getElementById('ch-feed').placeholder = 'Feed unavailable'; });
+}
+function addChannel() {
+  var url = document.getElementById('ch-url').value.trim();
+  var prov = document.getElementById('ch-prov').value;
+  var err = document.getElementById('ch-err');
+  err.textContent = '';
+  if (!/^https?:\/\//.test(url)) { err.textContent = 'Paste the .ics export link from the other platform.'; return; }
+  var body = { source_label: prov, provider: prov.toLowerCase().replace(/[^a-z]/g, ''), ical_url: url };
+  var unit = document.getElementById('ch-unit') && document.getElementById('ch-unit').value;
+  if (unit) body.resource_id = unit;
+  CB.api('/api/dashboard/ical/external', { method: 'POST', body: body })
+    .then(function (d) {
+      document.getElementById('ch-url').value = '';
+      // kick the first sync right away so the calendar fills in
+      return CB.api('/api/dashboard/ical/external/' + d.id + '/sync-now', { method: 'POST' }).catch(function () {});
+    })
+    .then(function () { loadChannels(); loadCalendar(); })
+    .catch(function (e) { err.textContent = e.message; });
+}
+function syncChannel(id) {
+  CB.api('/api/dashboard/ical/external/' + id + '/sync-now', { method: 'POST' })
+    .then(function () { loadChannels(); loadCalendar(); })
+    .catch(function (e) { document.getElementById('ch-err').textContent = e.message; });
+}
+function rmChannel(id) {
+  CB.api('/api/dashboard/ical/external/' + id, { method: 'DELETE' })
+    .then(function () { loadChannels(); loadCalendar(); })
+    .catch(function (e) { document.getElementById('ch-err').textContent = e.message; });
 }
 
 /* ── offerings ── */
