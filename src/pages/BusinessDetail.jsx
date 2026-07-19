@@ -9,7 +9,7 @@ import BlogSection from '../components/BlogSection'
 import PoliciesSection from '../components/PoliciesSection'
 import BookingCalendar from '../components/BookingCalendar'
 import HubTemplate from '../components/HubTemplate'
-import { fetchChildRentals, cachedFetchJson } from '../services/gcrApi'
+import { fetchChildRentals, cachedFetchJson, fixUrl } from '../services/gcrApi'
 import './BusinessDetail.css'
 import '../components/MiniSiteComponents.css'
 
@@ -378,7 +378,7 @@ export default function RestaurantDetail() {
       ? (typeof price === 'string' ? price : (price % 1 === 0 ? `$${price}` : `$${parseFloat(price).toFixed(2)}`))
       : discountStr
     // image_url is returned flat from the API — item.images[] was the old shape, never matched
-    const imgSrc = item.image_url || item.image_path || (item.images && item.images[0]?.url) || null
+    const imgSrc = fixUrl(item.image_url || item.image_path || (item.images && item.images[0]?.url)) || null
     return (
       <div key={item.id || i} className="menu-item">
         {imgSrc && (
@@ -633,7 +633,7 @@ export default function RestaurantDetail() {
       <div className={`carousel-wrap${allFailed ? ' carousel-wrap-empty' : ''}`}>
         <div className="carousel">
           {slides.map((photo, idx) => {
-            const src = photo.image_url || photo.url || ''
+            const src = fixUrl(photo.image_url || photo.url) || ''
             const broken = failedSlides[idx] || !src
             return (
             <div
@@ -1700,7 +1700,7 @@ export default function RestaurantDetail() {
                 {photos.slice(galleryPage * GALLERY_PER_PAGE, (galleryPage + 1) * GALLERY_PER_PAGE).map((photo, idx) => (
                   <img
                     key={idx}
-                    src={photo.image_url || photo.url}
+                    src={fixUrl(photo.image_url || photo.url)}
                     alt={photo.caption || business.name}
                     className="gallery-preview-img"
                     onClick={() => { setGalleryOpen(true); setGalleryPage(Math.floor((galleryPage * GALLERY_PER_PAGE + idx) / GALLERY_PER_PAGE)) }}
@@ -2381,7 +2381,7 @@ export default function RestaurantDetail() {
             <h2>📸 Photos</h2>
             <div className="gallery-grid">
               {photos.slice(galleryPage * GALLERY_PER_PAGE, (galleryPage + 1) * GALLERY_PER_PAGE).map((photo, idx) => (
-                <img key={idx} src={photo.image_url || photo.url} alt="" className="gallery-img" />
+                <img key={idx} src={fixUrl(photo.image_url || photo.url)} alt="" className="gallery-img" />
               ))}
             </div>
             {galleryTotal > 1 && (

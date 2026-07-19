@@ -86,6 +86,23 @@ function formatHappyHour(e) {
   return `${t(e.hh_start)} - ${t(e.hh_end)}`
 }
 
+// Shared photo-URL normalizer — every image src anywhere in the app should
+// pass through this before rendering.
+export function fixUrl(u) {
+  if (!u) return null
+  if (u.startsWith('//')) u = 'https:' + u
+  if (u.includes('googleapis.com') && u.includes('maxwidth=')) {
+    u = u.replace(/maxwidth=\d+/, 'maxwidth=800')
+  }
+  // Some recovered photo URLs carry literal unencoded spaces in the
+  // filename (e.g. ".../Phoenix East Complex 20.jpg") — a raw space is
+  // not a valid URL character, so browsers load these inconsistently.
+  // Only touch literal spaces so already percent-encoded URLs (e.g.
+  // trackhs.com's %3A-encoded paths) aren't double-encoded.
+  if (u.includes(' ')) u = u.replace(/ /g, '%20')
+  return u
+}
+
 function toCard(entity, photos = []) {
   // tag_name is the field the API actually returns (GCRCard.jsx reads it too);
   // label/name/tag are legacy fallbacks. Without tag_name here, every tag
@@ -94,14 +111,6 @@ function toCard(entity, photos = []) {
   const tags = Array.isArray(entity.tags)
     ? entity.tags.map(t => typeof t === 'string' ? t : t.tag_name || t.label || t.name || t.tag).filter(Boolean)
     : []
-  const fixUrl = u => {
-    if (!u) return null
-    if (u.startsWith('//')) u = 'https:' + u
-    if (u.includes('googleapis.com') && u.includes('maxwidth=')) {
-      u = u.replace(/maxwidth=\d+/, 'maxwidth=800')
-    }
-    return u
-  }
   const swipeCurated = (photos || []).filter(p => p.usage_note === 'Trip Swipe')
   const galleryPhotos = swipeCurated.length > 0 ? swipeCurated : photos
   const gallery = [...new Set((galleryPhotos || []).map(p => fixUrl(p.url || p.image_url)).filter(Boolean))]
