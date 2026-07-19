@@ -12,7 +12,18 @@ const AVAIL_TYPES = [
   { id: 'photographer', label: 'Photography',   emoji: '📸' },
   { id: 'rental',       label: 'Rentals',       emoji: '🚤' },
   { id: 'activity',     label: 'Activities',    emoji: '🏄' },
+  { id: 'stay',         label: 'Condos & Stays', emoji: '🏖' },
 ]
+
+// Saved availability searches — device-local for now (a cross-device table
+// is specced in the API's migration file). Shape: {id, label, type, date_from, date_to, query}
+const SAVED_KEY = 'gcr_saved_searches'
+function loadSavedSearches() {
+  try { return JSON.parse(localStorage.getItem(SAVED_KEY)) || [] } catch (e) { return [] }
+}
+function storeSavedSearches(list) {
+  try { localStorage.setItem(SAVED_KEY, JSON.stringify(list.slice(0, 20))) } catch (e) {}
+}
 
 const SLOT_STATUS = {
   available: { label: 'Available',    color: '#22c55e', icon: '🟢' },
@@ -176,6 +187,7 @@ export default function Search() {
   const [availQuery, setAvailQuery] = useState('')
   const [availResults, setAvailResults] = useState(null)
   const [availLoading, setAvailLoading] = useState(false)
+  const [savedSearches, setSavedSearches] = useState(loadSavedSearches)
   const [availError, setAvailError] = useState(null)
 
   // Pre-fill dates from tourist profile
@@ -262,6 +274,39 @@ export default function Search() {
     }
   }
 
+  function saveCurrentSearch() {
+    if (!dateFrom) return
+    const t = AVAIL_TYPES.find(x => x.id === availType)
+    const label = `${t ? t.emoji + ' ' + t.label : availType} · ${dateFrom}${dateTo && dateTo !== dateFrom ? ' → ' + dateTo : ''}${availQuery.trim() ? ' · "' + availQuery.trim() + '"' : ''}`
+    const entry = { id: Date.now(), label, type: availType, date_from: dateFrom, date_to: dateTo || dateFrom, query: availQuery.trim() }
+    const next = [entry, ...savedSearches.filter(s => s.label !== label)]
+    setSavedSearches(next); storeSavedSearches(next)
+  }
+
+  function runSavedSearch(s) {
+    setAvailType(s.type); setDateFrom(s.date_from); setDateTo(s.date_to); setAvailQuery(s.query || '')
+    setTimeout(() => { runAvailSearchWith(s) }, 0)
+  }
+
+  async function runAvailSearchWith(s) {
+    try {
+      setAvailLoading(true); setAvailError(null)
+      const body = { date_from: s.date_from, date_to: s.date_to, type: s.type }
+      if (s.query) body.query = s.query
+      if (userLocation) { body.lat = userLocation.lat; body.lng = userLocation.lng }
+      const res = await fetch(`${API_BASE}/api/gcr/availability-search`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+      })
+      if (!res.ok) throw new Error('Search failed')
+      setAvailResults(await res.json())
+    } catch (err) { setAvailError(err.message) } finally { setAvailLoading(false) }
+  }
+
+  function removeSavedSearch(id) {
+    const next = savedSearches.filter(s => s.id !== id)
+    setSavedSearches(next); storeSavedSearches(next)
+  }
+
   const totalItems = results.reduce((n, r) => n + (r.matched_menu_items?.length || 0) + (r.matched_specials?.length || 0), 0)
 
   return (
@@ -308,6 +353,16 @@ export default function Search() {
           {mode === 'dates' && (
             <div className="date-search-controls">
               <div className="date-search-label">Find what's available during your trip</div>
+              {savedSearches.length > 0 && (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, margin: '6px 0 10px' }}>
+                  {savedSearches.map(s => (
+                    <span key={s.id} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12.5, padding: '5px 10px', borderRadius: 999, background: 'rgba(13,125,116,.1)', cursor: 'pointer' }}>
+                      <span onClick={() => runSavedSearch(s)}>{s.label}</span>
+                      <span onClick={() => removeSavedSearch(s.id)} style={{ opacity: .55, fontWeight: 700 }}>✕</span>
+                    </span>
+                  ))}
+                </div>
+              )}
               <div className="date-search-row">
                 <div className="date-field">
                   <label>From</label>
@@ -468,6 +523,10 @@ export default function Search() {
                 <span className="avail-date-range">
                   {fmtDate(availResults.date_from)}{availResults.date_to !== availResults.date_from ? ` – ${fmtDate(availResults.date_to)}` : ''}
                 </span>
+                <button onClick={saveCurrentSearch}
+                  style={{ marginLeft: 8, fontSize: 12, fontWeight: 700, padding: '5px 12px', borderRadius: 999, border: 'none', background: 'rgba(13,125,116,.14)', color: '#0d7d74', cursor: 'pointer' }}>
+                  💾 Save search
+                </button>
               </div>
 
               {/* Live availability section first */}
