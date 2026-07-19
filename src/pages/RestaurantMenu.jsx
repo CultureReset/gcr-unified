@@ -110,6 +110,24 @@ export default function RestaurantMenu() {
                         {item.image_url && <img src={item.image_url} alt={item.name} />}
                         <h3>{item.name}</h3>
                         {item.description && <p className="item-desc">{item.description}</p>}
+                        {Array.isArray(item.tags) && item.tags.length > 0 && (
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, margin: '4px 0' }}>
+                            {item.tags.slice(0, 5).map((t, i) => (
+                              <span key={i} style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 999, background: 'rgba(13,125,116,.12)', color: '#0d7d74' }}>{typeof t === 'string' ? t : t.tag_name}</span>
+                            ))}
+                          </div>
+                        )}
+                        {Array.isArray(item.modifiers) && item.modifiers.length > 0 && (
+                          <div style={{ fontSize: 12, margin: '4px 0 2px', opacity: .85 }}>
+                            {item.modifiers.slice(0, 6).map((m, i) => (
+                              <div key={i}>
+                                <span style={{ opacity: .65 }}>{m.group ? m.group + ': ' : ''}</span>
+                                {m.name}
+                                {m.price_delta > 0 && <span style={{ fontWeight: 700 }}> +${Number(m.price_delta).toFixed(2)}</span>}
+                              </div>
+                            ))}
+                          </div>
+                        )}
                         <div className="item-footer">
                           {item.price > 0 && <span className="price">${item.price.toFixed(2)}</span>}
                           <button className="add-btn">+</button>

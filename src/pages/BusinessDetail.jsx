@@ -953,6 +953,38 @@ export default function RestaurantDetail() {
                 </div>
               )}
 
+              {/* Structured facts — served from entity_attributes */}
+              {(business.structured_attributes || []).length > 0 && (
+                <div style={{ marginTop: 16 }}>
+                  <h3>Good to Know</h3>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '6px 16px', fontSize: 14 }}>
+                    {(business.structured_attributes || []).slice(0, 24).map((a, i) => (
+                      <div key={a.id || i}>
+                        <span style={{ opacity: .65 }}>{a.label || a.key}: </span>
+                        <strong>{String(a.value)}{a.unit ? ` ${a.unit}` : ''}</strong>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Proximity — served from entity_nearby_landmarks */}
+              {(business.nearby_landmarks || []).length > 0 && (
+                <div style={{ marginTop: 16 }}>
+                  <h3>📍 What's Nearby</h3>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                    {(business.nearby_landmarks || []).slice(0, 10).map((l, i) => (
+                      <span key={l.id || i} style={{ fontSize: 13, padding: '4px 12px', borderRadius: 999, background: 'rgba(13,125,116,.1)' }}>
+                        {l.name}
+                        {l.travel_distance_meters != null && (
+                          <span style={{ opacity: .6 }}> · {l.travel_distance_meters >= 1000 ? (l.travel_distance_meters / 1609).toFixed(1) + ' mi' : l.travel_distance_meters + ' m'}</span>
+                        )}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* ── LIVE AVAILABILITY WIDGET ── */}
               {availability && availability.availability?.length > 0 && (() => {
                 const today = new Date().toISOString().slice(0,10)
@@ -1407,6 +1439,16 @@ export default function RestaurantDetail() {
                         {item.included_item || item.item_name}
                         {item.description && <span className="included-desc"> — {item.description}</span>}
                       </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {(business.whats_excluded || []).length > 0 && (
+                <div className="whats-included">
+                  <h3>🚫 Not Included</h3>
+                  <ul>
+                    {(business.whats_excluded || []).map((item, i) => (
+                      <li key={item.id || i}>{item.excluded_item}</li>
                     ))}
                   </ul>
                 </div>
