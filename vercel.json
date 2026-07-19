@@ -5,6 +5,18 @@
   "outputDirectory": "dist",
   "rewrites": [
     {
+      "source": "/bookpro",
+      "destination": "/bookpro/index.html"
+    },
+    {
+      "source": "/bookpro/start",
+      "destination": "/bookpro/start.html"
+    },
+    {
+      "source": "/bookpro/dashboard",
+      "destination": "/bookpro/dashboard.html"
+    },
+    {
       "source": "/:slug/profile",
       "destination": "/song-request.html?slug=:slug"
     },

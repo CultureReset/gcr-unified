@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BookPro — The Universal Booking Platform</title>
+<meta name="description" content="Create your own booking checkout page in minutes. Tickets, rentals, appointments, charters, lodging, service calls — waivers, deposits and payments included.">
+<style>
+  :root { --bg:#0b1020; --card:#121a30; --line:#22304f; --text:#eef2fb; --muted:#9fb0d0; --accent:#22c3a6; --accent2:#4f8cff; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; line-height:1.55; }
+  a { color:inherit; text-decoration:none; }
+  .wrap { max-width:1080px; margin:0 auto; padding:0 20px; }
+  header { padding:18px 0; border-bottom:1px solid var(--line); position:sticky; top:0; background:rgba(11,16,32,.92); backdrop-filter:blur(8px); z-index:5; }
+  .nav { display:flex; align-items:center; justify-content:space-between; }
+  .logo { font-weight:800; font-size:20px; letter-spacing:.3px; }
+  .logo span { color:var(--accent); }
+  .nav .cta { display:flex; gap:10px; }
+  .btn { display:inline-block; padding:11px 20px; border-radius:12px; font-weight:700; font-size:15px; border:1px solid var(--line); cursor:pointer; }
+  .btn.primary { background:linear-gradient(135deg,var(--accent),var(--accent2)); border:none; color:#04121c; }
+  .btn.ghost:hover, .btn.primary:hover { filter:brightness(1.1); }
+  .hero { padding:72px 0 48px; text-align:center; }
+  .hero h1 { font-size:clamp(32px,5.5vw,54px); line-height:1.12; font-weight:800; }
+  .hero h1 em { font-style:normal; background:linear-gradient(135deg,var(--accent),var(--accent2)); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .hero p { max-width:640px; margin:18px auto 0; color:var(--muted); font-size:18px; }
+  .hero .btn { margin-top:28px; font-size:17px; padding:14px 30px; }
+  .hero .sub { margin-top:12px; font-size:13px; color:var(--muted); }
+  .types { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-top:34px; }
+  .types span { border:1px solid var(--line); background:var(--card); padding:7px 13px; border-radius:999px; font-size:13.5px; color:var(--muted); }
+  section { padding:56px 0; }
+  h2 { font-size:30px; margin-bottom:10px; text-align:center; }
+  .lead { text-align:center; color:var(--muted); max-width:620px; margin:0 auto 36px; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:16px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:16px; padding:22px; }
+  .card .em { font-size:26px; }
+  .card h3 { margin:10px 0 6px; font-size:17px; }
+  .card p { color:var(--muted); font-size:14.5px; }
+  .steps { counter-reset:s; }
+  .steps .card { position:relative; padding-left:24px; }
+  .steps .card::before { counter-increment:s; content:counter(s); position:absolute; top:-12px; left:-8px; width:34px; height:34px; border-radius:50%; background:linear-gradient(135deg,var(--accent),var(--accent2)); color:#04121c; font-weight:800; display:flex; align-items:center; justify-content:center; }
+  footer { border-top:1px solid var(--line); padding:28px 0 40px; color:var(--muted); font-size:13.5px; text-align:center; }
+  .band { background:var(--card); border-block:1px solid var(--line); text-align:center; padding:48px 0; }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap nav">
+    <a class="logo" href="/bookpro">Book<span>Pro</span></a>
+    <div class="cta">
+      <a class="btn ghost" href="/bookpro/start#login">Sign in</a>
+      <a class="btn primary" href="/bookpro/start">Start free</a>
+    </div>
+  </div>
+</header>
+
+<div class="wrap hero">
+  <h1>One booking platform.<br><em>Any business. Any checkout.</em></h1>
+  <p>Create an account, tell us what you do, pick a template, set your prices — and get a live booking &amp; checkout page you can share anywhere. Waivers, deposits, coupons, texts and calendars included.</p>
+  <a class="btn primary" href="/bookpro/start">Create your booking page →</a>
+  <div class="sub">Free to set up · Your Stripe, your money · No app to install</div>
+  <div class="types">
+    <span>🐬 Dolphin cruises</span><span>🎣 Fishing charters</span><span>💇 Hair salons</span><span>🚤 Boat rentals</span>
+    <span>🏠 Vacation rentals</span><span>💆 Spas</span><span>🔧 Service calls</span><span>📸 Photographers</span>
+    <span>🧘 Classes</span><span>🍽️ Reservations</span><span>🎟️ Tickets &amp; events</span><span>🚐 Shuttles</span><span>⚙️ Anything else</span>
+  </div>
+</div>
+
+<section>
+  <div class="wrap">
+    <h2>A truly universal checkout</h2>
+    <p class="lead">However you charge, it fits. Mix and match — it's all the same engine underneath.</p>
+    <div class="grid">
+      <div class="card"><div class="em">👨‍👩‍👧</div><h3>Per-person tickets</h3><p>Adult, kid, senior — any tiers you want, each with its own price, with per-departure seat caps.</p></div>
+      <div class="card"><div class="em">⏰</div><h3>Time slots &amp; appointments</h3><p>Departures, appointment times, class schedules — with capacity per slot and booking cutoffs.</p></div>
+      <div class="card"><div class="em">🌙</div><h3>Per hour, day or night</h3><p>Rentals by the hour or day; lodging by the night with check-in/check-out and minimum stays.</p></div>
+      <div class="card"><div class="em">💵</div><h3>Flat fees &amp; priced services</h3><p>Service calls, packages and priced menus of services — full payment, deposit only, or pay on site.</p></div>
+      <div class="card"><div class="em">✍️</div><h3>Digital waivers</h3><p>Your waiver text, signed from the confirmation text. Stored and searchable.</p></div>
+      <div class="card"><div class="em">➕</div><h3>Add-ons &amp; coupons</h3><p>Upsells charged per booking, per person or per day, plus % or $ promo codes at checkout.</p></div>
+      <div class="card"><div class="em">💳</div><h3>Your own Stripe</h3><p>Connect your Stripe account or key — customers pay you directly. Deposits supported.</p></div>
+      <div class="card"><div class="em">📱</div><h3>Texts &amp; self-serve</h3><p>Confirmation and reminder texts with cancel/reschedule links. Verified reviews after each visit.</p></div>
+    </div>
+  </div>
+</section>
+
+<div class="band">
+  <div class="wrap">
+    <h2>Live in four steps</h2>
+    <p class="lead">Start to finish in one sitting — no developer needed.</p>
+    <div class="grid steps">
+      <div class="card"><h3>Create your account</h3><p>One CyberCheck account runs your whole business.</p></div>
+      <div class="card"><h3>Pick your business type</h3><p>Charter, salon, rental, lodging, tickets… or build your own from scratch.</p></div>
+      <div class="card"><h3>Set prices &amp; upload photos</h3><p>Tiers, rates, slots, waiver text, gallery — everything is editable, forever.</p></div>
+      <div class="card"><h3>Share your booking page</h3><p>You get a live page + checkout link to put on Instagram, Google, or your site.</p></div>
+    </div>
+    <a class="btn primary" style="margin-top:34px" href="/bookpro/start">Start free — create your page</a>
+  </div>
+</div>
+
+<footer>
+  <div class="wrap">BookPro — the universal booking platform · Powered by CyberCheck · <a href="/bookpro/start#login" style="text-decoration:underline">Business sign-in</a></div>
+</footer>
+</body>
+</html>
