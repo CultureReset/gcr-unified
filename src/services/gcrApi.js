@@ -21,6 +21,24 @@ export function formatDistance(miles) {
 
 const GCR_API = `${API_BASE}/api/gcr`
 
+// ─── In-memory response cache ──────────────────────────────────────────────
+// The SPA has no router-level data cache, so every navigation (including
+// back to a page you were just on) re-fetches over the network. This makes
+// repeat views of the same URL within `ttlMs` return instantly instead.
+// Keyed by URL, so any call site fetching the same endpoint shares a hit —
+// e.g. a business card preview and its detail page reuse one cache entry.
+const _responseCache = new Map() // url -> { data, expiresAt }
+
+export async function cachedFetchJson(url, { ttlMs = 60000, options, errorMessage } = {}) {
+  const cached = _responseCache.get(url)
+  if (cached && cached.expiresAt > Date.now()) return cached.data
+  const r = await fetch(url, options)
+  if (!r.ok) throw new Error(errorMessage || `Request failed (HTTP ${r.status})`)
+  const data = await r.json()
+  _responseCache.set(url, { data, expiresAt: Date.now() + ttlMs })
+  return data
+}
+
 function mapCategory(entityType, tags = [], entitySubtype = '') {
   const check = s => (s || '').toLowerCase()
   const t = check(entityType)
@@ -443,9 +461,13 @@ export function personalizeAndSort(cards, prefMap) {
 }
 
 export async function fetchBusinessBySlug(slug) {
-  const r = await fetch(`${GCR_API}/entity/${encodeURIComponent(slug)}`)
-  if (!r.ok) throw new Error(`Failed to load ${slug}`)
-  const d = await r.json()
+  // 120s TTL matches the API's own Cache-Control max-age for this endpoint
+  // (routes/gcr.js `/entity/:slug`) so the browser HTTP cache and this JS
+  // cache agree on freshness.
+  const d = await cachedFetchJson(`${GCR_API}/entity/${encodeURIComponent(slug)}`, {
+    ttlMs: 120000,
+    errorMessage: `Failed to load ${slug}`,
+  })
 
   // API returns a flat object — not wrapped in d.entity
   // All entity fields (name, slug, description, etc.) are at the top level of d

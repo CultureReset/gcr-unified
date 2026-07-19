@@ -9,7 +9,7 @@ import BlogSection from '../components/BlogSection'
 import PoliciesSection from '../components/PoliciesSection'
 import BookingCalendar from '../components/BookingCalendar'
 import HubTemplate from '../components/HubTemplate'
-import { fetchChildRentals } from '../services/gcrApi'
+import { fetchChildRentals, cachedFetchJson } from '../services/gcrApi'
 import './BusinessDetail.css'
 import '../components/MiniSiteComponents.css'
 
@@ -127,9 +127,13 @@ export default function RestaurantDetail() {
   useEffect(() => {
     async function loadBusiness() {
       try {
-        const res = await fetch(`${API_BASE}/api/gcr/entity/${encodeURIComponent(slug)}`)
-        if (!res.ok) throw new Error('Failed to load business')
-        const data = await res.json()
+        // Shares a cache entry with fetchBusinessBySlug (gcrApi.js) — if this
+        // business was already fetched anywhere else (a card preview, etc.)
+        // this returns instantly with no network round trip.
+        const data = await cachedFetchJson(`${API_BASE}/api/gcr/entity/${encodeURIComponent(slug)}`, {
+          ttlMs: 120000,
+          errorMessage: 'Failed to load business',
+        })
         if (!data || !data.slug) throw new Error('Business not found')
         setBusiness(data)
         const et = (data.entity_type || '').toLowerCase()
