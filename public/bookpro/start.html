@@ -524,7 +524,8 @@ function publish() {
   var slug = null;
   CB.plat('/state', { method: 'POST', body: {
     business: { name: S.biz.name, type: S.tpl.key, tagline: S.biz.tagline, phone: S.biz.phone, email: S.biz.email,
-      emoji: S.biz.emoji, accent: S.biz.accent, website: S.biz.website || null, instagram: S.biz.instagram || null },
+      emoji: S.biz.emoji, accent: S.biz.accent, website: S.biz.website || null, instagram: S.biz.instagram || null,
+      standalone: true }, // BookPro businesses never claim or appear in GCR directory listings
     installed: built.installed, page_order: built.page_order
   } })
   .then(function (d) {
