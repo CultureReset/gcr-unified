@@ -23,3 +23,8 @@ dist-ssr
 *.sln
 *.sw?
 .vercel
+
+# Environment secrets — never commit these
+.env
+.env.*
+!.env.example
