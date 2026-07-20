@@ -10,6 +10,7 @@ import PoliciesSection from '../components/PoliciesSection'
 import BookingCalendar from '../components/BookingCalendar'
 import HubTemplate from '../components/HubTemplate'
 import { fetchChildRentals, cachedFetchJson, fixUrl } from '../services/gcrApi'
+import OfferSections from '../components/OfferSections'
 import './BusinessDetail.css'
 import '../components/MiniSiteComponents.css'
 
@@ -299,7 +300,17 @@ export default function RestaurantDetail() {
   const flexSections = (business.sections || [])
     .filter(s => (s.items || []).length > 0)
     .map(s => ({ ...s, items: [...s.items].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0)) }))
-  const hasOfferings = flexSections.length > 0
+  // L2 offer model — canonical source for anything the business sells
+  const offerSections = business.offer_sections || []
+  const offersUnsectioned = business.offers_unsectioned || []
+  const priceSummary = business.price_summary || null
+  const hoursByType = business.hours_by_type || {}
+  const OWN_TAB_OFFER_TYPES = new Set(['menu', 'drink', 'drinks', 'happy_hour'])
+  const hasL2CatchallOffers =
+    offerSections.some(sec => (sec.offers || []).some(o => !OWN_TAB_OFFER_TYPES.has(o.offer_type)))
+    || offersUnsectioned.some(o => !OWN_TAB_OFFER_TYPES.has(o.offer_type))
+
+  const hasOfferings = flexSections.length > 0 || hasL2CatchallOffers
 
   // Rich offerings come from real entity_sections (uuid string ids) and already
   // present each priced item in an organized, grouped way. Offerings synthesized
@@ -449,7 +460,8 @@ export default function RestaurantDetail() {
   const hasMenu = flatMenuSections.length > 0 || foodRotating.length > 0
   const hasDrinks = flatDrinkSections.length > 0 || drinkRotating.length > 0
   const hasSpecials = allSpecials.length > 0 || dailyFeatures.length > 0 || sides.length > 0
-  const hasHH = !!(business.hh_days || business.hh_sections?.length || business.happy_hour_sections?.length)
+  const hasHH = (hoursByType.happy_hour || []).length > 0
+    || !!(business.hh_days || business.hh_sections?.length || business.happy_hour_sections?.length)
 
   // Industry-specific data from API
   const roomTypes = business.room_types || []
@@ -1203,6 +1215,15 @@ export default function RestaurantDetail() {
                 </div>
               )}
 
+              {priceSummary && (
+                <div className="price-level-row">
+                  <span className="price-range">
+                    ${priceSummary.min}–${priceSummary.max}
+                    {priceSummary.units.length === 1 && <span className="price-range-text"> / {priceSummary.units[0]}</span>}
+                  </span>
+                </div>
+              )}
+
               {(() => {
                 const hasPropertyDetails = business.bedrooms || business.bathrooms || business.sqft;
                 if (!hasPropertyDetails) return null;
@@ -1319,6 +1340,9 @@ export default function RestaurantDetail() {
                   </div>
                 </div>
               ))}
+
+              {/* L2 offer model — canonical happy hour data (real day/time rows) */}
+              <OfferSections sections={offerSections} filterType="happy_hour" />
             </section>
           )}
 
@@ -1387,6 +1411,9 @@ export default function RestaurantDetail() {
                   </div>
                 </div>
               ))}
+
+              {/* L2 offer model — canonical offerings/charters/stays data */}
+              <OfferSections sections={offerSections} unsectioned={offersUnsectioned} />
             </section>
           )}
 
@@ -1810,9 +1837,12 @@ export default function RestaurantDetail() {
                     })}
                   </div>
                 )
-              }) : !foodRotating.length && (
+              }) : !foodRotating.length && offerSections.every(sec => !(sec.offers || []).some(o => o.offer_type === 'menu')) && (
                 <p className="no-data">No menu available</p>
               )}
+
+              {/* L2 offer model — canonical menu data (tiered pricing, market price) */}
+              <OfferSections sections={offerSections} filterType="menu" />
             </section>
           )}
 
@@ -1869,9 +1899,13 @@ export default function RestaurantDetail() {
                     </div>
                   </div>
                 )
-              }) : !drinkRotating.length && (
+              }) : !drinkRotating.length && offerSections.every(sec => !(sec.offers || []).some(o => o.offer_type === 'drink')) && (
                 <p className="no-data">No drink menu available</p>
               )}
+
+              {/* L2 offer model — canonical drinks data (tiered pricing, market price) */}
+              <OfferSections sections={offerSections} filterType="drinks" />
+
               {/* Order Links — DoorDash, UberEats, direct online order */}
               {orderLinks.length > 0 && (
                 <div className="order-links-section">
