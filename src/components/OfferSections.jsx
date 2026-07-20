@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import './OfferSections.css'
 
 // Renders the L2 offer model (entity_offer / _price / _section / _inclusion)
@@ -29,82 +30,65 @@ function formatTime(t) {
   return m ? `${hour12}:${String(m).padStart(2, '0')} ${period}` : `${hour12} ${period}`
 }
 
-function priceRowLabel(p) {
-  const parts = []
-  if (p.label) parts.push(p.label)
-  else if (p.party_role) parts.push(p.party_role)
+function priceLabel(p) {
+  const parts = [p.label || p.party_role || 'Price']
   if (p.age_min != null || p.age_max != null) {
-    if (p.age_min != null && p.age_max != null) parts.push(`${p.age_min}-${p.age_max} yrs`)
-    else if (p.age_min != null) parts.push(`${p.age_min}+ yrs`)
-    else parts.push(`up to ${p.age_max} yrs`)
+    if (p.age_min != null && p.age_max != null) parts.push(`(${p.age_min}-${p.age_max})`)
+    else if (p.age_min != null) parts.push(`(${p.age_min}+)`)
+    else parts.push(`(up to ${p.age_max})`)
   }
-  if (p.day_of_week != null && DAY_LABELS[p.day_of_week]) parts.push(DAY_LABELS[p.day_of_week])
+  return parts.join(' ')
+}
+
+function priceWindow(p) {
+  const bits = []
+  if (p.day_of_week != null && DAY_LABELS[p.day_of_week]) bits.push(DAY_LABELS[p.day_of_week])
   if (p.time_start || p.time_end) {
-    parts.push(`${formatTime(p.time_start)}${p.time_end ? `–${formatTime(p.time_end)}` : ''}`)
+    bits.push(`${formatTime(p.time_start)}${p.time_end ? `–${formatTime(p.time_end)}` : ''}`)
   }
-  return parts.length ? parts.join(' · ') : 'Price'
+  return bits.join(' · ')
 }
 
 function PriceRow({ p }) {
-  if (p.price_status === 'market_price') {
-    return (
-      <div className="offer-price-row">
-        <span className="offer-price-label">{priceRowLabel(p)}</span>
-        <span className="offer-price-amount offer-price-market">Market price</span>
-      </div>
-    )
-  }
-  if (p.amount == null) return null
+  const window = priceWindow(p)
   return (
-    <div className="offer-price-row">
-      <span className="offer-price-label">{priceRowLabel(p)}</span>
-      <span className="offer-price-amount">
-        ${Number(p.amount).toFixed(2).replace(/\.00$/, '')}
-        {p.price_unit && <span className="offer-price-unit"> / {p.price_unit}</span>}
-        {p.is_promotional && <span className="offer-badge offer-badge-promo">Deal</span>}
-      </span>
+    <div className={`offer-price${p.is_promotional ? ' offer-price--promo' : ''}`}>
+      <span className="offer-price__label">{priceLabel(p)}</span>
+      {p.price_status === 'market_price' ? (
+        <span className="offer-price__market">Market price</span>
+      ) : p.amount != null ? (
+        <span className="offer-price__amount">
+          ${Number(p.amount).toFixed(2).replace(/\.00$/, '')}
+          {p.price_unit ? ` / ${p.price_unit}` : ''}
+        </span>
+      ) : null}
+      {window && <span className="offer-price__window">{window}</span>}
+      {p.is_promotional && <span className="offer-price__badge">Deal</span>}
+      {p.price_note && <span className="offer-price__note">{p.price_note}</span>}
     </div>
   )
 }
 
 function OfferCard({ offer }) {
+  const [expanded, setExpanded] = useState(false)
   const prices = offer.prices || []
-  const showPriceList = prices.length > 1
-  const singlePrice = prices.length === 1 ? prices[0] : null
+  const hasDetail = offer.included.length > 0 || offer.bring.length > 0
 
   return (
     <div className="offer-card">
       {offer.image_url && (
-        <div className="offer-card-image">
-          <img src={offer.image_url} alt={offer.name} loading="lazy" />
-        </div>
+        <img className="offer-card__img" src={offer.image_url} alt={offer.name} loading="lazy" />
       )}
-      <div className="offer-card-body">
-        <div className="offer-card-head">
-          <span className="offer-card-name">{offer.name}</span>
-          {!showPriceList && (
-            <span className="offer-card-price">
-              {offer.is_market_price && offer.price_from == null ? (
-                <span className="offer-price-market">Market price</span>
-              ) : offer.price_from != null ? (
-                <>
-                  {offer.price_from === offer.price_to
-                    ? `$${offer.price_from}`
-                    : `$${offer.price_from}–$${offer.price_to}`}
-                  {offer.price_unit && <span className="offer-price-unit"> / {offer.price_unit}</span>}
-                </>
-              ) : null}
-            </span>
-          )}
+      <div className="offer-card__body">
+        <div className="offer-card__head">
+          <h4 className="offer-card__name">{offer.name}</h4>
+          {offer.badge && <span className="offer-card__badge">{offer.badge}</span>}
         </div>
 
-        {offer.badge && <span className="offer-badge offer-badge-flag">{offer.badge}</span>}
-        {!offer.badge && offer.has_promotional && <span className="offer-badge offer-badge-promo">Deal</span>}
+        {offer.description && <p className="offer-card__desc">{offer.description}</p>}
 
-        {offer.description && <p className="offer-card-desc">{offer.description}</p>}
-
-        {(offer.duration_minutes || offer.party_min || offer.capacity) && (
-          <div className="offer-card-meta">
+        {(offer.duration_minutes || offer.party_min || offer.party_max || offer.capacity) && (
+          <div className="offer-card__meta">
             {offer.duration_minutes && (
               <span>
                 ⏱ {offer.duration_minutes}
@@ -113,36 +97,46 @@ function OfferCard({ offer }) {
               </span>
             )}
             {(offer.party_min || offer.party_max) && (
-              <span>
-                👥 {offer.party_min || 1}{offer.party_max ? `–${offer.party_max}` : '+'} people
-              </span>
+              <span>👥 {offer.party_min || 1}{offer.party_max ? `–${offer.party_max}` : '+'} people</span>
             )}
             {offer.capacity && <span>🪑 Capacity {offer.capacity}</span>}
           </div>
         )}
 
-        {showPriceList && (
-          <div className="offer-price-list">
+        {prices.length > 0 && (
+          <div className={`offer-card__prices${prices.length > 1 ? ' offer-card__prices--multi' : ''}`}>
             {prices.map(p => <PriceRow key={p.price_id} p={p} />)}
           </div>
         )}
-        {singlePrice && singlePrice.price_note && (
-          <p className="offer-price-note">{singlePrice.price_note}</p>
+
+        {hasDetail && (
+          <>
+            <button type="button" className="offer-card__toggle" onClick={() => setExpanded(e => !e)}>
+              {expanded ? 'Hide details' : 'Details'}
+            </button>
+            {expanded && (
+              <div className="offer-card__detail">
+                {offer.included.length > 0 && (
+                  <div>
+                    <h5>Included</h5>
+                    <ul>{offer.included.map((item, i) => <li key={i}>{item}</li>)}</ul>
+                  </div>
+                )}
+                {offer.bring.length > 0 && (
+                  <div>
+                    <h5>What to bring</h5>
+                    <ul>{offer.bring.map((item, i) => <li key={i}>{item}</li>)}</ul>
+                  </div>
+                )}
+              </div>
+            )}
+          </>
         )}
 
-        {offer.included.length > 0 && (
-          <div className="offer-chips">
-            {offer.included.map((item, i) => (
-              <span key={i} className="offer-chip offer-chip-included">✓ {item}</span>
-            ))}
-          </div>
-        )}
-        {offer.bring.length > 0 && (
-          <div className="offer-chips">
-            {offer.bring.map((item, i) => (
-              <span key={i} className="offer-chip offer-chip-bring">🎒 {item}</span>
-            ))}
-          </div>
+        {offer.booking_url && (
+          <a className="offer-card__book" href={offer.booking_url} target="_blank" rel="noopener noreferrer">
+            Book
+          </a>
         )}
       </div>
     </div>
@@ -169,18 +163,16 @@ export default function OfferSections({ sections, unsectioned, filterType }) {
     <div className="offer-sections">
       {filteredSections.map(sec => (
         <div key={sec.section_id} className="offer-section">
-          <div className="offer-section-head">
-            <h3>{sec.name}</h3>
-          </div>
-          {sec.description && <p className="offer-section-desc">{sec.description}</p>}
-          <div className="offer-grid">
+          <h3 className="offer-section__title">{sec.name}</h3>
+          {sec.description && <p className="offer-section__desc">{sec.description}</p>}
+          <div className="offer-section__grid">
             {sec.offers.map(o => <OfferCard key={o.offer_id} offer={o} />)}
           </div>
         </div>
       ))}
       {filteredUnsectioned.length > 0 && (
-        <div className="offer-section offer-section-unsectioned">
-          <div className="offer-grid">
+        <div className="offer-section">
+          <div className="offer-section__grid">
             {filteredUnsectioned.map(o => <OfferCard key={o.offer_id} offer={o} />)}
           </div>
         </div>
