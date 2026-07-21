@@ -962,6 +962,43 @@ export default function RestaurantDetail() {
                   (industry_charter_fishing, industry_condo, …) */}
               <IndustryFacts facts={business.industry_facts} />
 
+              {/* Money pack — structured fees / deposits / refund + weather rules */}
+              {((business.fees || []).length > 0 || (business.deposits || []).length > 0 || (business.refund_policies || []).length > 0 || (business.weather_rules || []).length > 0) && (
+                <div style={{ marginTop: 16 }}>
+                  <h3>Fees &amp; Policies</h3>
+                  <div style={{ display: 'grid', gap: '6px 16px', fontSize: 14 }}>
+                    {(business.fees || []).map(f => (
+                      <div key={`fee-${f.id}`}>
+                        <span style={{ opacity: .65 }}>{f.fee_name}: </span>
+                        <strong>{f.amount != null ? `$${f.amount}${f.amount_type && f.amount_type !== 'flat' ? ` ${f.amount_type.replace('_', ' ')}` : ''}` : (f.description || 'See details')}</strong>
+                        {f.amount != null && f.description ? <span style={{ opacity: .65 }}> — {f.description}</span> : null}
+                      </div>
+                    ))}
+                    {(business.deposits || []).map(d => (
+                      <div key={`dep-${d.id}`}>
+                        <span style={{ opacity: .65 }}>{d.deposit_name}: </span>
+                        <strong>{d.amount != null ? `$${d.amount}` : 'Required'}</strong>
+                        {d.refundable ? <span style={{ opacity: .65 }}> (refundable)</span> : null}
+                      </div>
+                    ))}
+                    {(business.refund_policies || []).map(p => (
+                      <div key={`ref-${p.id}`}>
+                        <span style={{ opacity: .65 }}>{p.policy_name}: </span>
+                        <strong>{p.non_refundable ? 'Non-refundable' : (p.full_refund_window_hours ? `Full refund up to ${p.full_refund_window_hours}h before` : '')}</strong>
+                        {p.terms ? <span style={{ opacity: .65 }}> {p.terms}</span> : null}
+                      </div>
+                    ))}
+                    {(business.weather_rules || []).map(w => (
+                      <div key={`wx-${w.id}`}>
+                        <span style={{ opacity: .65 }}>Weather policy: </span>
+                        <strong>{w.action || w.condition || ''}</strong>
+                        {w.description ? <span style={{ opacity: .65 }}> {w.description}</span> : null}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Structured facts — served from entity_attributes */}
               {(business.structured_attributes || []).length > 0 && (
                 <div style={{ marginTop: 16 }}>

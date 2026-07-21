@@ -563,6 +563,11 @@ export async function fetchBusinessBySlug(slug) {
     // (industry_charter_fishing, industry_condo, …) via the table contract
     industry_facts:      d.industry_facts      || null,
     industry_code:       d.industry_code       || null,
+    // Money pack — structured fees, deposits, refund + weather rules
+    fees:                d.fees                || [],
+    deposits:            d.deposits            || [],
+    refund_policies:     d.refund_policies     || [],
+    weather_rules:       d.weather_rules       || [],
   }
 }
 
