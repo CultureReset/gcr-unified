@@ -1084,6 +1084,7 @@
 .menu-item {
   display: flex;
   flex-direction: row;
+  flex-wrap: wrap;
   gap: 12px;
   align-items: flex-start;
   background: rgba(232, 93, 4, 0.03);
@@ -1127,15 +1128,22 @@
 .menu-item-img {
   width: 84px;
   height: 84px;
+  max-width: 84px;
+  max-height: 84px;
   object-fit: cover;
   border-radius: 10px;
   flex-shrink: 0;
+  flex-grow: 0;
   order: 2;
 }
 
 .item-body {
-  flex: 1;
-  min-width: 0;
+  /* A hard minimum width, not min-width:0, so the text column can never be
+     squeezed thinner than legible — under real space pressure the row
+     wraps (menu-item has flex-wrap:wrap) instead of collapsing text into
+     an unreadable one-character-per-line column next to the photo. */
+  flex: 1 1 160px;
+  min-width: 160px;
   order: 1;
 }
 
