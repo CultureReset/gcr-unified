@@ -710,6 +710,11 @@
 .content-main {
   min-width: 0;
   padding: 16px 0;
+  /* Content sections set their own `order` (from the industry-aware
+     priority computed in BusinessDetail.jsx) so the page visually flows
+     lead-content-first regardless of the fixed order they appear in JSX. */
+  display: flex;
+  flex-direction: column;
 }
 
 .content-section {

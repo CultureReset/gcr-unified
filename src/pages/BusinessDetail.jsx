@@ -93,22 +93,12 @@ export default function RestaurantDetail() {
   const [siblings, setSiblings] = useState([])
   const subSectionRefs = useRef({})
   // Industry-first content flow: the DOM order of content sections follows
-  // the industry tab order (rank map filled during render, applied after
-  // paint via CSS flex order on the shared content-main container).
+  // the industry tab order (rank map filled during render). Applied directly
+  // as each section's own `style={{ order }}` in JSX — not as a post-paint
+  // DOM mutation — so it's never dependent on ref-collection timing, object
+  // key insertion order, or guessing the flex parent from an arbitrary child.
+  // .content-main is a flex column in BusinessDetail.css to match.
   const sectionOrderRef = useRef({})
-  useEffect(() => {
-    const orders = sectionOrderRef.current || {}
-    const entries = Object.entries(sectionRefs.current).filter(([, el]) => el && el.isConnected)
-    if (!entries.length) return
-    const parent = entries[0][1].parentElement
-    if (parent) {
-      parent.style.display = 'flex'
-      parent.style.flexDirection = 'column'
-    }
-    for (const [id, el] of entries) {
-      el.style.order = orders[id] != null ? orders[id] : 500
-    }
-  })
 
   // Related profiles: same-property businesses (template: "Related profiles
   // — same-category businesses connected inside <parent>")
@@ -942,7 +932,7 @@ export default function RestaurantDetail() {
       <div className="content-layout">
         <main className="content-main">
           {/* Overview */}
-                      <section className="content-section" ref={el => { sectionRefs.current["overview"] = el }} id="section-overview">
+                      <section className="content-section" ref={el => { sectionRefs.current["overview"] = el }} id="section-overview" style={{ order: sectionOrderRef.current["overview"] ?? 500 }}>
               <h2>About</h2>
               {business.description && <p>{business.description}</p>}
               {!business.description && business.editorial_summary && <p>{business.editorial_summary}</p>}
@@ -1285,7 +1275,7 @@ export default function RestaurantDetail() {
 
           {/* Experience */}
           {hasActivityExtras && (
-                      <section className="content-section" ref={el => { sectionRefs.current["experience"] = el }} id="section-experience">
+                      <section className="content-section" ref={el => { sectionRefs.current["experience"] = el }} id="section-experience" style={{ order: sectionOrderRef.current["experience"] ?? 500 }}>
               {business.what_makes_it_different && (
                 <div className="exp-block">
                   <h2>What Makes It Different</h2>
@@ -1330,7 +1320,7 @@ export default function RestaurantDetail() {
 
           {/* Happy Hour */}
           {hasHH && (
-                      <section className="content-section" ref={el => { sectionRefs.current["happy-hour"] = el }} id="section-happy-hour">
+                      <section className="content-section" ref={el => { sectionRefs.current["happy-hour"] = el }} id="section-happy-hour" style={{ order: sectionOrderRef.current["happy-hour"] ?? 500 }}>
               <h2>🍺 Happy Hour</h2>
               {business.hh_days && (
                 <p className="hh-schedule">
@@ -1366,7 +1356,7 @@ export default function RestaurantDetail() {
 
           {/* Pricing */}
           {hasOfferings && (
-                      <section className="content-section" ref={el => { sectionRefs.current["offerings"] = el }} id="section-offerings">
+                      <section className="content-section" ref={el => { sectionRefs.current["offerings"] = el }} id="section-offerings" style={{ order: sectionOrderRef.current["offerings"] ?? 500 }}>
               {flexSections.map((sec) => (
                 <div key={sec.id} className="offering-section">
                   <h2>{sec.section_name}</h2>
@@ -1442,7 +1432,7 @@ export default function RestaurantDetail() {
           )}
 
           {(showFlatPricing || whatsIncluded.length > 0 || requirements.length > 0 || whatToBring.length > 0 || activityDetails) && (
-                      <section className="content-section" ref={el => { sectionRefs.current["pricing"] = el }} id="section-pricing">
+                      <section className="content-section" ref={el => { sectionRefs.current["pricing"] = el }} id="section-pricing" style={{ order: sectionOrderRef.current["pricing"] ?? 500 }}>
               <h2>{showFlatPricing ? '💰 Pricing' : '📋 Details'}</h2>
               {showFlatPricing && (
                 <div className="pricing-list">
@@ -1562,7 +1552,7 @@ export default function RestaurantDetail() {
 
           {/* FAQs */}
           {faqs.length > 0 && (
-                      <section className="content-section" ref={el => { sectionRefs.current["faqs"] = el }} id="section-faqs">
+                      <section className="content-section" ref={el => { sectionRefs.current["faqs"] = el }} id="section-faqs" style={{ order: sectionOrderRef.current["faqs"] ?? 500 }}>
               <h2>❓ Frequently Asked Questions</h2>
                 <div className="faqs-list">
                   {faqs.map((faq, i) => (
@@ -1577,7 +1567,7 @@ export default function RestaurantDetail() {
 
           {/* Events */}
           {events.length > 0 && (
-                      <section className="content-section" ref={el => { sectionRefs.current["events"] = el }} id="section-events">
+                      <section className="content-section" ref={el => { sectionRefs.current["events"] = el }} id="section-events" style={{ order: sectionOrderRef.current["events"] ?? 500 }}>
               <h2>🎉 Events</h2>
                 {(() => {
                   const todayStr = new Date().toISOString().split('T')[0]
@@ -1636,7 +1626,7 @@ export default function RestaurantDetail() {
 
           {/* Schedule (activity departure times / tour schedules) */}
           {schedules.length > 0 && (
-            <section className="content-section" ref={el => { sectionRefs.current["schedule"] = el }} id="section-schedule">
+            <section className="content-section" ref={el => { sectionRefs.current["schedule"] = el }} id="section-schedule" style={{ order: sectionOrderRef.current["schedule"] ?? 500 }}>
               <h2>🗓️ Schedule & Departures</h2>
               {(() => {
                 const grouped = schedules.reduce((acc, s) => {
@@ -1676,7 +1666,7 @@ export default function RestaurantDetail() {
 
           {/* Hours */}
           {hours.length > 0 && (
-            <section className="content-section" ref={el => { sectionRefs.current["hours"] = el }} id="section-hours">
+            <section className="content-section" ref={el => { sectionRefs.current["hours"] = el }} id="section-hours" style={{ order: sectionOrderRef.current["hours"] ?? 500 }}>
               <h2>Hours</h2>
               <ul className="hours-list">
                 {hours.map((hr, idx) => (
@@ -1730,7 +1720,7 @@ export default function RestaurantDetail() {
           )}
 
           {/* Location */}
-                      <section className="content-section" ref={el => { sectionRefs.current["location"] = el }} id="section-location">
+                      <section className="content-section" ref={el => { sectionRefs.current["location"] = el }} id="section-location" style={{ order: sectionOrderRef.current["location"] ?? 500 }}>
               <h2>Location</h2>
               <p className="address">
                 📍 {business.address_line_1}<br />
@@ -1745,7 +1735,7 @@ export default function RestaurantDetail() {
 
           {/* Gallery */}
           {photos.length > 0 && (
-                      <section className="content-section" ref={el => { sectionRefs.current["gallery"] = el }} id="section-gallery">
+                      <section className="content-section" ref={el => { sectionRefs.current["gallery"] = el }} id="section-gallery" style={{ order: sectionOrderRef.current["gallery"] ?? 500 }}>
               <h2>Photos ({photos.length})</h2>
               <div className="gallery-grid-preview">
                 {photos.slice(galleryPage * GALLERY_PER_PAGE, (galleryPage + 1) * GALLERY_PER_PAGE).map((photo, idx) => (
@@ -1769,27 +1759,27 @@ export default function RestaurantDetail() {
           )}
 
           {/* Reviews */}
-          <div ref={el => { sectionRefs.current["reviews"] = el }} id="section-reviews"><ReviewsSection slug={slug} googleRating={business.rating} googleReviewCount={business.review_count} /></div>
+          <div ref={el => { sectionRefs.current["reviews"] = el }} id="section-reviews" style={{ order: sectionOrderRef.current["reviews"] ?? 500 }}><ReviewsSection slug={slug} googleRating={business.rating} googleReviewCount={business.review_count} /></div>
 
           {/* Team / Blog / Policies — only render when there's actually
               something to show. These flags are already computed from the
               same fetches that gate the tab nav, so an empty business no
               longer shows "No team members listed" placeholder blocks. */}
           {hasTeam && (
-            <div ref={el => { sectionRefs.current["team"] = el }} id="section-team"><TeamSection slug={slug} /></div>
+            <div ref={el => { sectionRefs.current["team"] = el }} id="section-team" style={{ order: sectionOrderRef.current["team"] ?? 500 }}><TeamSection slug={slug} /></div>
           )}
 
           {hasBlog && (
-            <div ref={el => { sectionRefs.current["blog"] = el }} id="section-blog"><BlogSection slug={slug} /></div>
+            <div ref={el => { sectionRefs.current["blog"] = el }} id="section-blog" style={{ order: sectionOrderRef.current["blog"] ?? 500 }}><BlogSection slug={slug} /></div>
           )}
 
           {hasPolicies && (
-            <div ref={el => { sectionRefs.current["policies"] = el }} id="section-policies"><PoliciesSection slug={slug} policies={business.policies} /></div>
+            <div ref={el => { sectionRefs.current["policies"] = el }} id="section-policies" style={{ order: sectionOrderRef.current["policies"] ?? 500 }}><PoliciesSection slug={slug} policies={business.policies} /></div>
           )}
 
           {/* Menu */}
           {hasMenu && (
-                      <section className="content-section" ref={el => { sectionRefs.current["menu"] = el }} id="section-menu">
+                      <section className="content-section" ref={el => { sectionRefs.current["menu"] = el }} id="section-menu" style={{ order: sectionOrderRef.current["menu"] ?? 500 }}>
               <h2>🍽️ Menu</h2>
 
               {/* Today's Features — rotating food sections (Catch of the Day, Daily Special, etc.) */}
@@ -1869,7 +1859,7 @@ export default function RestaurantDetail() {
 
           {/* Drinks */}
           {hasDrinks && (
-                      <section className="content-section" ref={el => { sectionRefs.current["drinks"] = el }} id="section-drinks">
+                      <section className="content-section" ref={el => { sectionRefs.current["drinks"] = el }} id="section-drinks" style={{ order: sectionOrderRef.current["drinks"] ?? 500 }}>
               <h2>🍷 Drinks</h2>
 
               {/* On tap / featured rotating drinks (Beer on Tap, etc.) */}
@@ -1948,7 +1938,7 @@ export default function RestaurantDetail() {
 
           {/* Specials */}
           {hasSpecials && (
-                      <section className="content-section" ref={el => { sectionRefs.current["specials"] = el }} id="section-specials">
+                      <section className="content-section" ref={el => { sectionRefs.current["specials"] = el }} id="section-specials" style={{ order: sectionOrderRef.current["specials"] ?? 500 }}>
               <h2>⭐ Specials</h2>
 
               {dailyFeatures.length > 0 && (
@@ -1986,7 +1976,7 @@ export default function RestaurantDetail() {
 
           {/* SOCIAL FEED */}
           {hasSocialPosts && (
-                      <section className="content-section" ref={el => { sectionRefs.current["social"] = el }} id="section-social">
+                      <section className="content-section" ref={el => { sectionRefs.current["social"] = el }} id="section-social" style={{ order: sectionOrderRef.current["social"] ?? 500 }}>
               <h2>📱 Social Feed</h2>
               <div className="social-feed-grid">
                 {socialPosts.map(post => (
@@ -2018,7 +2008,7 @@ export default function RestaurantDetail() {
 
           {/* ROOMS — Hotel / Condo / Vacation Rental */}
           {hasRooms && (
-                      <section className="content-section" ref={el => { sectionRefs.current["rooms"] = el }} id="section-rooms">
+                      <section className="content-section" ref={el => { sectionRefs.current["rooms"] = el }} id="section-rooms" style={{ order: sectionOrderRef.current["rooms"] ?? 500 }}>
               <h2>🛏️ Rooms & Units</h2>
               {propertyDetails && (
                 <div className="property-meta-row">
@@ -2070,7 +2060,7 @@ export default function RestaurantDetail() {
 
           {/* AMENITIES — Hotel / Stay */}
           {hasAmenities && (
-                      <section className="content-section" ref={el => { sectionRefs.current["amenities"] = el }} id="section-amenities">
+                      <section className="content-section" ref={el => { sectionRefs.current["amenities"] = el }} id="section-amenities" style={{ order: sectionOrderRef.current["amenities"] ?? 500 }}>
               <h2>✨ Amenities</h2>
               {/* Unit's own amenities + inherited complex amenities */}
               {ownAmenities.length > 0 && (
@@ -2127,7 +2117,7 @@ export default function RestaurantDetail() {
 
           {/* BOOK / STAY LINKS */}
           {stayLinks.length > 0 && (
-                      <section className="content-section" ref={el => { sectionRefs.current["book-stay"] = el }} id="section-book-stay">
+                      <section className="content-section" ref={el => { sectionRefs.current["book-stay"] = el }} id="section-book-stay" style={{ order: sectionOrderRef.current["book-stay"] ?? 500 }}>
               <h2>🔗 Book This Property</h2>
               <div className="stay-links-list">
                 {stayLinks.map((link, i) => (
@@ -2152,7 +2142,7 @@ export default function RestaurantDetail() {
 
           {/* SERVICES — Salon / Spa / Gym / Service */}
           {hasServices && (
-                      <section className="content-section" ref={el => { sectionRefs.current["services"] = el }} id="section-services">
+                      <section className="content-section" ref={el => { sectionRefs.current["services"] = el }} id="section-services" style={{ order: sectionOrderRef.current["services"] ?? 500 }}>
               <h2>💆 Services</h2>
               {servicePackages.length > 0 && (
                 <div className="packages-section">
@@ -2235,7 +2225,7 @@ export default function RestaurantDetail() {
 
           {/* PRODUCTS — Shopping */}
           {hasProducts && (
-                      <section className="content-section" ref={el => { sectionRefs.current["products"] = el }} id="section-products">
+                      <section className="content-section" ref={el => { sectionRefs.current["products"] = el }} id="section-products" style={{ order: sectionOrderRef.current["products"] ?? 500 }}>
               <h2>🛍️ Products</h2>
               {productCategories.length > 0 ? (
                 productCategories.map(cat => {
@@ -2279,7 +2269,7 @@ export default function RestaurantDetail() {
 
           {/* PARK INFO */}
           {hasParkInfo && (
-                      <section className="content-section" ref={el => { sectionRefs.current["park-info"] = el }} id="section-park-info">
+                      <section className="content-section" ref={el => { sectionRefs.current["park-info"] = el }} id="section-park-info" style={{ order: sectionOrderRef.current["park-info"] ?? 500 }}>
               <h2>🌳 Park Information</h2>
               {accessInfo && (
                 <div className="access-info">
@@ -2316,7 +2306,7 @@ export default function RestaurantDetail() {
 
           {/* MEETING POINT — Activity / Charter */}
           {hasMeetingPoints && (
-                      <section className="content-section" ref={el => { sectionRefs.current["meeting"] = el }} id="section-meeting">
+                      <section className="content-section" ref={el => { sectionRefs.current["meeting"] = el }} id="section-meeting" style={{ order: sectionOrderRef.current["meeting"] ?? 500 }}>
               <h2>📌 Meeting Point</h2>
               {meetingPoints.map((mp, i) => (
                 <div key={mp.id || i} className="meeting-point-card">
@@ -2336,7 +2326,7 @@ export default function RestaurantDetail() {
 
           {/* FISH SPECIES — Charter / Fishing */}
           {hasFishSpecies && (
-                      <section className="content-section" ref={el => { sectionRefs.current["fish"] = el }} id="section-fish">
+                      <section className="content-section" ref={el => { sectionRefs.current["fish"] = el }} id="section-fish" style={{ order: sectionOrderRef.current["fish"] ?? 500 }}>
               <h2>🐟 Fish Species</h2>
               <div className="fish-grid">
                 {fishSpecies.map((f, i) => (
