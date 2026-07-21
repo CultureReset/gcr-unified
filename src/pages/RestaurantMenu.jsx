@@ -9,6 +9,7 @@ export default function RestaurantMenu() {
   const [menu, setMenu] = useState(null);
   const [activeTab, setActiveTab] = useState('menu');
   const [loading, setLoading] = useState(true);
+  const [userPhone, setUserPhone] = useState(null);
 
   useEffect(() => {
     setLoading(true);
