@@ -7,6 +7,7 @@ import TeamSection from '../components/TeamSection'
 import GallerySection from '../components/GallerySection'
 import BlogSection from '../components/BlogSection'
 import PoliciesSection from '../components/PoliciesSection'
+import IndustryFacts from '../components/IndustryFacts'
 import BookingCalendar from '../components/BookingCalendar'
 import HubTemplate from '../components/HubTemplate'
 import { fetchChildRentals, cachedFetchJson, fixUrl } from '../services/gcrApi'
@@ -956,6 +957,10 @@ export default function RestaurantDetail() {
                   <p>{business.ai_review_summary}</p>
                 </div>
               )}
+
+              {/* Industry facts — the entity's direct industry table row
+                  (industry_charter_fishing, industry_condo, …) */}
+              <IndustryFacts facts={business.industry_facts} />
 
               {/* Structured facts — served from entity_attributes */}
               {(business.structured_attributes || []).length > 0 && (

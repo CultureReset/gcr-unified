@@ -559,6 +559,10 @@ export async function fetchBusinessBySlug(slug) {
     // Modules
     modules:             d.modules             || [],
     module_keys:         d.module_keys         || [],
+    // Industry facts — the entity's direct industry table row
+    // (industry_charter_fishing, industry_condo, …) via the table contract
+    industry_facts:      d.industry_facts      || null,
+    industry_code:       d.industry_code       || null,
   }
 }
 
