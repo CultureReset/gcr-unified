@@ -1379,11 +1379,20 @@ export default function RestaurantDetail() {
                   <div className="offering-grid">
                     {sec.items.map((item) => {
                       const m = item.metadata || {}
+                      // price_label sometimes carries a raw internal unit token
+                      // (legacy `offerings.unit`, e.g. 'flat', 'person', 'trip')
+                      // rather than a real price string — those only ever make
+                      // sense appended to a dollar amount, never shown alone.
+                      // When there's no numeric price, the item's own
+                      // description (e.g. "$600-$900+") already carries the
+                      // real price text below, so no badge beats a fake one.
+                      const RAW_UNIT_TOKENS = new Set(['flat', 'item', 'trip', 'round', 'entry', 'ticket', 'season', 'year', 'person', 'hour', 'day', 'night'])
+                      const hasRealPriceLabel = item.price_label && !RAW_UNIT_TOKENS.has(item.price_label.toLowerCase().trim())
                       const priceText = item.price_from != null
                         ? (item.price_to != null
                             ? `$${item.price_from}–$${item.price_to}`
                             : `$${item.price_from}`)
-                        : (item.price_label || 'Ask Us')
+                        : (hasRealPriceLabel ? item.price_label : null)
                       const includes = Array.isArray(m.includes) ? m.includes : []
                       const features = Array.isArray(m.features) ? m.features : []
                       return (
@@ -1396,7 +1405,7 @@ export default function RestaurantDetail() {
                           <div className="offering-head">
                             <span className="offering-icon">{item.icon || '•'}</span>
                             <span className="offering-name">{item.item_name}</span>
-                            <span className="offering-price">{priceText}</span>
+                            {priceText && <span className="offering-price">{priceText}</span>}
                           </div>
                           {(item.price_label || item.duration) && (
                             <div className="offering-meta">
