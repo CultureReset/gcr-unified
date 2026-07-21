@@ -904,7 +904,13 @@ export default function RestaurantDetail() {
                 setActiveSubSection(null)
                 const el = sectionRefs.current[sec.id]
                 if (el) {
-                  const top = el.getBoundingClientRect().top + window.scrollY - 130
+                  // Same measured-header formula as scrollToSubSection —
+                  // was a flat -130 that ignored the real (ResizeObserver-
+                  // measured) header height, so section tops could land
+                  // partially behind the sticky header/tabs bars.
+                  const headerH = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--detail-header-h') || '48')
+                  const tabsH = 100
+                  const top = el.getBoundingClientRect().top + window.scrollY - headerH - tabsH
                   window.scrollTo({ top, behavior: 'smooth' })
                 }
               }}

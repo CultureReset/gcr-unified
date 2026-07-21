@@ -81,6 +81,7 @@ function AppRoutes() {
     location.pathname.startsWith('/menu/') ||
     location.pathname.startsWith('/rental/') ||
     location.pathname.startsWith('/service/') ||
+    location.pathname.startsWith('/business/') ||
     location.pathname.startsWith('/links/') ||
     location.pathname.startsWith('/swipe/')
   const hideHeader = ['/', '/auth'].some(p => location.pathname === p) ||
@@ -89,6 +90,7 @@ function AppRoutes() {
     location.pathname.startsWith('/menu/') ||
     location.pathname.startsWith('/rental/') ||
     location.pathname.startsWith('/service/') ||
+    location.pathname.startsWith('/business/') ||
     location.pathname.startsWith('/links/') ||
     location.pathname.startsWith('/swipe/')
 
