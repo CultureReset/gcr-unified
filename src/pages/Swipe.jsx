@@ -6,6 +6,7 @@ import { CATEGORIES } from '../data/categories'
 import { TAG_EMOJI } from '../components/GCRCard'
 import { fetchBusinesses, calcDistance, formatDistance, fetchPreferences, personalizeAndSort, searchProperties, fetchHomeFeed } from '../services/gcrApi'
 import { API_BASE, SMS_NUMBER } from '../config'
+import { CAT_TABS, matchesCategory } from '../data/catTabs'
 import './Swipe.css'
 
 function formatEventTime(t) {
@@ -137,41 +138,8 @@ async function fetchSocialCards() {
   }
 }
 
-// Every real section on the platform (same split CategoryPage.jsx's nav
-// uses, via categoryMap.js's subtypeToCategory() — see gcrApi.js's toCard(),
-// which stamps this onto each card as `section`, separate from the older,
-// cruder `category` field EntityCard/HubTemplate/Home's category rails
-// already depend on elsewhere). "Activities" used to be one catch-all tab
-// covering marinas/wellness/public-spots/services/everything-else at once;
-// this is the actual breakdown. Happy Hours isn't a subtype at all (any
-// restaurant or bar can have one) so it's filtered on the `happy_hour` field
-// instead of `section` — see the businesses filters below. Events still
-// isn't a standalone swipeable entity (see fetchFeedCards' event/live-music/
-// happy-hour/special cards, always category:'all' and interleaved into every
-// tab instead), so that tab still links out to the full Events page.
-const CAT_TABS = [
-  { id: 'all',           label: 'All',          emoji: '🌟' },
-  { id: 'restaurants',   label: 'Restaurants',  emoji: '🍽️' },
-  { id: 'coffee',        label: 'Coffee',       emoji: '☕' },
-  { id: 'nightlife',     label: 'Nightlife',    emoji: '🎵' },
-  { id: 'things-to-do',  label: 'Things To Do', emoji: '🏄' },
-  { id: 'shopping',      label: 'Shopping',     emoji: '🛍️' },
-  { id: 'public-spots',  label: 'Public Spots', emoji: '✨' },
-  { id: 'wellness',      label: 'Wellness',     emoji: '💆' },
-  { id: 'marinas',       label: 'Marinas',      emoji: '⚓' },
-  { id: 'staying',       label: 'Stay',         emoji: '🏨' },
-  { id: 'happy-hours',   label: 'Happy Hours',  emoji: '🍹' },
-  { id: 'services',      label: 'Services',     emoji: '🧰' },
-  { id: 'events',        label: 'Events',       emoji: '🎪', to: '/events' },
-]
-
-// Shared by every "which cards match this tab" filter below -- Happy Hours
-// isn't a section (any restaurant/bar can have one), so it checks the
-// happy_hour field directly instead of `section`.
-function matchesCategory(b, category) {
-  if (category === 'happy-hours') return !!b.happy_hour
-  return b.section === category
-}
+// CAT_TABS / matchesCategory now live in ../data/catTabs.js, shared with
+// Search.jsx's category filter row — see that file for the taxonomy notes.
 
 // Same options as /api/tourist/setup-questions' group_type question —
 // kept in sync manually since that endpoint returns a static, hardcoded list.
