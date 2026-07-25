@@ -326,7 +326,14 @@ export default function Auth() {
             <h2>{authMethod === 'phone' ? 'Get a text to sign in' : mode === 'signup' ? 'Create your account' : 'Welcome back'}</h2>
             <p>{authMethod === 'phone' ? "We'll text you a code — no password needed." : mode === 'signup' ? 'Save your trip across devices with an email + password.' : 'Sign in to see your saved places & itinerary.'}</p>
 
-            {/* One-tap SMS signup */}
+            {/* One-tap SMS signup ("Text BEACH") — REMOVED FROM VIEW.
+                Outbound replies from routes/sms.js's inbound webhook are
+                suppressed (A2P 10DLC pending), so a real user tapping this
+                would text BEACH and get silence back. The backend flow
+                (routes/sms.js, /api/tourist-auth/phone-token) is untouched
+                and still there; this is just no longer shown or linked to
+                from the live page. Restore this block once A2P 10DLC is
+                approved and outbound replies are re-enabled.
             <a
               href={`sms:${SMS_NUMBER}?body=BEACH`}
               className="btn-sms-signup"
@@ -335,6 +342,7 @@ export default function Auth() {
             </a>
             <p className="auth-sms-hint">Tap above — opens your messages app, just hit send</p>
             <div className="auth-divider"><span>or sign in with phone number</span></div>
+            */}
 
             {/* Method toggle */}
             <div className="auth-mode-toggle">
