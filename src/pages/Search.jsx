@@ -3,6 +3,8 @@ import { useSearchParams, useNavigate } from 'react-router-dom'
 import Toast from '../components/Toast'
 import { API_BASE } from '../config'
 import { useApp } from '../context/AppContext'
+import { CAT_TABS, matchesCategory } from '../data/catTabs'
+import { subtypeToCategory } from '../categoryMap'
 import './Search.css'
 
 // ─── Type filters for date search ────────────────────────────────────────────
@@ -177,7 +179,51 @@ export default function Search() {
   const [radius, setRadius] = useState('')
   const [fuzzyMatch, setFuzzyMatch] = useState(false)
   const [toast, setToast] = useState(null)
+  const [activeCat, setActiveCat] = useState('all')
   const debounceRef = useRef(null)
+
+  // ── Autocomplete ──────────────────────────────────────────────────────────
+  // Separate, faster debounce from the full search below — this just fills a
+  // clickable dropdown of likely names while the visitor is still typing, so
+  // they don't have to finish (or correctly spell) the query by hand.
+  const [suggestions, setSuggestions] = useState([])
+  const [showSuggest, setShowSuggest] = useState(false)
+  const suggestDebounceRef = useRef(null)
+  const suggestAbortRef = useRef(null)
+  const searchBoxRef = useRef(null)
+
+  useEffect(() => {
+    function onOutsideClick(e) {
+      if (searchBoxRef.current && !searchBoxRef.current.contains(e.target)) setShowSuggest(false)
+    }
+    document.addEventListener('mousedown', onOutsideClick)
+    return () => document.removeEventListener('mousedown', onOutsideClick)
+  }, [])
+
+  function fetchSuggestions(val) {
+    clearTimeout(suggestDebounceRef.current)
+    if (val.trim().length < 2) { setSuggestions([]); setShowSuggest(false); return }
+    suggestDebounceRef.current = setTimeout(async () => {
+      try {
+        suggestAbortRef.current?.abort()
+        const ctrl = new AbortController()
+        suggestAbortRef.current = ctrl
+        const res = await fetch(`${API_BASE}/api/gcr/search/suggest?q=${encodeURIComponent(val.trim())}&limit=8`, { signal: ctrl.signal })
+        if (!res.ok) return
+        const data = await res.json()
+        setSuggestions(data.suggestions || [])
+        setShowSuggest((data.suggestions || []).length > 0)
+      } catch (e) { /* aborted or offline — dropdown just stays as-is */ }
+    }, 180)
+  }
+
+  function pickSuggestion(s) {
+    clearTimeout(suggestDebounceRef.current)
+    setShowSuggest(false)
+    setSuggestions([])
+    setSearchInput(s.name)
+    setSearchParams({ q: s.name }, { replace: true })
+  }
 
   // Date search state
   const today = new Date().toISOString().slice(0, 10)
@@ -228,6 +274,7 @@ export default function Search() {
   const handleInputChange = (e) => {
     const val = e.target.value
     setSearchInput(val)
+    fetchSuggestions(val)
     clearTimeout(debounceRef.current)
     if (val.trim().length >= 2) {
       debounceRef.current = setTimeout(() => setSearchParams({ q: val.trim() }, { replace: true }), 400)
@@ -237,6 +284,7 @@ export default function Search() {
   const handleSearch = (e) => {
     e.preventDefault()
     clearTimeout(debounceRef.current)
+    setShowSuggest(false)
     if (searchInput.trim()) setSearchParams({ q: searchInput.trim() }, { replace: true })
   }
 
@@ -307,13 +355,30 @@ export default function Search() {
     setSavedSearches(next); storeSavedSearches(next)
   }
 
-  const totalItems = results.reduce((n, r) => n + (r.matched_menu_items?.length || 0) + (r.matched_specials?.length || 0), 0)
+  // /api/gcr/search returns raw entity rows (it's a plain fetch, not routed
+  // through gcrApi.js's toCard()), so `section`/`happy_hour` — what the
+  // category tabs filter on — aren't on them yet. Stamp both on here using
+  // the same taxonomy Swipe.jsx's deck and CategoryPage.jsx's nav use, so a
+  // typed-out search and a swiped category tab agree on what counts as what.
+  const categorizedResults = results.map(r => ({
+    ...r,
+    section: subtypeToCategory(r),
+    happy_hour: !!(r.hh_start || r.hh_end || r.hh_days),
+  }))
+  const visibleResults = activeCat === 'all' ? categorizedResults : categorizedResults.filter(b => matchesCategory(b, activeCat))
+  const totalItems = visibleResults.reduce((n, r) => n + (r.matched_menu_items?.length || 0) + (r.matched_specials?.length || 0), 0)
 
   return (
     <div className="search-page">
 
-      {/* ── HEADER ── */}
-      <div className="search-hero">
+      {/* ── STICKY BAR — mode toggle + search box + autocomplete + category
+          tabs. Kept in its own sticky wrapper (separate from the taller date-
+          search controls below) so scrolling through results doesn't leave
+          the whole "My Dates" panel pinned to the screen — just the compact
+          part someone actually wants within reach while scrolling. Sits
+          right below GCRHeader (the app's own sticky top band), same
+          `--gcr-header-h` anchor CategoryListings.jsx's sticky toolbar uses. */}
+      <div className="search-sticky">
         <div className="search-hero-inner">
 
           {/* Mode toggle — dates mode only for logged-in users */}
@@ -334,20 +399,71 @@ export default function Search() {
             </div>
           )}
 
-          {/* Keyword search bar */}
+          {/* Keyword search bar + autocomplete dropdown */}
           {mode === 'keyword' && (
-            <form className="search-form" onSubmit={handleSearch}>
-              <input
-                type="text"
-                placeholder="Search restaurants, charters, activities..."
-                value={searchInput}
-                onChange={handleInputChange}
-                autoComplete="off"
-                autoFocus
-              />
-              <button type="submit" className="search-submit">🔍</button>
-            </form>
+            <div className="search-form-wrap" ref={searchBoxRef}>
+              <form className="search-form" onSubmit={handleSearch}>
+                <input
+                  type="text"
+                  placeholder="Search restaurants, charters, activities..."
+                  value={searchInput}
+                  onChange={handleInputChange}
+                  onFocus={() => { if (suggestions.length) setShowSuggest(true) }}
+                  autoComplete="off"
+                  autoFocus
+                />
+                <button type="submit" className="search-submit">🔍</button>
+              </form>
+              {showSuggest && suggestions.length > 0 && (
+                <div className="search-suggest-list">
+                  {suggestions.map(s => (
+                    <button
+                      key={s.slug}
+                      type="button"
+                      className="search-suggest-item"
+                      // onMouseDown (not onClick) fires before the input's onBlur
+                      // would otherwise close this dropdown out from under the tap.
+                      onMouseDown={() => pickSuggestion(s)}
+                    >
+                      <span className="search-suggest-icon">{s.icon || '📍'}</span>
+                      <span className="search-suggest-text">
+                        <span className="search-suggest-name">{s.name}</span>
+                        {s.city && <span className="search-suggest-city">{s.city}</span>}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           )}
+
+          {/* Category tabs — same section breakdown Swipe.jsx uses, filtering
+              whatever the keyword search already returned. Horizontally
+              scrollable (slides left/right) since it doesn't fit one row on
+              a phone screen; "Events" isn't a filterable result type here so
+              it just links out to the full Events page like Swipe.jsx does. */}
+          {mode === 'keyword' && (
+            <div className="search-cat-tabs">
+              {CAT_TABS.filter(t => t.id !== 'events').map(t => (
+                <button
+                  key={t.id}
+                  className={`search-cat-tab ${activeCat === t.id ? 'active' : ''}`}
+                  onClick={() => setActiveCat(t.id)}
+                >
+                  <span>{t.emoji}</span><span>{t.label}</span>
+                </button>
+              ))}
+              <button className="search-cat-tab search-cat-tab--link" onClick={() => navigate('/events')}>
+                <span>🎪</span><span>Events</span>
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ── Non-sticky hero extras: date-search panel + share button ── */}
+      <div className="search-hero">
+        <div className="search-hero-inner">
 
           {/* Date search controls */}
           {mode === 'dates' && (
@@ -437,11 +553,17 @@ export default function Search() {
               <div>No results for &ldquo;<strong>{query}</strong>&rdquo;</div>
               <div style={{ fontSize: 13, color: '#8fa3b1', marginTop: 6 }}>Try a different keyword</div>
             </div>
+          ) : visibleResults.length === 0 ? (
+            <div className="search-empty">
+              <div style={{ fontSize: 40 }}>🔍</div>
+              <div>No {CAT_TABS.find(t => t.id === activeCat)?.label.toLowerCase()} results for &ldquo;<strong>{query}</strong>&rdquo;</div>
+              <button className="search-dates-cta" onClick={() => setActiveCat('all')}>Clear category filter</button>
+            </div>
           ) : (
             <>
               <div className="search-results-header">
                 <span>
-                  {results.length} result{results.length !== 1 ? 's' : ''}
+                  {visibleResults.length} result{visibleResults.length !== 1 ? 's' : ''}
                   {totalItems > 0 && ` · ${totalItems} item${totalItems !== 1 ? 's' : ''}`}
                   {' '}for &ldquo;{query}&rdquo;
                 </span>
@@ -470,10 +592,10 @@ export default function Search() {
               </div>
               {fuzzyMatch && (
                 <div className="search-fuzzy-note">
-                  No exact match for &ldquo;{query}&rdquo; — showing the closest names instead
+                  Some of these are close matches, not exact — in case &ldquo;{query}&rdquo; was a typo
                 </div>
               )}
-              {[...results]
+              {[...visibleResults]
                 .sort((a, b) => sortByDist ? (a.distance_miles ?? 9999) - (b.distance_miles ?? 9999) : 0)
                 .map(biz => <SearchResultCard key={biz.slug} biz={biz} navigate={navigate} />)
               }
