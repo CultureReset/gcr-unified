@@ -66,48 +66,16 @@ export default function Auth() {
     }
   }, [])
 
-  // Tap-to-sign-in link — for texts sent from off-platform ("text BEACH to
-  // this number from anywhere"). Verifies the one-time token and signs in
-  // automatically; no form, nothing to type.
+  // Tap-to-sign-in magic link — DEAD-ENDED. Every account/session must come
+  // through the Twilio Verify phone flow below (sendPhoneOTP/verifyPhoneCode).
+  // The backend endpoint (/api/tourist-auth/phone-token) and the SMS webhook
+  // that used to text this link out (routes/sms.js) are untouched and still
+  // exist — this page just no longer calls out to it, so a stray ?token= in
+  // the URL does nothing instead of creating a session.
   useEffect(() => {
     const magicToken = searchParams.get('token')
     if (!magicToken) return
-    ;(async () => {
-      setLoading(true); setError(''); setInfo('')
-      try {
-        const r = await fetch(`${API}/api/tourist-auth/phone-token`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ token: magicToken, anonymous_visitor_id: anonymousVisitorId() }),
-        })
-        const d = await r.json()
-        if (!r.ok) { setError(d.error || 'This sign-in link is invalid or expired.'); return }
-        const session = d.session || (d.access_token ? { access_token: d.access_token } : null)
-        if (session?.access_token) {
-          localStorage.setItem('gcr_access_token', session.access_token)
-          if (session.refresh_token) localStorage.setItem('gcr_refresh_token', session.refresh_token)
-          if (session.expires_at)    localStorage.setItem('gcr_expires_at', String(session.expires_at))
-        }
-        const uid = d.user?.id || d.tourist?.user_id
-        if (uid) localStorage.setItem('gcr_user_id', uid)
-        if (d.user?.email) localStorage.setItem('gcr_user_email', d.user.email)
-        if (d.user?.phone) localStorage.setItem('gcr_user_phone', d.user.phone)
-
-        const pending = sessionStorage.getItem('gcr_pending_invite')
-        if (pending) {
-          sessionStorage.removeItem('gcr_pending_invite')
-          navigate('/join?t=' + encodeURIComponent(pending), { replace: true })
-          return
-        }
-        const profile = await setSessionFromLogin?.(d)
-        const complete = profile?.setupComplete || profile?.setup_complete || d.tourist?.setup_complete
-        navigate(complete ? (returnTo || '/home') : '/setup/name', { replace: true })
-      } catch {
-        setError('Network error — try again.')
-      } finally {
-        setLoading(false)
-      }
-    })()
+    setError('This sign-in link is no longer supported. Enter your phone number to get a code instead.')
   }, [])
 
   useEffect(() => {
