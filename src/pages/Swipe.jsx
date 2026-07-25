@@ -383,7 +383,7 @@ export default function Swipe() {
     ? allBusinesses.filter(b => !b._isPromo || b.category === 'all')
     : allBusinesses.filter(b => matchesCategory(b, category)))
     .filter(b => !seenSlugs.includes(b.slug))
-    .filter(b => b.hero_image_url) // Only show businesses with images
+    .filter(b => b.hero_image_url || (Array.isArray(b.photos) && b.photos.length > 0)) // Only show businesses with SOME image — hero OR gallery, never both-empty
 
   function closeTrip() {
     // notify parent iframe if embedded, then go back
@@ -497,7 +497,7 @@ export default function Swipe() {
       ? allBusinesses.filter(b => !b._isPromo || b.category === 'all')
       : allBusinesses.filter(b => matchesCategory(b, category)))
       .filter(b => isGuest ? true : !seenSlugs.includes(b.slug))
-      .filter(b => b.hero_image_url) // Only show cards with images — no blank gradient placeholders
+      .filter(b => b.hero_image_url || (Array.isArray(b.photos) && b.photos.length > 0)) // Only show cards with SOME image — hero OR gallery — no blank gradient placeholders
     setPool(visible)
 
     // Resume exactly where they left off: restore whichever still-unseen
