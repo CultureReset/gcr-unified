@@ -1,4 +1,8 @@
-.profile-page { padding: 0 20px; display: flex; flex-direction: column; gap: 20px; }
+/* padding-bottom clears BottomNav + the "Ask a local" FAB + the install
+   banner, which stack above it at up to ~200px from the viewport bottom —
+   see the same fix in BusinessDetail.css .detail-page. Without this, Account
+   / Log Out at the end of the list sits behind those floating overlays. */
+.profile-page { padding: 0 20px 210px; display: flex; flex-direction: column; gap: 20px; }
 
 .profile-header { display: flex; align-items: center; gap: 14px; }
 .profile-avatar {

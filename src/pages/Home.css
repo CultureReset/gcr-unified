@@ -1,5 +1,10 @@
 .home-page {
   padding: 0 20px;
+  /* Clears BottomNav + the "Ask a local" FAB + the install banner, which
+     stack above it at up to ~200px from the viewport bottom — see the same
+     fix in BusinessDetail.css .detail-page. Without this the last section
+     on the page sits behind those floating overlays. */
+  padding-bottom: 210px;
 }
 
 .home-header {

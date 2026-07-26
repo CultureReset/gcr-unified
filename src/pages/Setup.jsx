@@ -253,11 +253,11 @@ function QuestionInput({ q, answers, setAnswer }) {
       return (
         <div style={{display:'flex',flexDirection:'column',gap:10}}>
           <div>
-            <label style={{display:'block',fontSize:13,color:'rgba(255,255,255,.6)',marginBottom:6}}>Arrival</label>
+            <label style={{display:'block',fontSize:13,color:'var(--muted, #5c6b81)',marginBottom:6}}>Arrival</label>
             <input className="setup-input" type="date" value={answers.arrival || ''} onChange={e => setAnswer('arrival', e.target.value)} />
           </div>
           <div>
-            <label style={{display:'block',fontSize:13,color:'rgba(255,255,255,.6)',marginBottom:6}}>Departure</label>
+            <label style={{display:'block',fontSize:13,color:'var(--muted, #5c6b81)',marginBottom:6}}>Departure</label>
             <input className="setup-input" type="date" value={answers.departure || ''} onChange={e => setAnswer('departure', e.target.value)} />
           </div>
         </div>
@@ -275,7 +275,7 @@ function QuestionInput({ q, answers, setAnswer }) {
       return (
         <div style={{display:'flex',flexDirection:'column',gap:10}}>
           {opts.map(o => (
-            <label key={o.value} style={{display:'flex',alignItems:'center',gap:10,padding:14,background:val===o.value?'rgba(124,106,247,.2)':'rgba(255,255,255,.04)',border:'1px solid '+(val===o.value?'rgba(124,106,247,.5)':'rgba(255,255,255,.1)'),borderRadius:12,cursor:'pointer',color:'#fff'}}>
+            <label key={o.value} style={{display:'flex',alignItems:'center',gap:10,padding:14,background:val===o.value?'rgba(11,122,117,.12)':'var(--bg2, #f0f4f8)',border:'1px solid '+(val===o.value?'var(--primary, #0b7a75)':'var(--border, #e2e8f0)'),borderRadius:12,cursor:'pointer',color:'var(--ink, #1a2433)'}}>
               <input type="radio" name={q.key} checked={val === o.value} onChange={() => setAnswer(q.key, o.value)} />
               <span>{o.icon ? o.icon + ' ' : ''}{o.label || o.value}</span>
             </label>
@@ -296,9 +296,9 @@ function QuestionInput({ q, answers, setAnswer }) {
               style={{
                 padding:'10px 14px',
                 borderRadius:999,
-                border:'1px solid '+(arr.includes(o.value)?'rgba(124,106,247,.5)':'rgba(255,255,255,.15)'),
-                background: arr.includes(o.value) ? 'rgba(124,106,247,.25)' : 'rgba(255,255,255,.04)',
-                color:'#fff',
+                border:'1px solid '+(arr.includes(o.value)?'var(--primary, #0b7a75)':'var(--border, #e2e8f0)'),
+                background: arr.includes(o.value) ? 'rgba(11,122,117,.12)' : 'var(--bg2, #f0f4f8)',
+                color:'var(--ink, #1a2433)',
                 cursor:'pointer',
                 fontSize:14,
               }}
