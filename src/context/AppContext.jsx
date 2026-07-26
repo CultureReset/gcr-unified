@@ -33,15 +33,52 @@ function authHeaders() {
   return { 'X-Guest-Id': anonymousVisitorId(), 'Content-Type': 'application/json' }
 }
 
+// The access token is short-lived (Supabase default: 1 hour). Rather than
+// force a full re-login every time it expires, trade the stored refresh
+// token for a new one on the first 401 and retry the request once. A
+// single in-flight promise is shared across callers so several requests
+// that 401 at the same moment don't each race to spend the (single-use)
+// refresh token — only the first triggers a network call, the rest await it.
+let _refreshPromise = null
+function refreshAccessToken() {
+  const refresh_token = localStorage.getItem('gcr_refresh_token')
+  if (!refresh_token) return Promise.resolve(false)
+  if (!_refreshPromise) {
+    _refreshPromise = fetch(API + '/api/tourist-auth/refresh', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refresh_token }),
+    })
+      .then(r => r.ok ? r.json() : null)
+      .then(d => {
+        if (!d?.session?.access_token) return false
+        localStorage.setItem('gcr_access_token', d.session.access_token)
+        if (d.session.refresh_token) localStorage.setItem('gcr_refresh_token', d.session.refresh_token)
+        if (d.session.expires_at) localStorage.setItem('gcr_expires_at', String(d.session.expires_at))
+        return true
+      })
+      .catch(() => false)
+      .finally(() => { _refreshPromise = null })
+  }
+  return _refreshPromise
+}
+
 async function apiGet(path) {
-  const r = await fetch(API + path, { headers: authHeaders() })
-  if (r.status === 401) { handleUnauthorized(); return null }
+  let r = await fetch(API + path, { headers: authHeaders() })
+  if (r.status === 401) {
+    if (await refreshAccessToken()) r = await fetch(API + path, { headers: authHeaders() })
+    if (r.status === 401) { handleUnauthorized(); return null }
+  }
   if (!r.ok) return null
   return await r.json()
 }
 async function apiSend(method, path, body) {
-  const r = await fetch(API + path, { method, headers: authHeaders(), body: body ? JSON.stringify(body) : undefined })
-  if (r.status === 401) { handleUnauthorized(); return null }
+  const payload = body ? JSON.stringify(body) : undefined
+  let r = await fetch(API + path, { method, headers: authHeaders(), body: payload })
+  if (r.status === 401) {
+    if (await refreshAccessToken()) r = await fetch(API + path, { method, headers: authHeaders(), body: payload })
+    if (r.status === 401) { handleUnauthorized(); return null }
+  }
   if (!r.ok) return null
   return await r.json()
 }
@@ -56,13 +93,19 @@ function handleUnauthorized() {
 }
 
 export async function authFetch(path, options = {}) {
-  const token = getToken()
-  const headers = { ...(options.headers || {}) }
-  if (token) headers['Authorization'] = 'Bearer ' + token
-  if (options.body && !headers['Content-Type']) headers['Content-Type'] = 'application/json'
   const url = path.startsWith('http') ? path : API + path
-  const r = await fetch(url, { ...options, headers })
-  if (r.status === 401) handleUnauthorized()
+  function withAuth() {
+    const token = getToken()
+    const headers = { ...(options.headers || {}) }
+    if (token) headers['Authorization'] = 'Bearer ' + token
+    if (options.body && !headers['Content-Type']) headers['Content-Type'] = 'application/json'
+    return fetch(url, { ...options, headers })
+  }
+  let r = await withAuth()
+  if (r.status === 401) {
+    if (await refreshAccessToken()) r = await withAuth()
+    if (r.status === 401) handleUnauthorized()
+  }
   return r
 }
 

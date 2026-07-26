@@ -1,5 +1,5 @@
 import { API_BASE } from '../config'
-import { anonymousVisitorId } from '../context/AppContext'
+import { anonymousVisitorId, authFetch } from '../context/AppContext'
 import { subtypeToCategory } from '../categoryMap'
 
 export function calcDistance(lat1, lng1, lat2, lng2) {
@@ -617,18 +617,13 @@ export async function searchProperties(query) {
 
 // Save an item to tourist's favorites
 export async function saveItem(entitySlug) {
-  const token = localStorage.getItem('gcr_access_token')
-  if (!token) {
+  if (!localStorage.getItem('gcr_access_token')) {
     throw new Error('Not authenticated')
   }
 
   try {
-    const r = await fetch(`${API_BASE}/api/tourist/saves`, {
+    const r = await authFetch('/api/tourist/saves', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
       body: JSON.stringify({ entity_slug: entitySlug })
     })
 
@@ -645,17 +640,13 @@ export async function saveItem(entitySlug) {
 
 // Remove a saved item
 export async function unsaveItem(entitySlug) {
-  const token = localStorage.getItem('gcr_access_token')
-  if (!token) {
+  if (!localStorage.getItem('gcr_access_token')) {
     throw new Error('Not authenticated')
   }
 
   try {
-    const r = await fetch(`${API_BASE}/api/tourist/saves/${encodeURIComponent(entitySlug)}`, {
-      method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
+    const r = await authFetch(`/api/tourist/saves/${encodeURIComponent(entitySlug)}`, {
+      method: 'DELETE'
     })
 
     if (!r.ok) {
