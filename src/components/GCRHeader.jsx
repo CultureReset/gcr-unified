@@ -71,7 +71,15 @@ export default function GCRHeader() {
     setTimeout(update, 500)
     const ro = new ResizeObserver(update)
     ro.observe(el)
-    return () => ro.disconnect()
+    return () => {
+      ro.disconnect()
+      // Without this, --gcr-header-h stays at whatever height it was last
+      // measured at (e.g. 128px) even after navigating to a route that hides
+      // this header — every page that depends on the var being ~0 here
+      // (BusinessDetail's sticky back-bar and tab strip among them) inherits
+      // that stale value and sticks at the wrong offset instead of the top.
+      document.documentElement.style.setProperty('--gcr-header-h', '0px')
+    }
   }, [])
 
   return (
