@@ -562,11 +562,13 @@
   margin-bottom: 8px;
 }
 
-/* Sticky Tabs — stacks directly beneath .detail-header (measured via
-   --detail-header-h in BusinessDetail.jsx), not the global header var. */
+/* Sticky Tabs — third in the stack: global GCRHeader, then .detail-header
+   (the back/share bar), then this. Both offsets are needed; using only
+   --detail-header-h parked these ~48px from the top, i.e. behind the
+   global header, so the tab row vanished under it while scrolling. */
 .sticky-tabs {
   position: sticky;
-  top: var(--detail-header-h, 48px);
+  top: calc(var(--gcr-header-h, 88px) + var(--detail-header-h, 48px));
   z-index: 99;
   background: rgba(255,255,255,.97);
   backdrop-filter: blur(8px);

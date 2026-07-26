@@ -181,17 +181,28 @@ export default function RestaurantDetail() {
   }, [slug])
 
   useEffect(() => {
-    if (!business?.photos?.length) return
+    const total = business?.photos?.length || 0
+    if (total < 2) return
     const timer = setInterval(() => {
-      setCurrentSlide(prev => (prev + 1) % business.photos.length)
+      // Step over photos whose URL failed to load. Some entities carry dead
+      // photo URLs, and without this the carousel parks on a blank fallback
+      // tile every time it cycles onto one, which reads as "images aren't
+      // loading" even when most of them are fine.
+      setCurrentSlide(prev => {
+        for (let step = 1; step <= total; step++) {
+          const next = (prev + step) % total
+          if (!failedSlides[next]) return next
+        }
+        return prev // every photo is broken — the all-failed fallback covers this
+      })
     }, 5000)
     return () => clearInterval(timer)
-  }, [business?.photos?.length])
+  }, [business?.photos?.length, failedSlides])
 
-  // The global GCRHeader is hidden on this route (see App.jsx hideHeader list) — there's
-  // nothing above .detail-header here, so it sticks at top:0 and .sticky-tabs stacks
-  // directly beneath it using this measured height (not the global --gcr-header-h var,
-  // which is stale/unset on this page and previously caused a blank gap + overlap).
+  // Measures .detail-header (the back/share bar) so .sticky-tabs can stack
+  // beneath it. The global GCRHeader IS shown on this route, so .detail-header
+  // sticks below it at --gcr-header-h and .sticky-tabs offsets by both vars
+  // (see BusinessDetail.css).
   // Depends on `business` (not []) because .detail-header doesn't exist in the DOM yet
   // during the initial mount — this component early-returns a loading placeholder until
   // `business` resolves, so the ref is still null on a mount-only effect.
@@ -641,7 +652,12 @@ export default function RestaurantDetail() {
                   src={src}
                   alt=""
                   className="carousel-slide-img"
-                  onError={() => setFailedSlides(prev => ({ ...prev, [idx]: true }))}
+                  onError={() => {
+                    setFailedSlides(prev => ({ ...prev, [idx]: true }))
+                    // If the dead photo is the one on screen, move off it now
+                    // instead of showing a blank tile until the next tick.
+                    setCurrentSlide(cur => cur === idx ? (idx + 1) % slides.length : cur)
+                  }}
                   loading="lazy"
                 />
               )}
