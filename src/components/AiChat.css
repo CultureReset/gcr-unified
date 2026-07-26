@@ -5,7 +5,12 @@
      80px offset didn't clear that on notched phones, so the FAB sat on
      top of the nav bar. */
   bottom: calc(76px + env(safe-area-inset-bottom));
-  right: 18px;
+  /* Hug the right edge of the centered app column rather than the browser
+     window — on a tablet/desktop the window is wider than the column, so a
+     flat right:18px left this floating out in the empty side margin,
+     visually detached from the app. Falls back to 18px from the viewport
+     edge on phones, where the column already fills the screen. */
+  right: max(18px, calc(50% - (var(--max-w) / 2) + 18px));
   z-index: 1000;
   display: flex;
   align-items: center;
@@ -28,7 +33,8 @@
 .ai-chat-window {
   position: fixed;
   bottom: 80px;
-  right: 18px;
+  /* Same column-hugging offset as the FAB above. */
+  right: max(18px, calc(50% - (var(--max-w) / 2) + 18px));
   z-index: 1000;
   width: 360px;
   max-width: calc(100vw - 32px);

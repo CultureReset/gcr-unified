@@ -32,7 +32,23 @@ html {
   --text3: #94a3b8;
   --radius: 20px;
   --radius-sm: 12px;
+  /* Width of the whole app column — the shell, the fixed header and the
+     fixed bottom nav all key off this single value so they always line up.
+     Phone-first, then it steps up so a tablet actually uses its screen
+     instead of showing a narrow phone-width strip, while still staying
+     centered and capped so it never stretches edge-to-edge on a big
+     desktop monitor. */
   --max-w: 430px;
+}
+
+/* Tablet portrait (iPad mini ~744pt, iPad ~810-834pt) */
+@media (min-width: 700px) {
+  :root { --max-w: 720px; }
+}
+
+/* Tablet landscape / laptop and up */
+@media (min-width: 1000px) {
+  :root { --max-w: 900px; }
 }
 
 html, body {
