@@ -61,9 +61,9 @@ export default function Setup() {
     }
   }, [questions, stepSlug])
 
-  if (loading) return <div className="setup-page" style={{display:'flex',alignItems:'center',justifyContent:'center',color:'#fff'}}>Loading…</div>
-  if (error)   return <div className="setup-page" style={{display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',padding:20,textAlign:'center'}}>{error}</div>
-  if (!questions.length) return <div className="setup-page" style={{color:'#fff',padding:20}}>No setup questions configured.</div>
+  if (loading) return <div className="setup-page" style={{display:'flex',alignItems:'center',justifyContent:'center',color:'var(--text)'}}>Loading…</div>
+  if (error)   return <div className="setup-page" style={{display:'flex',alignItems:'center',justifyContent:'center',color:'var(--text)',padding:20,textAlign:'center'}}>{error}</div>
+  if (!questions.length) return <div className="setup-page" style={{color:'var(--text)',padding:20}}>No setup questions configured.</div>
 
   const q = questions[idx]
   const total = questions.length
@@ -193,8 +193,9 @@ function AutocompleteInput({ value, onChange, placeholder }) {
           top: '100%',
           left: 0,
           right: 0,
-          background: 'rgba(18,18,31,0.95)',
-          border: '1px solid rgba(255,255,255,0.1)',
+          background: 'var(--card)',
+          border: '1px solid var(--border)',
+          boxShadow: '0 8px 24px rgba(26,36,51,0.12)',
           borderTop: 'none',
           borderRadius: '0 0 12px 12px',
           maxHeight: 200,
@@ -212,17 +213,17 @@ function AutocompleteInput({ value, onChange, placeholder }) {
                 textAlign: 'left',
                 background: 'transparent',
                 border: 'none',
-                borderBottom: '1px solid rgba(255,255,255,0.05)',
-                color: 'white',
+                borderBottom: '1px solid var(--border)',
+                color: 'var(--text)',
                 cursor: 'pointer',
                 fontSize: 14,
                 transition: 'background 0.2s',
               }}
-              onMouseEnter={e => e.target.style.background = 'rgba(124,106,247,0.1)'}
+              onMouseEnter={e => e.target.style.background = 'var(--bg2)'}
               onMouseLeave={e => e.target.style.background = 'transparent'}
             >
               <div style={{ fontWeight: 500 }}>{s.name}</div>
-              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)' }}>{s.type} · {s.city}</div>
+              <div style={{ fontSize: 12, color: 'var(--text2)' }}>{s.type} · {s.city}</div>
             </button>
           ))}
         </div>
