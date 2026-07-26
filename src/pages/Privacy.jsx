@@ -3,10 +3,10 @@ import { useNavigate } from 'react-router-dom'
 export default function Privacy() {
   const navigate = useNavigate()
   return (
-    <div className="page safe-top safe-bottom" style={{padding:'24px 20px 100px',color:'#fff',maxWidth:760,margin:'0 auto',lineHeight:1.6}}>
+    <div className="page safe-top safe-bottom" style={{padding:'24px 20px 100px',color:'#1a2433',maxWidth:760,margin:'0 auto',lineHeight:1.6}}>
       <button onClick={() => navigate(-1)} style={{background:'none',border:'none',color:'#7c6af7',fontSize:14,cursor:'pointer',padding:0,marginBottom:16}}>← Back</button>
       <h1 style={{marginTop:0}}>Privacy Policy</h1>
-      <p style={{color:'rgba(255,255,255,.6)'}}>Last updated: April 21, 2026</p>
+      <p style={{color:'#64748b'}}>Last updated: April 21, 2026</p>
 
       <h2>What we collect</h2>
       <ul>
