@@ -26,8 +26,10 @@ export default function Group() {
 
   useEffect(() => { load() /* eslint-disable-next-line */ }, [slug])
 
-  if (loading) return <div className="page safe-top" style={{padding:20,color:'#fff'}}>Loading group…</div>
-  if (error)   return <div className="page safe-top" style={{padding:20,color:'#fff'}}>
+  // group-page carries the dark background these states' white text assumes —
+  // without it they rendered white-on-light and were unreadable.
+  if (loading) return <div className="group-page page safe-top" style={{padding:20}}>Loading group…</div>
+  if (error)   return <div className="group-page page safe-top" style={{padding:20}}>
     <p>{error}</p>
     <button className="btn-primary" onClick={() => navigate('/home')} style={{marginTop:16}}>Back to home</button>
   </div>

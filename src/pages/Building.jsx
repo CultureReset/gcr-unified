@@ -73,7 +73,7 @@ export default function Building() {
       <div className="building-content">
         <div className="building-logo">🌊 Gulf Coast Radar</div>
         <h2 style={{color:'#fca5a5'}}>Couldn't build your trip</h2>
-        <p style={{color:'rgba(255,255,255,.7)'}}>{error}</p>
+        <p style={{color:'var(--text2)'}}>{error}</p>
         <button className="btn-primary" style={{marginTop:20}} onClick={() => navigate('/home')}>Back to home</button>
       </div>
     </div>
