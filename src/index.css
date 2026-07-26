@@ -34,11 +34,12 @@ html {
   --radius-sm: 12px;
   /* Width of the whole app column — the shell, the fixed header and the
      fixed bottom nav all key off this single value so they always line up.
-     Phone-first, then it steps up so a tablet actually uses its screen
-     instead of showing a narrow phone-width strip, while still staying
-     centered and capped so it never stretches edge-to-edge on a big
-     desktop monitor. */
-  --max-w: 430px;
+     Phones fill the screen edge-to-edge whatever the model (a hardcoded
+     430px left a sliver of background down both sides of a 440pt iPhone
+     Pro Max, and would do the same on any future wider phone); the cap
+     only kicks in at tablet sizes and up, where a full-bleed layout is
+     what looked stretched in the first place. */
+  --max-w: 100%;
 }
 
 /* Tablet portrait (iPad mini ~744pt, iPad ~810-834pt) */
