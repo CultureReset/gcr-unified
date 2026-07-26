@@ -146,6 +146,14 @@
   top: var(--gcr-header-h, 128px);
   z-index: 20;
 }
+
+/* The global AiChat FAB sits low enough that on initial load (before
+   scrolling) it overlaps this filter row's right edge, hiding the last
+   tab(s). Push it up specifically on this page rather than changing its
+   position app-wide. */
+.app-shell:has(.deals-page) .ai-chat-fab {
+  bottom: calc(140px + env(safe-area-inset-bottom));
+}
 .deals-filters {
   max-width: 1220px;
   margin: 0 auto;

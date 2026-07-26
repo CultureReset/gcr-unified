@@ -3,10 +3,10 @@ import { useNavigate } from 'react-router-dom'
 export default function Terms() {
   const navigate = useNavigate()
   return (
-    <div className="page safe-top safe-bottom" style={{padding:'24px 20px 100px',color:'#fff',maxWidth:760,margin:'0 auto',lineHeight:1.6}}>
+    <div className="page safe-top safe-bottom" style={{padding:'24px 20px 100px',color:'#1a2433',maxWidth:760,margin:'0 auto',lineHeight:1.6}}>
       <button onClick={() => navigate(-1)} style={{background:'none',border:'none',color:'#7c6af7',fontSize:14,cursor:'pointer',padding:0,marginBottom:16}}>← Back</button>
       <h1 style={{marginTop:0}}>Terms of Service</h1>
-      <p style={{color:'rgba(255,255,255,.6)'}}>Last updated: April 21, 2026</p>
+      <p style={{color:'#64748b'}}>Last updated: April 21, 2026</p>
 
       <h2>1. Who we are</h2>
       <p>Gulf Coast Radar ("the Service") is operated by CyberCheck Inc. Contact: <a href="mailto:info@cybercheckinc.com" style={{color:'#7c6af7'}}>info@cybercheckinc.com</a>.</p>
