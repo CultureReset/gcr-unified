@@ -505,7 +505,11 @@ export default function Swipe() {
     const visible = (category === 'all'
       ? allBusinesses.filter(b => !b._isPromo || b.category === 'all')
       : allBusinesses.filter(b => matchesCategory(b, category)))
-      .filter(b => b.hero_image_url) // Only show cards with images — no blank gradient placeholders
+      // Same "has SOME image" rule as the main deck-build effect above — this
+      // one used to check hero_image_url only, so when it ran (on the initial
+      // seenSlugs load) it rebuilt the deck WITHOUT any business whose only
+      // images live in its gallery, silently dropping them from the pool.
+      .filter(b => b.hero_image_url || (Array.isArray(b.photos) && b.photos.length > 0))
     setPool(visible)
     const sorted = Object.keys(prefMap).length
       ? personalizeAndSort(visible, prefMap)
