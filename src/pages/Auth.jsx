@@ -344,7 +344,13 @@ export default function Auth() {
             <div className="auth-divider"><span>or sign in with phone number</span></div>
             */}
 
-            {/* Method toggle */}
+            {/* Phone/Email method toggle — HIDDEN FOR NOW. Sign-up is
+                phone-only via Twilio Verify; the email + password flow
+                (signUp/signIn/forgot-password/verifyCode below, and the
+                backend's /signup, /signin, /forgot-password, /reset-password
+                routes) is all still intact and working, just not offered.
+                authMethod defaults to 'phone', so hiding this pins the page
+                to the phone flow. Restore this block to re-enable email.
             <div className="auth-mode-toggle">
               <button
                 className={`mode-btn ${authMethod === 'phone' ? 'active' : ''}`}
@@ -359,6 +365,7 @@ export default function Auth() {
                 ✉️ Email
               </button>
             </div>
+            */}
 
             {authMethod === 'phone' ? (
               <>
