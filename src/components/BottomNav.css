@@ -63,8 +63,7 @@
   }
 }
 
-@media (min-width: 769px) {
-  .bottom-nav {
-    display: none;
-  }
-}
+/* The bottom nav used to be hidden at >=769px, which left tablet and
+   desktop visitors with no way to reach Home/Search/Saves/Profile at all —
+   the header has no equivalent. Same header, same footer, every screen
+   size; it stays width-matched to the app column via --max-w. */
