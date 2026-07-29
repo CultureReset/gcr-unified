@@ -535,28 +535,38 @@ export default function Landing() {
     if (searchVal.trim()) navigate(`/search?q=${encodeURIComponent(searchVal.trim())}`)
   }, [searchVal, navigate])
 
-  // Weather
+  // Weather — refetches every 30min so conditions/beach status don't go stale on a long visit
   useEffect(() => {
-    fetch('https://api.open-meteo.com/v1/forecast?latitude=30.246&longitude=-87.701&current_weather=true&daily=temperature_2m_max,temperature_2m_min&temperature_unit=fahrenheit&wind_speed_unit=mph&forecast_days=1&timezone=America%2FChicago')
-      .then(r => r.json())
-      .then(d => {
-        const cw = d?.current_weather
-        if (!cw) return
-        const code = cw.weathercode ?? 0
-        const wind = Math.round(cw.windspeed || 0)
-        const beachStatus =
-          (code >= 95) ? { label: '🚩 Beach Advisory', color: '#ff4444' } :
-          (code >= 61 || wind > 25) ? { label: '🟡 Swim Caution', color: '#ffbb00' } :
-          { label: '🏖️ Beach Open', color: '#6ef0b8' }
-        setWeather({
-          temp:  Math.round(cw.temperature),
-          wind,
-          code,
-          beachStatus,
-          hi: Math.round(d.daily?.temperature_2m_max?.[0] || 0),
-          lo: Math.round(d.daily?.temperature_2m_min?.[0] || 0),
-        })
-      }).catch(() => {})
+    const formatClock = iso => iso ? new Date(iso).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/Chicago' }) : null
+
+    const loadWeather = () => {
+      fetch('https://api.open-meteo.com/v1/forecast?latitude=30.246&longitude=-87.701&current_weather=true&daily=temperature_2m_max,temperature_2m_min,sunrise,sunset&temperature_unit=fahrenheit&wind_speed_unit=mph&forecast_days=1&timezone=America%2FChicago')
+        .then(r => r.json())
+        .then(d => {
+          const cw = d?.current_weather
+          if (!cw) return
+          const code = cw.weathercode ?? 0
+          const wind = Math.round(cw.windspeed || 0)
+          const beachStatus =
+            (code >= 95) ? { label: '🚩 Beach Advisory', color: '#ff4444' } :
+            (code >= 61 || wind > 25) ? { label: '🟡 Swim Caution', color: '#ffbb00' } :
+            { label: '🏖️ Beach Open', color: '#6ef0b8' }
+          setWeather({
+            temp:  Math.round(cw.temperature),
+            wind,
+            code,
+            beachStatus,
+            hi: Math.round(d.daily?.temperature_2m_max?.[0] || 0),
+            lo: Math.round(d.daily?.temperature_2m_min?.[0] || 0),
+            sunrise: formatClock(d.daily?.sunrise?.[0]),
+            sunset:  formatClock(d.daily?.sunset?.[0]),
+          })
+        }).catch(() => {})
+    }
+
+    loadWeather()
+    const interval = setInterval(loadWeather, 30 * 60 * 1000)
+    return () => clearInterval(interval)
   }, [])
 
   // Home feed (happy hours, live music, events)
@@ -648,6 +658,8 @@ export default function Landing() {
             {weather && <span className="hn-wx-cond">{wxLabel}</span>}
             {weather?.hi > 0 && <span className="hn-wx-hi-lo">↑{weather.hi}° ↓{weather.lo}°</span>}
             {weather?.wind > 0 && <span className="hn-wx-wind">💨 {weather.wind}mph</span>}
+            {weather?.sunrise && <span className="hn-wx-sun">🌅 {weather.sunrise}</span>}
+            {weather?.sunset && <span className="hn-wx-sun">🌇 {weather.sunset}</span>}
             <span className="hn-wx-beach" style={weather?.beachStatus?.color ? {color: weather.beachStatus.color} : {}}>
               {weather?.beachStatus?.label || '🏖️ Beach Open'}
             </span>

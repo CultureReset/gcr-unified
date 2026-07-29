@@ -12,7 +12,7 @@
 .home-greeting h2 {
   font-size: 22px;
   font-weight: 800;
-  color: white;
+  color: var(--text);
 }
 
 .home-dest {
@@ -70,14 +70,14 @@
 }
 
 .stat { text-align: center; }
-.stat-num { font-size: 24px; font-weight: 800; color: white; }
+.stat-num { font-size: 24px; font-weight: 800; color: var(--text); }
 .stat-label { font-size: 11px; color: var(--text3); font-weight: 600; text-transform: uppercase; margin-top: 2px; }
 .stat-divider { width: 1px; height: 36px; background: var(--border); }
 
 .section-title {
   font-size: 18px;
   font-weight: 800;
-  color: white;
+  color: var(--text);
   margin-bottom: 14px;
 }
 
@@ -101,7 +101,7 @@
 .category-card:active { transform: scale(0.97); }
 
 .cat-emoji { font-size: 28px; display: block; margin-bottom: 8px; }
-.cat-label { font-size: 15px; font-weight: 800; color: white; }
+.cat-label { font-size: 15px; font-weight: 800; color: var(--text); }
 .cat-count { font-size: 12px; color: var(--text3); margin-top: 4px; }
 
 .cat-glow {
@@ -128,7 +128,7 @@
   margin-bottom: 28px;
 }
 
-.build-title { font-size: 15px; font-weight: 800; color: white; }
+.build-title { font-size: 15px; font-weight: 800; color: var(--text); }
 .build-sub { font-size: 13px; color: var(--text2); margin-top: 3px; }
 .build-btn { width: auto; padding: 12px 20px; font-size: 14px; }
 
@@ -332,7 +332,7 @@
 .slide-card-name {
   font-size: 13px;
   font-weight: 800;
-  color: #fff;
+  color: var(--text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -422,7 +422,7 @@
   color: var(--text2, #94a3b8);
 }
 .feed-empty-icon { font-size: 48px; margin-bottom: 12px; }
-.feed-empty-title { font-size: 17px; font-weight: 800; color: #fff; margin-bottom: 6px; }
+.feed-empty-title { font-size: 17px; font-weight: 800; color: var(--text); margin-bottom: 6px; }
 .feed-empty-sub { font-size: 14px; line-height: 1.5; }
 
 /* ── Social Feed cards ──────────────────────────────────────── */

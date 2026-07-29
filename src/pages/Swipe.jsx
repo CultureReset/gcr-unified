@@ -549,9 +549,11 @@ export default function Swipe() {
         </div>
       </div>
       <div className="swipe-actions">
-        <div className="action-btn nope" style={{opacity:0.3}} />
-        <div className="action-btn super" style={{opacity:0.3}} />
-        <div className="action-btn like" style={{opacity:0.3}} />
+        <div className="swipe-actions-row primary">
+          <div className="action-btn nope" style={{opacity:0.3}} />
+          <div className="action-btn super" style={{opacity:0.3}} />
+          <div className="action-btn like" style={{opacity:0.3}} />
+        </div>
       </div>
     </div>
   )
