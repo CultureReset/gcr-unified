@@ -540,17 +540,21 @@ export default function Landing() {
     const formatClock = iso => iso ? new Date(iso).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/Chicago' }) : null
 
     const loadWeather = () => {
-      fetch('https://api.open-meteo.com/v1/forecast?latitude=30.246&longitude=-87.701&current_weather=true&daily=temperature_2m_max,temperature_2m_min,sunrise,sunset&temperature_unit=fahrenheit&wind_speed_unit=mph&forecast_days=1&timezone=America%2FChicago')
+      fetch('https://api.open-meteo.com/v1/forecast?latitude=30.246&longitude=-87.701&current_weather=true&daily=temperature_2m_max,temperature_2m_min,sunrise,sunset,precipitation_probability_max&temperature_unit=fahrenheit&wind_speed_unit=mph&forecast_days=1&timezone=America%2FChicago')
         .then(r => r.json())
         .then(d => {
           const cw = d?.current_weather
           if (!cw) return
           const code = cw.weathercode ?? 0
           const wind = Math.round(cw.windspeed || 0)
+          // NOTE: this is a weather-only estimate (wind speed + storm code), not the
+          // actual lifeguard-posted flag — there's no real beach-safety-flag feed
+          // wired into this codebase. Swap this block out if a real source shows up.
           const beachStatus =
-            (code >= 95) ? { label: '🚩 Beach Advisory', color: '#ff4444' } :
-            (code >= 61 || wind > 25) ? { label: '🟡 Swim Caution', color: '#ffbb00' } :
-            { label: '🏖️ Beach Open', color: '#6ef0b8' }
+            (code >= 95 || wind > 39) ? { label: '🚩🚩 Water Closed', color: '#b91c1c' } :
+            (code >= 61 || wind > 25) ? { label: '🚩 High Hazard', color: '#ff4444' } :
+            (wind > 15)               ? { label: '🟡 Medium Hazard', color: '#ffbb00' } :
+            { label: '🟢 Low Hazard', color: '#6ef0b8' }
           setWeather({
             temp:  Math.round(cw.temperature),
             wind,
@@ -558,6 +562,7 @@ export default function Landing() {
             beachStatus,
             hi: Math.round(d.daily?.temperature_2m_max?.[0] || 0),
             lo: Math.round(d.daily?.temperature_2m_min?.[0] || 0),
+            rainChance: d.daily?.precipitation_probability_max?.[0] ?? null,
             sunrise: formatClock(d.daily?.sunrise?.[0]),
             sunset:  formatClock(d.daily?.sunset?.[0]),
           })
@@ -657,6 +662,7 @@ export default function Landing() {
             {weather && <span>{wxIcon} {weather.temp}°F</span>}
             {weather && <span className="hn-wx-cond">{wxLabel}</span>}
             {weather?.hi > 0 && <span className="hn-wx-hi-lo">↑{weather.hi}° ↓{weather.lo}°</span>}
+            {weather?.rainChance != null && <span className="hn-wx-rain">🌧️ {weather.rainChance}%</span>}
             {weather?.wind > 0 && <span className="hn-wx-wind">💨 {weather.wind}mph</span>}
             {weather?.sunrise && <span className="hn-wx-sun">🌅 {weather.sunrise}</span>}
             {weather?.sunset && <span className="hn-wx-sun">🌇 {weather.sunset}</span>}
