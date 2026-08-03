@@ -193,8 +193,24 @@ export const VOCAB = [
   { id: 'spa',        title: 'Spa & massage', weight: 1.2, keys: ['spa', 'massage', 'daysp', 'wellnesscenter'] },
   { id: 'hairnails',  title: 'Hair & nails', keys: ['hairsalon', 'nailsalon', 'beautysalon', 'barbershop', 'hairca'] },
   { id: 'photo',      title: 'Photographers', weight: 1.2, keys: ['photographer', 'photography', 'photostudio'] },
-  { id: 'gearrental', title: 'Beach & equipment rentals', weight: 1.3,
-    keys: ['rentals', 'beachrental', 'equipmentrental', 'chairrental', 'bikerental', 'cartrental'] },
+  // Rentals are a hierarchy, not one bucket. The specific rows carry real
+  // weight; the umbrella sits below them so it only wins a slot on a page where
+  // no specific row is selective enough — which is exactly what "separated, but
+  // still held together" needs. `rentals` deliberately isn't a key on any of the
+  // specific rows, or all 880 rental-offer places would pour into them.
+  { id: 'gearrental', title: 'Beach & equipment rentals', weight: 1.4,
+    keys: ['beachrental', 'equipmentrental', 'chairrental', 'bikerental'] },
+  { id: 'condorental', title: 'Vacation homes & condos', weight: 1.2,
+    keys: ['condorental'] },
+  { id: 'parking',    title: 'Parking', weight: 0.7, keys: ['parking'] },
+  // The umbrella. Built from the specific tokens rather than from a `rentals`
+  // token of its own, because the one column that would have supplied that
+  // token — entity_offer.offer_type='rental' — is an import artifact carrying
+  // hair salons and vets (see gcr-api-clean/lib/concepts.js). Assembling it
+  // from the specifics keeps "held together" honest.
+  { id: 'rentalsall', title: 'Rentals', weight: 0.6,
+    keys: ['rentals', 'beachrental', 'condorental', 'boatrental', 'bikerental',
+           'golfcartrental', 'equipmentrental', 'pontoon'] },
   { id: 'transport',  title: 'Getting around', weight: 1.2,
     keys: ['transportationservice', 'airportshuttle', 'carrental', 'taxi', 'shuttle', 'limo', 'golfcartrental'] },
   { id: 'fitness',    title: 'Fitness', keys: ['gym', 'fitness', 'yoga', 'pilates'] },
