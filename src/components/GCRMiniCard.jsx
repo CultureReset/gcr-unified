@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { shortStatus, fmtDist } from '../lib/hours'
+import { getMiniCardFields } from '../lib/miniCardFields'
 import './GCRMiniCard.css'
 
 // ─── Mini card ────────────────────────────────────────────────────────────────
@@ -10,16 +10,20 @@ import './GCRMiniCard.css'
 // up to six action buttons, because the stack view is where someone compares
 // places they already care about.
 //
-// This card is the "browse" card. It carries five things and nothing else:
+// This card is the "browse" card, and its skeleton never changes:
 //
-//   photo · name · subtype + city · rating · one status badge
+//   photo · one badge · name · one meta line · up to three foot stats
 //
 // That restraint is the whole reason a rail works — a rail of full GCRCards is
 // just a worse version of the stack. Anything you're tempted to add here almost
 // certainly belongs on the profile page instead. The card is a link into the
 // profile, not a replacement for it.
+//
+// Which *facts* land in those slots is per page — a coffee shop lives or dies on
+// whether it's still open, a charter boat on price and duration. See
+// ../lib/miniCardFields.js for the mapping and the reasoning behind each page.
 
-export default function GCRMiniCard({ entity, onSave, savedSlugs }) {
+export default function GCRMiniCard({ entity, category, onSave, savedSlugs }) {
   const navigate = useNavigate()
   const [imgFailed, setImgFailed] = useState(false)
 
@@ -28,9 +32,6 @@ export default function GCRMiniCard({ entity, onSave, savedSlugs }) {
   const slug = entity.slug || entity.subdomain || entity.id || ''
   const name = entity.name || 'Business'
   const icon = entity.icon || entity.emoji || '📍'
-  const city = entity.city || ''
-  const subtype = (entity.entity_subtype || entity.entity_type || entity.type || '')
-    .toLowerCase().replace(/_/g, ' ')
 
   // Same photo resolution order as GCRCard so a place doesn't show one image in
   // the rail and a different one in the stack.
@@ -38,13 +39,8 @@ export default function GCRMiniCard({ entity, onSave, savedSlugs }) {
   const hero = entity.hero_image_url || entity.cover_url ||
     coverPhoto?.url || coverPhoto?.image_url || null
 
-  const rating = entity.rating
-  const distLabel = fmtDist(entity.distance_miles)
-  const status = shortStatus(entity.hours || [])
   const isSaved = savedSlugs?.has(slug)
-
-  // One line, two facts, in priority order: what it is, then where it is.
-  const metaLine = [subtype, city].filter(Boolean).join(' · ')
+  const { badge, meta, stats } = getMiniCardFields(entity, category)
 
   return (
     <article
@@ -70,8 +66,8 @@ export default function GCRMiniCard({ entity, onSave, savedSlugs }) {
         )}
         <div className="gcr-mini-scrim" />
 
-        {status && (
-          <span className={`gcr-mini-status status-${status.cls}`}>{status.label}</span>
+        {badge && (
+          <span className={`gcr-mini-status tone-${badge.tone}`}>{badge.label}</span>
         )}
 
         <button
@@ -86,13 +82,14 @@ export default function GCRMiniCard({ entity, onSave, savedSlugs }) {
 
       <div className="gcr-mini-body">
         <h3 className="gcr-mini-name">{name}</h3>
-        {metaLine && <p className="gcr-mini-meta">{metaLine}</p>}
-        <div className="gcr-mini-foot">
-          {rating != null && rating !== '' && (
-            <span className="gcr-mini-rating">⭐ {Number(rating).toFixed(1)}</span>
-          )}
-          {distLabel && <span className="gcr-mini-dist">📍 {distLabel}</span>}
-        </div>
+        {meta && <p className="gcr-mini-meta">{meta}</p>}
+        {stats.length > 0 && (
+          <div className="gcr-mini-foot">
+            {stats.map(s => (
+              <span key={s.key} className={`gcr-mini-stat ${s.muted ? 'muted' : ''}`}>{s.label}</span>
+            ))}
+          </div>
+        )}
       </div>
     </article>
   )

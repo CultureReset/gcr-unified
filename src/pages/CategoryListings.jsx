@@ -280,6 +280,7 @@ export default function CategoryListings() {
                 <GCRMiniCard
                   key={entity.slug || entity.id}
                   entity={entity}
+                  category={category}
                   onSave={handleSave}
                   savedSlugs={savedSlugs}
                 />

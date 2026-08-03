@@ -302,6 +302,7 @@ export default function CategoryPage() {
                 <GCRMiniCard
                   key={entity.id || entity.slug}
                   entity={entity}
+                  category={category}
                   onSave={() => handleSave({ ...entity, category })}
                   savedSlugs={savedSlugs}
                 />

@@ -36,11 +36,23 @@ export function computeStatus(hours) {
   const closeStr = h.close_time || h.closes_at || h.close || ''
   if (!openStr || !closeStr) return null
 
-  const cur = new Date().getHours() * 60 + new Date().getMinutes()
+  const now = new Date()
   const [oh, om] = openStr.split(':').map(Number)
   const [ch, cm] = closeStr.split(':').map(Number)
   const openMin  = oh * 60 + om
-  const closeMin = ch * 60 + cm
+  let closeMin   = ch * 60 + cm
+  let cur = now.getHours() * 60 + now.getMinutes()
+
+  // A close time at or before the open time means the window runs past midnight
+  // — a bar open 4pm–2am. Compared naively, closeMin (120) sits below openMin
+  // (960) and every such venue reads "Closed" for its entire night. Push the
+  // close into the next day, and when the clock is in the small hours, count
+  // "now" as belonging to the night that's still running.
+  const crossesMidnight = closeMin <= openMin
+  if (crossesMidnight) {
+    closeMin += 1440
+    if (cur < openMin && cur + 1440 < closeMin) cur += 1440
+  }
 
   if (cur < openMin - 60) return null
   if (cur < openMin)       return { label: `Opens ${fmt12(openStr)}`,           cls: 'opening' }

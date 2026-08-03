@@ -86,10 +86,22 @@
   white-space: nowrap;
 }
 
-.gcr-mini-status.status-open    { background: #15803d; border-color: rgba(255,255,255,.28); }
-.gcr-mini-status.status-opening { background: #a16207; border-color: rgba(255,255,255,.28); }
-.gcr-mini-status.status-closing { background: #c2410c; border-color: rgba(255,255,255,.28); }
-.gcr-mini-status.status-closed  { background: rgba(15,34,51,.78); }
+/* Badge tones. Green/amber/orange carry "now" state, teal carries a deal, the
+   dark neutral carries a price (a price is a fact, not an alert — colouring it
+   would make every Things To Do card shout), and red is reserved for live
+   booking scarcity, which is the only thing on the card that expires. */
+.gcr-mini-status.tone-open    { background: #15803d; border-color: rgba(255,255,255,.28); }
+.gcr-mini-status.tone-opening { background: #a16207; border-color: rgba(255,255,255,.28); }
+.gcr-mini-status.tone-closing { background: #c2410c; border-color: rgba(255,255,255,.28); }
+.gcr-mini-status.tone-closed  { background: rgba(15,34,51,.78); }
+.gcr-mini-status.tone-deal    { background: #0b7a75; border-color: rgba(255,255,255,.28); }
+.gcr-mini-status.tone-price   { background: rgba(15,34,51,.82); }
+.gcr-mini-status.tone-free    { background: #15803d; border-color: rgba(255,255,255,.28); }
+.gcr-mini-status.tone-scarce  { background: #dc2626; border-color: rgba(255,255,255,.3); }
+.gcr-mini-status.tone-gone    { background: rgba(15,34,51,.85); }
+/* The subtype fallback. Deliberately the quietest of the tones — it's a label,
+   not news, and it shouldn't compete with a real "Open" or "2 left". */
+.gcr-mini-status.tone-neutral { background: rgba(15,34,51,.7); font-weight: 800; }
 
 .gcr-mini-save {
   position: absolute;
@@ -163,9 +175,16 @@
   font-size: 11.5px;
   font-weight: 800;
   color: var(--text, #1a2433);
+  /* Three stats can outrun 190px on a card with a long duration string. Clipping
+     the third is better than wrapping to a second line, which would make this
+     card taller than its neighbours and ruin the row's bottom edge. */
+  overflow: hidden;
+  white-space: nowrap;
 }
 
-.gcr-mini-dist { color: var(--text2, #64748b); font-weight: 700; }
+/* Secondary stats step back so the eye lands on the first one (usually rating)
+   rather than reading three equally-weighted numbers. */
+.gcr-mini-stat.muted { color: var(--text2, #64748b); font-weight: 700; }
 
 /* Slightly larger on tablet/desktop, where 190px cards look undersized next to
    a 620px content column. */
