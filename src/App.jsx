@@ -117,11 +117,45 @@ function AppRoutes() {
       const v = qs.get(k) || sessionStorage.getItem('ts_' + k)
       if (v) { utm[k] = v; sessionStorage.setItem('ts_' + k, v) }
     })
-    const device = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent) ? 'mobile' : 'desktop'
+    const ua = navigator.userAgent
+    const device = /iPad|Tablet/i.test(ua) ? 'tablet'
+      : /Mobi|Android|iPhone/i.test(ua) ? 'mobile'
+      : 'desktop'
+
+    // Coarse on purpose — enough to answer "is Safari broken for people" or
+    // "how much of this is iOS", without fingerprinting anyone.
+    const browser = /Edg\//.test(ua) ? 'Edge'
+      : /OPR\//.test(ua) ? 'Opera'
+      : /Chrome\//.test(ua) ? 'Chrome'
+      : /Safari\//.test(ua) ? 'Safari'
+      : /Firefox\//.test(ua) ? 'Firefox'
+      : 'Other'
+    const os = /Windows/.test(ua) ? 'Windows'
+      : /Android/.test(ua) ? 'Android'
+      : /iPhone|iPad|iPod/.test(ua) ? 'iOS'
+      : /Mac OS X/.test(ua) ? 'macOS'
+      : /Linux/.test(ua) ? 'Linux'
+      : 'Other'
+
+    // The API resolves entity_slug from /business/:slug itself, but sending it
+    // means a slug page that does not match that shape still attributes.
+    const slugMatch = location.pathname.match(/\/business\/([^/?]+)/)
+
     fetch(API + '/api/gcr/track', {
       method: 'POST', keepalive: true,
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ page_path: location.pathname, referrer: document.referrer || null, session_id: sess, device_type: device, source: 'tripswipe', ...utm })
+      body: JSON.stringify({
+        page_path: location.pathname,
+        page_title: document.title || null,
+        entity_slug: slugMatch ? decodeURIComponent(slugMatch[1]) : null,
+        referrer: document.referrer || null,
+        session_id: sess,
+        device_type: device,
+        browser,
+        os,
+        source: 'tripswipe',
+        ...utm,
+      })
     }).catch(() => {})
   }, [location.pathname])
 
