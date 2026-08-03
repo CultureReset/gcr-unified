@@ -2,6 +2,11 @@ import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import GCRCard from '../components/GCRCard'
+import GCRMiniCard from '../components/GCRMiniCard'
+import ListingRail from '../components/ListingRail'
+import ViewToggle from '../components/ViewToggle'
+import { buildSections } from '../lib/sections'
+import { useListingView } from '../lib/useListingView'
 import { API_BASE } from '../config'
 import { subtypeToCategory, formatSubtypeLabel } from '../categoryMap'
 import './CategoryPage.css'
@@ -53,7 +58,14 @@ export default function CategoryPage() {
   const [error, setError] = useState(null)
   const [offset, setOffset] = useState(0)
   const [hasMore, setHasMore] = useState(true)
+  // Set when a rail's "View all" is used — narrows the list view to that rail's
+  // members. Kept separate from selectedTag because rails like "Open right now"
+  // are computed predicates, not tags, and so can't be expressed as a chip.
+  const [activeSection, setActiveSection] = useState(null)
   const savedSlugs = new Set((savedPlaces || []).map(p => p.slug))
+
+  const tagActive = !!selectedTag && selectedTag !== 'All'
+  const [view, setView] = useListingView(tagActive || !!activeSection)
 
   const handleSave = async (entity) => {
     const slug = entity.slug || entity.id
@@ -90,6 +102,9 @@ export default function CategoryPage() {
         // to another (e.g. Happy Hours) -- reset it on every category change so
         // it can't silently filter out results that should show.
         setSelectedTag(null)
+        // Same reasoning for a rail-derived filter: "Happy hour" carried over
+        // from Restaurants would narrow Marinas to nothing.
+        setActiveSection(null)
 
         let ents = []
 
@@ -175,7 +190,7 @@ export default function CategoryPage() {
   }, [category])
 
   const SKIP_CATS = new Set(['google_type', 'google_primary_type', 'google_secondary_type'])
-  const filtered = !selectedTag || selectedTag === 'All'
+  const tagFiltered = !tagActive
     ? entities
     : entities.filter(e => {
         if (formatSubtypeLabel(e.entity_subtype) === selectedTag) return true
@@ -187,6 +202,28 @@ export default function CategoryPage() {
           return tag === selectedTag
         })
       })
+
+  const filtered = activeSection ? tagFiltered.filter(activeSection.match) : tagFiltered
+
+  // Only worth building when Browse is actually on screen — buildSections walks
+  // the full entity list once per definition.
+  const hasDistance = entities.some(e => e.distance_miles != null)
+  const sections = view === 'browse'
+    ? buildSections(filtered, { category, hasDistance })
+    : []
+
+  const openSection = (section) => {
+    // A rail and a chip narrowing the list at the same time reads as a bug —
+    // whichever the user picked last wins outright.
+    setSelectedTag(null)
+    setActiveSection(section)
+    setView('list')
+  }
+
+  const pickTag = (tag) => {
+    setActiveSection(null)
+    setSelectedTag(tag)
+  }
 
   const handleLoadMore = () => {
     // All entities loaded upfront — no pagination needed
@@ -217,13 +254,16 @@ export default function CategoryPage() {
 
       {/* Toolbar */}
       <div className="category-toolbar">
-        <h2 className="results-title">{filtered.length} results</h2>
+        <div className="toolbar-row">
+          <h2 className="results-title">{filtered.length} results</h2>
+          <ViewToggle view={view} onChange={setView} />
+        </div>
         <div className="filter-chips">
           {allTags.map(tag => (
             <button
               key={tag}
               className={`chip ${selectedTag === tag ? 'active' : ''}`}
-              onClick={() => setSelectedTag(tag)}
+              onClick={() => pickTag(tag)}
             >
               {tag}
             </button>
@@ -231,16 +271,47 @@ export default function CategoryPage() {
         </div>
       </div>
 
+      {/* Which rail the list view is currently narrowed to, plus the way back
+          out of it — arriving via "View all" otherwise looks identical to the
+          unfiltered page, just shorter. */}
+      {activeSection && (
+        <div className="active-section-bar">
+          <span>Showing <strong>{activeSection.title}</strong></span>
+          <button onClick={() => setActiveSection(null)}>Clear ✕</button>
+        </div>
+      )}
+
       {/* Listings */}
-      <div className="listings-stack">
-        {loading && !entities.length ? (
-          <div className="loading">Loading...</div>
-        ) : error ? (
-          <div className="error">{error}</div>
-        ) : filtered.length === 0 ? (
-          <div className="empty">No results found</div>
-        ) : (
-          filtered.map(entity => (
+      {loading && !entities.length ? (
+        <div className="listings-stack"><div className="loading">Loading...</div></div>
+      ) : error ? (
+        <div className="listings-stack"><div className="error">{error}</div></div>
+      ) : filtered.length === 0 ? (
+        <div className="listings-stack"><div className="empty">No results found</div></div>
+      ) : view === 'browse' && sections.length > 0 ? (
+        <div className="listings-browse">
+          {sections.map(section => (
+            <ListingRail
+              key={section.key}
+              eyebrow={section.eyebrow}
+              title={section.title}
+              count={section.total}
+              onViewAll={() => openSection(section)}
+            >
+              {section.items.map(entity => (
+                <GCRMiniCard
+                  key={entity.id || entity.slug}
+                  entity={entity}
+                  onSave={() => handleSave({ ...entity, category })}
+                  savedSlugs={savedSlugs}
+                />
+              ))}
+            </ListingRail>
+          ))}
+        </div>
+      ) : (
+        <div className="listings-stack">
+          {filtered.map(entity => (
             <GCRCard
               key={entity.id || entity.slug}
               entity={entity}
@@ -248,9 +319,9 @@ export default function CategoryPage() {
               onSave={handleSave}
               savedSlugs={savedSlugs}
             />
-          ))
-        )}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

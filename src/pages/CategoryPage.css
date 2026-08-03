@@ -46,11 +46,19 @@
   box-shadow: 0 2px 8px rgba(0,0,0,.06);
 }
 
+.toolbar-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
 .results-title {
   font-size: 15px;
   font-weight: 800;
   color: #1a2b3c;
-  margin: 0 0 10px;
+  margin: 0;
 }
 
 .filter-chips {
@@ -100,6 +108,52 @@
   padding: 18px;
   max-width: 620px;
   margin: 0 auto;
+}
+
+/* ── Browse view ──
+   Wider cap than the stack: the stack is a single column of reading-width
+   cards, whereas a rail wants room to show four or five mini cards before it
+   starts scrolling. No side padding — the rails handle their own insets so
+   cards can bleed off the right edge (see ListingRail.css). */
+.listings-browse {
+  padding: 18px 0 0;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.active-section-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  max-width: 620px;
+  margin: 14px auto -4px;
+  padding: 9px 14px;
+  background: #e8f7f5;
+  border: 1.5px solid #b2dfdb;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #0b5e5a;
+}
+
+.active-section-bar strong { font-weight: 900; }
+
+.active-section-bar button {
+  flex-shrink: 0;
+  background: #0b7a75;
+  border: none;
+  color: #fff;
+  border-radius: 999px;
+  padding: 5px 11px;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.active-section-bar button:focus-visible {
+  outline: 3px solid #0b7a75;
+  outline-offset: 2px;
 }
 
 /* States */

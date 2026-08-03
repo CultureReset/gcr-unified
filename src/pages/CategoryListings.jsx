@@ -1,6 +1,11 @@
 import { useEffect, useState, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import GCRCard from '../components/GCRCard'
+import GCRMiniCard from '../components/GCRMiniCard'
+import ListingRail from '../components/ListingRail'
+import ViewToggle from '../components/ViewToggle'
+import { buildSections } from '../lib/sections'
+import { useListingView } from '../lib/useListingView'
 import { API_BASE } from '../config'
 import { subtypeToCategory, formatSubtypeLabel } from '../categoryMap'
 import { useApp } from '../context/AppContext'
@@ -43,7 +48,13 @@ export default function CategoryListings() {
   const [activeSort, setActiveSort] = useState('default')
   const [activeTag, setActiveTag] = useState('All')
   const [allTags, setAllTags] = useState(['All'])
+  // Set when a rail's "View all" is used — see CategoryPage.jsx for the same
+  // pattern and why it can't just reuse activeTag.
+  const [activeSection, setActiveSection] = useState(null)
   const gridRef = useRef(null)
+
+  const filterActive = !!search || activeFilter !== 'all' || activeTag !== 'All' || !!activeSection
+  const [view, setView] = useListingView(filterActive)
 
   const meta = CATEGORY_META[category] || { label: category, emoji: '📍', desc: '' }
   const apiType = TYPE_MAP[category] || category
@@ -154,13 +165,25 @@ export default function CategoryListings() {
           const name = typeof t === 'string' ? t : (t.tag_name || t.tag || '')
           return name === activeTag
         })
-      return matchSearch && matchFilter && matchTag
+      const matchSection = !activeSection || activeSection.match(e)
+      return matchSearch && matchFilter && matchTag && matchSection
     })
     .sort((a, b) => {
       if (activeSort === 'distance') return (a.distance_miles ?? 9999) - (b.distance_miles ?? 9999)
       if (activeSort === 'rating') return (b.rating || 0) - (a.rating || 0)
       return 0
     })
+
+  const hasDistance = entities.some(e => e.distance_miles != null)
+  const sections = view === 'browse'
+    ? buildSections(filtered, { category, hasDistance })
+    : []
+
+  const openSection = (section) => {
+    setActiveTag('All')
+    setActiveSection(section)
+    setView('list')
+  }
 
   return (
     <div className="category-listings">
@@ -182,6 +205,10 @@ export default function CategoryListings() {
           value={search}
           onChange={e => setSearch(e.target.value)}
         />
+        <div className="cl-view-row">
+          <span className="cl-count">{filtered.length} results</span>
+          <ViewToggle view={view} onChange={setView} />
+        </div>
         <div className="listings-filters">
           {['all', 'hh', 'music'].map(f => (
             <button
@@ -216,7 +243,7 @@ export default function CategoryListings() {
               <button
                 key={tag}
                 className={`tag-chip ${activeTag === tag ? 'active' : ''}`}
-                onClick={() => setActiveTag(tag)}
+                onClick={() => { setActiveSection(null); setActiveTag(tag) }}
               >
                 {tag}
               </button>
@@ -239,18 +266,47 @@ export default function CategoryListings() {
           <div style={{ fontWeight: 700 }}>No results found</div>
           {search && <div style={{ fontSize: 13, color: '#66788a', marginTop: 8 }}>Try a different search</div>}
         </div>
-      ) : (
-        <div className="listings-grid" ref={gridRef}>
-          {filtered.map(entity => (
-            <GCRCard
-              key={entity.slug || entity.id}
-              entity={entity}
-              category={category}
-              onSave={handleSave}
-              savedSlugs={savedSlugs}
-            />
+      ) : view === 'browse' && sections.length > 0 ? (
+        <div className="listings-browse">
+          {sections.map(section => (
+            <ListingRail
+              key={section.key}
+              eyebrow={section.eyebrow}
+              title={section.title}
+              count={section.total}
+              onViewAll={() => openSection(section)}
+            >
+              {section.items.map(entity => (
+                <GCRMiniCard
+                  key={entity.slug || entity.id}
+                  entity={entity}
+                  onSave={handleSave}
+                  savedSlugs={savedSlugs}
+                />
+              ))}
+            </ListingRail>
           ))}
         </div>
+      ) : (
+        <>
+          {activeSection && (
+            <div className="active-section-bar">
+              <span>Showing <strong>{activeSection.title}</strong></span>
+              <button onClick={() => setActiveSection(null)}>Clear ✕</button>
+            </div>
+          )}
+          <div className="listings-grid" ref={gridRef}>
+            {filtered.map(entity => (
+              <GCRCard
+                key={entity.slug || entity.id}
+                entity={entity}
+                category={category}
+                onSave={handleSave}
+                savedSlugs={savedSlugs}
+              />
+            ))}
+          </div>
+        </>
       )}
     </div>
   )
