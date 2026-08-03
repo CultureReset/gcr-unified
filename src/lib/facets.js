@@ -76,6 +76,13 @@ export function entityTokens(entity) {
   add(entity.entity_type)
   ;(entity.secondary_subtypes || []).forEach(add)
 
+  // What the place actually sells, derived server-side from entity_offer (see
+  // gcr-api-clean/lib/concepts.js). This is the axis that finds a parasailing
+  // trip sold by a business subtyped `travel_agency`, and it's where the thin
+  // activity concepts live — pontoon rentals go from 5 findable places to 28,
+  // paddleboard from 1 to 6, dolphin cruises from 57 to 84.
+  ;(entity.concepts || []).forEach(add)
+
   for (const t of (entity.tags || [])) {
     const label = (typeof t === 'string' ? t : (t.tag_name || t.tag || '')).trim()
     if (!label) continue
@@ -146,7 +153,7 @@ export const VOCAB = [
   { id: 'livemusic', title: 'Live music', intent: 'night', weight: 1.2,
     keys: ['livemusic', 'livedj', 'karaoke', 'livemusicvenues'] },
   { id: 'nightlife', title: 'Bars & nightlife', intent: 'night',
-    keys: ['nightlife', 'barsnightlife', 'cocktails', 'brewery', 'sportsbar'] },
+    keys: ['nightlife', 'barsnightlife', 'cocktails', 'brewery', 'sportsbar', 'beer', 'wine'] },
 
   // Cuisine
   { id: 'seafood',  title: 'Seafood',  weight: 1.4, keys: ['seafood', 'oyster', 'rawbar'] },
@@ -156,6 +163,8 @@ export const VOCAB = [
   { id: 'italian',  title: 'Italian',  keys: ['italian'] },
   { id: 'asian',    title: 'Asian',    keys: ['japanese', 'sushi', 'chinese', 'thai', 'korean', 'vietnamese', 'asian'] },
   { id: 'bbq',      title: 'BBQ',      keys: ['barbecue', 'bbq'] },
+  { id: 'steak',    title: 'Steakhouses', keys: ['steakhouse', 'steak'] },
+  { id: 'wings',    title: 'Wings & bar food', keys: ['wings', 'wingstop'] },
   { id: 'southern', title: 'Southern & cajun', keys: ['southern', 'cajun', 'creole', 'soulfood'] },
 
   // Things to do — the on-water activity vocabulary, all badly fragmented.
@@ -168,11 +177,16 @@ export const VOCAB = [
     keys: ['jetski', 'waverunner', 'watersport', 'jetskiing'] },
   { id: 'paddle',     title: 'Kayak & paddleboard',
     keys: ['kayak', 'paddleboard', 'paddlesport', 'canoe', 'sup'] },
-  { id: 'boatrental', title: 'Boat rentals', keys: ['boatrental', 'pontoon', 'boatrentals'] },
-  { id: 'sailing',    title: 'Sailing & cruises', keys: ['sailing', 'sailingcharter', 'sunsetcruise', 'cruise'] },
+  { id: 'boatrental', title: 'Boat & pontoon rentals', weight: 1.2,
+    keys: ['boatrental', 'pontoon', 'boatrentals', 'tritoon'] },
+  { id: 'sailing',    title: 'Cruises & boat tours',
+    keys: ['sailing', 'sailingcharter', 'sunsetcruise', 'cruise', 'boattour'] },
+  { id: 'helicopter', title: 'Scenic flights', keys: ['helicopter', 'airtour'] },
+  { id: 'marina',     title: 'Marinas & slips', keys: ['marina', 'boatslip'] },
   { id: 'golf',       title: 'Golf', keys: ['golf', 'golfcourse', 'minigolf'] },
   { id: 'outdoors',   title: 'Parks & trails', keys: ['hiking', 'trail', 'natureprese', 'campground', 'statepark'] },
-  { id: 'attraction', title: 'Attractions', keys: ['attraction', 'touristattraction', 'amusement', 'museum', 'zoo', 'aquarium'] },
+  { id: 'attraction', title: 'Attractions',
+    keys: ['attraction', 'touristattraction', 'amusement', 'museum', 'zoo', 'aquarium', 'waterpark'] },
 
   // Services — five separate salon subtypes are one strong row, not five weak
   // ones (hair 36 + spa 33 + nails 27 + beauty 23 + massage 23).
