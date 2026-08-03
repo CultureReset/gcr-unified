@@ -4,8 +4,9 @@ import GCRCard from '../components/GCRCard'
 import GCRMiniCard from '../components/GCRMiniCard'
 import ListingRail from '../components/ListingRail'
 import ViewToggle from '../components/ViewToggle'
-import { buildSections } from '../lib/sections'
+import { buildRails, buildPrefs } from '../lib/railEngine'
 import { useListingView } from '../lib/useListingView'
+import { fetchPreferences } from '../services/gcrApi'
 import { API_BASE } from '../config'
 import { subtypeToCategory, formatSubtypeLabel } from '../categoryMap'
 import { useApp } from '../context/AppContext'
@@ -51,7 +52,16 @@ export default function CategoryListings() {
   // Set when a rail's "View all" is used — see CategoryPage.jsx for the same
   // pattern and why it can't just reuse activeTag.
   const [activeSection, setActiveSection] = useState(null)
+  const [prefs, setPrefs] = useState(null)
   const gridRef = useRef(null)
+
+  useEffect(() => {
+    let cancelled = false
+    fetchPreferences()
+      .then(raw => { if (!cancelled) setPrefs(buildPrefs(raw)) })
+      .catch(() => { /* personalization is a bonus, never a blocker */ })
+    return () => { cancelled = true }
+  }, [])
 
   const filterActive = !!search || activeFilter !== 'all' || activeTag !== 'All' || !!activeSection
   const [view, setView] = useListingView(filterActive)
@@ -174,10 +184,7 @@ export default function CategoryListings() {
       return 0
     })
 
-  const hasDistance = entities.some(e => e.distance_miles != null)
-  const sections = view === 'browse'
-    ? buildSections(filtered, { category, hasDistance })
-    : []
+  const sections = view === 'browse' ? buildRails(filtered, { prefs }) : []
 
   const openSection = (section) => {
     setActiveTag('All')

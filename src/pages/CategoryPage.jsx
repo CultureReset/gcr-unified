@@ -5,8 +5,9 @@ import GCRCard from '../components/GCRCard'
 import GCRMiniCard from '../components/GCRMiniCard'
 import ListingRail from '../components/ListingRail'
 import ViewToggle from '../components/ViewToggle'
-import { buildSections } from '../lib/sections'
+import { buildRails, buildPrefs } from '../lib/railEngine'
 import { useListingView } from '../lib/useListingView'
+import { fetchPreferences } from '../services/gcrApi'
 import { API_BASE } from '../config'
 import { subtypeToCategory, formatSubtypeLabel } from '../categoryMap'
 import './CategoryPage.css'
@@ -49,7 +50,7 @@ const HERO_GRADIENTS = {
 export default function CategoryPage() {
   const location = useLocation()
   const navigate = useNavigate()
-  const { savedPlaces, addSavedPlace, removeSavedPlace } = useApp()
+  const { savedPlaces, addSavedPlace, removeSavedPlace, userLocation, userId } = useApp()
   const category = location.pathname.slice(1) // Remove leading slash
   const [entities, setEntities] = useState([])
   const [allTags, setAllTags] = useState([])
@@ -62,6 +63,10 @@ export default function CategoryPage() {
   // members. Kept separate from selectedTag because rails like "Open right now"
   // are computed predicates, not tags, and so can't be expressed as a chip.
   const [activeSection, setActiveSection] = useState(null)
+  // Trip Swipe preference scores, used to rank and reorder the Browse rows.
+  // Null until they load (or forever, for someone with no swipe history) — the
+  // engine treats that as "anonymous" and falls back to Top rated.
+  const [prefs, setPrefs] = useState(null)
   const savedSlugs = new Set((savedPlaces || []).map(p => p.slug))
 
   const tagActive = !!selectedTag && selectedTag !== 'All'
@@ -81,6 +86,15 @@ export default function CategoryPage() {
       console.error('Failed to save:', err)
     }
   }
+
+  // Loaded once, not per category — the same scores drive every listing page.
+  useEffect(() => {
+    let cancelled = false
+    fetchPreferences()
+      .then(raw => { if (!cancelled) setPrefs(buildPrefs(raw)) })
+      .catch(() => { /* personalization is a bonus, never a blocker */ })
+    return () => { cancelled = true }
+  }, [])
 
   const config = CATEGORY_CONFIG[category]
   const heroGradient = HERO_GRADIENTS[category] || 'linear-gradient(135deg, #334155, #1e293b)'
@@ -118,8 +132,13 @@ export default function CategoryPage() {
           let all = []
           let offset = 0
           const BATCH = 1000
+          // lat/lng turn on distance_miles (and the "Near you" row); user_id
+          // turns on the API's own preference-weighted ranking, which has
+          // existed since Trip Swipe shipped but was never passed from here.
+          const locParams = userLocation ? `&lat=${userLocation.lat}&lng=${userLocation.lng}` : ''
+          const userParams = userId ? `&user_id=${encodeURIComponent(userId)}` : ''
           while (true) {
-            const res = await fetch(`${API_BASE}/api/gcr/entities?limit=${BATCH}&offset=${offset}`)
+            const res = await fetch(`${API_BASE}/api/gcr/entities?limit=${BATCH}&offset=${offset}${locParams}${userParams}`)
             if (!res.ok) break
             const data = await res.json()
             const batch = data.entities || []
@@ -187,7 +206,7 @@ export default function CategoryPage() {
     }
 
     loadEntities()
-  }, [category])
+  }, [category, userLocation, userId])
 
   const SKIP_CATS = new Set(['google_type', 'google_primary_type', 'google_secondary_type'])
   const tagFiltered = !tagActive
@@ -205,12 +224,9 @@ export default function CategoryPage() {
 
   const filtered = activeSection ? tagFiltered.filter(activeSection.match) : tagFiltered
 
-  // Only worth building when Browse is actually on screen — buildSections walks
-  // the full entity list once per definition.
-  const hasDistance = entities.some(e => e.distance_miles != null)
-  const sections = view === 'browse'
-    ? buildSections(filtered, { category, hasDistance })
-    : []
+  // Only worth building when Browse is on screen — the engine walks the full
+  // entity list once per candidate row.
+  const sections = view === 'browse' ? buildRails(filtered, { prefs }) : []
 
   const openSection = (section) => {
     // A rail and a chip narrowing the list at the same time reads as a bug —
