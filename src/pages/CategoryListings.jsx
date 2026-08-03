@@ -94,10 +94,10 @@ export default function CategoryListings() {
             if (batch.length < 1000) break
             offset += 1000
           }
-          // Hub children (e.g. a marina's individual charter boats) belong
-          // inside their parent hub's own directory, not as a duplicate
-          // standalone card here — same fix as CategoryPage.jsx.
-          ents = all.filter(e => subtypeToCategory(e) === category && !e.parent_slug)
+          // Children are listed alongside parents — a charter that runs out of
+          // a marina is its own destination with its own page, not a detail of
+          // the marina. Same rule as CategoryPage.jsx.
+          ents = all.filter(e => subtypeToCategory(e) === category)
         }
 
         // Deduplicate: same name → keep the one with a proper subtype / no hash slug

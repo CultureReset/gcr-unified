@@ -21,6 +21,13 @@ const MAX_PER_RAIL = 12
 const MIN_PER_RAIL = 4
 const MAX_APPEARANCES = 2
 const MAX_RAILS = 12
+// Parent and child entities are equals — a charter that runs out of a marina
+// lists alongside it. The cost of that is concentration: one tour agency with
+// eight dolphin cruises under it would otherwise own the Dolphin Cruises row
+// and push every other operator off the page. Cap how many cards from any one
+// operator a single row may show; the rest stay reachable through "View all"
+// and through the operator's own page.
+const MAX_PER_PARENT = 3
 
 const byRating = (a, b) => (b.rating || 0) - (a.rating || 0)
 const byDistance = (a, b) => (a.distance_miles ?? 9999) - (b.distance_miles ?? 9999)
@@ -297,6 +304,9 @@ export function buildRails(entities, { prefs = null, now = new Date() } = {}) {
     if (rails.length >= MAX_RAILS) break
     if (superseded.has(cand.id)) continue
 
+    // Sort before capping, so the per-operator cap keeps that operator's best
+    // three rather than an arbitrary three.
+    const perParent = new Map()
     const items = all
       .filter(e => {
         const id = idOf(e)
@@ -305,6 +315,13 @@ export function buildRails(entities, { prefs = null, now = new Date() } = {}) {
         return true
       })
       .sort(cand.sort || byRating)
+      .filter(e => {
+        const operator = e.parent_slug || idOf(e)
+        const n = perParent.get(operator) || 0
+        if (n >= MAX_PER_PARENT) return false
+        perParent.set(operator, n + 1)
+        return true
+      })
       .slice(0, MAX_PER_RAIL)
 
     if (items.length < MIN_PER_RAIL) continue

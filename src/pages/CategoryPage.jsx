@@ -146,14 +146,20 @@ export default function CategoryPage() {
             if (batch.length < BATCH) break
             offset += BATCH
           }
-          // feed = show everything; otherwise filter by subtype. Hub children
-          // (entity.parent_slug set — e.g. a marina's individual charter
-          // boats, a complex's individual restaurants) are meant to be found
-          // by drilling into their parent hub, not as their own standalone
-          // card on the main category grid — without this they'd show twice.
+          // feed = show everything; otherwise filter by subtype.
+          //
+          // Children are NOT excluded. A fishing charter that runs out of a
+          // marina, a dolphin cruise sold by a tour agency, a unit inside a
+          // condo complex — each has its own slug and its own page, and is the
+          // thing a visitor is actually looking for. The parent is a second
+          // thing they might look for, not a folder the child hides inside.
+          // Both are listable in their own right.
+          //
+          // The risk this trades for is one operator flooding a row with eight
+          // near-identical children; buildRails caps per-parent for that.
           ents = category === 'feed'
             ? all
-            : all.filter(e => subtypeToCategory(e) === category && !e.parent_slug)
+            : all.filter(e => subtypeToCategory(e) === category)
         }
 
         // Deduplicate: same name → keep the one with a proper subtype / no hash slug
