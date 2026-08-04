@@ -1,6 +1,6 @@
 .category-page {
   min-height: 100vh;
-  background: #f5f7fb;
+  background: var(--bg);
 }
 
 /* ── Hero ── */
@@ -109,4 +109,4 @@
   font-size: 15px;
 }
 
-.error { color: #dc2626; }
+.error { color: #b3261e; }

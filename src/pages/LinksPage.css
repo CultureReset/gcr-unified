@@ -1,6 +1,6 @@
 .lp-page {
   min-height: 100vh;
-  background: linear-gradient(180deg, #f4f8fb 0%, #eef3f8 100%);
+  background: var(--bg);
   padding: 24px 14px 48px;
   position: relative;
 }

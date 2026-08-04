@@ -1,4 +1,9 @@
-:root {
+/* Scoped, not :root. These are this page's own palette; declared at
+   :root they leaked into every other page in the bundle — whichever
+   stylesheet loaded last won. That is how the bottom nav's active tab
+   ended up orange rather than the app's teal, and why the global --border/--card were being
+   silently replaced app-wide. */
+.detail-page {
   --accent: #e85d04;
   --accent-dark: #c44d00;
   --card: #fff;
@@ -11,7 +16,7 @@
 
 .detail-page {
   min-height: 100vh;
-  background: #f6f8fb;
+  background: var(--bg);
 }
 
 /* Back Button Header */
@@ -32,7 +37,7 @@
   z-index: 100;
 }
 
-.back-btn, .share-btn {
+.detail-page .back-btn, .detail-page .share-btn {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -384,7 +389,7 @@
   margin-top: 12px;
 }
 
-.badge {
+.detail-page .badge {
   background: var(--chip);
   color: var(--accent);
   border: 1px solid #ffd0b0;
@@ -1047,7 +1052,7 @@
 }
 
 .error {
-  color: #d32f2f;
+  color: #b3261e;
 }
 
 /* Menu Styles */

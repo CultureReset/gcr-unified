@@ -1,4 +1,9 @@
-:root {
+/* Scoped, not :root. These are this component's own palette; declared at
+   :root they leaked into every other page in the bundle — whichever
+   stylesheet loaded last won. That is how the bottom nav's active tab
+   ended up the wrong colour, and why the global --border/--card were being
+   silently replaced app-wide. */
+.gcr-card {
   --brand: #0b7a75;
   --brand-dark: #065f5b;
   --brand-soft: #e8f7fa;

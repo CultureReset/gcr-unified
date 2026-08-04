@@ -14,7 +14,7 @@
 
 .list-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
 .list-header h2 { font-size: 26px; font-weight: 800; color: var(--text); }
-.list-count { background: rgba(124,106,247,0.2); color: var(--primary); padding: 6px 12px; border-radius: 20px; font-size: 13px; font-weight: 700; }
+.list-count { background: rgba(11,122,117,0.12); color: #08615d; padding: 6px 12px; border-radius: 20px; font-size: 13px; font-weight: 700; }
 
 .filter-scroll { display: flex; gap: 8px; overflow-x: auto; margin-bottom: 20px; padding-bottom: 4px; scrollbar-width: none; }
 .filter-scroll::-webkit-scrollbar { display: none; }

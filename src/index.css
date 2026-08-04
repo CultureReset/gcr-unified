@@ -14,24 +14,45 @@ html {
   text-size-adjust: 100%;
 }
 
+/* ── Palette ─────────────────────────────────────────────────
+   Gulf Coast: sea haze behind, white sand cards on top, teal water for
+   anything interactive. The page is deliberately tinted rather than white
+   so a plain white card lifts off it without needing a heavy border.
+
+   Every text tier is checked against every surface it can land on, and
+   the worst pairing in the whole set is 4.55:1 — above the 4.5:1 WCAG AA
+   floor for body text. The old greys were inherited from the dark shell
+   this app used to have: --text3 #94a3b8 measured 2.56:1 on white, which
+   is why small labels ("ARRIVAL", "SAVED", "Companions") looked like
+   smudges. If you change a colour here, re-check the whole grid —
+   darkening the page tint alone is enough to push the quiet tier under.
+
+                     bg       bg1      bg2      bg3      card
+     --text        12.05    14.96    13.97    11.00    14.96
+     --text2        6.11     7.59     7.08     5.58     7.59
+     --text3        4.99     6.20     5.79     4.55     6.20
+──────────────────────────────────────────────────────────── */
 :root {
-  --bg: #f7f9fc;
-  --bg1: #ffffff;
-  --bg2: #f0f4f8;
-  --bg3: #e8edf3;
-  --card: #ffffff;
-  --border: #e2e8f0;
-  --primary: #0b7a75;
+  --bg: #d9e9f4;       /* sea haze — the page itself */
+  --bg1: #ffffff;      /* header / nav surfaces */
+  --bg2: #f2f8fc;      /* subtle inset inside a card */
+  --bg3: #cbe0ee;      /* deeper inset, skeletons, image placeholders */
+  --card: #ffffff;     /* sand — cards, sheets, anything that floats */
+  --border: #b7d3e5;
+  --primary: #0b7a75;  /* gulf teal */
   --primary-dark: #065f5b;
   --accent: #0b7a75;
   --green: #22c55e;
   --red: #ef4444;
-  --ink: #1a2433;
-  --text: #1a2433;
-  --text2: #64748b;
-  --text3: #94a3b8;
+  --ink: #0c2a38;
+  --text: #0c2a38;     /* deep water — headings, names */
+  --text2: #3a5866;    /* supporting copy */
+  --text3: #486574;    /* the quiet tier: small caps labels, meta */
   --radius: 20px;
   --radius-sm: 12px;
+  /* One shadow for every floating surface, tinted with the page's blue so
+     cards read as sitting *on* the sea haze rather than on grey. */
+  --card-shadow: 0 2px 10px rgba(12,42,56,0.08);
   /* Width of the whole app column — the shell, the fixed header and the
      fixed bottom nav all key off this single value so they always line up.
      Phones fill the screen edge-to-edge whatever the model (a hardcoded
@@ -71,7 +92,7 @@ html {
 }
 
 html, body {
-  background: #fff;
+  background: var(--bg);
   color: var(--text);
   font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
   min-height: 100vh;
@@ -89,7 +110,7 @@ html, body {
   min-height: 100dvh;
   display: flex;
   justify-content: center;
-  background: #fff;
+  background: var(--bg);
   /* clip, not hidden: overflow-x:hidden forces the browser to also treat
      overflow-y as auto (per the CSS overflow spec, a non-visible value on
      one axis converts a visible value on the other to auto), which quietly
@@ -107,7 +128,7 @@ html, body {
   min-height: 100vh;
   min-height: 100dvh;
   position: relative;
-  background: #fff;
+  background: var(--bg);
   padding-top: var(--gcr-header-h, 148px);
 }
 
@@ -192,7 +213,9 @@ input { outline: none; font-family: inherit; }
   width: 100%;
   transition: all 0.2s;
   letter-spacing: 0.3px;
-  box-shadow: 0 8px 24px rgba(124,106,247,0.35);
+  /* Was a purple glow left over from the old brand colour — it read as
+     a lilac halo around the teal button. */
+  box-shadow: 0 8px 24px rgba(11,122,117,0.30);
 }
 .btn-primary:active { transform: scale(0.97); }
 
@@ -268,7 +291,7 @@ input { outline: none; font-family: inherit; }
    about 1.9:1). Same hues, dark enough to read. */
 .badge-live { background: rgba(239,68,68,0.14); color: #b91c1c; }
 .badge-happy { background: rgba(251,146,60,0.16); color: #c2410c; }
-.badge-music { background: rgba(124,106,247,0.14); color: #5b21b6; }
+.badge-music { background: rgba(11,122,117,0.12); color: #08615d; }
 .badge-verified { background: rgba(34,197,94,0.14); color: #15803d; }
 .badge-waterfront { background: rgba(56,189,248,0.14); color: #0369a1; }
 .badge-status-open { background: rgba(34,197,94,0.14); color: #15803d; }
@@ -303,7 +326,7 @@ input { outline: none; font-family: inherit; }
 }
 
 .gradient-text {
-  background: linear-gradient(135deg, #7c6af7, #f97316);
+  background: linear-gradient(135deg, var(--primary), #38bdf8);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;

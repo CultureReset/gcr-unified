@@ -1,4 +1,4 @@
-.services-page { min-height:100vh; background:#f5f7fb; }
+.services-page { min-height:100vh; background:var(--bg); }
 
 /* Hero — matches GCR navy/teal theme */
 .services-hero { 
@@ -25,7 +25,7 @@
   padding:.5rem .85rem; border-radius:999px; 
   border:1.5px solid #e2e8f0; background:#fff; 
   font-size:.82rem; font-weight:800; white-space:nowrap; 
-  cursor:pointer; color:#64748b; font-family:inherit; transition:.15s; 
+  cursor:pointer; color:#465c6b; font-family:inherit; transition:.15s; 
 }
 .services-type-btn:hover { border-color:#0b7a75; color:#0b7a75; }
 .services-type-btn.active { background:#0b2d42; color:#fff; border-color:#0b2d42; }
@@ -46,7 +46,7 @@
   border-radius:12px; padding:.65rem .85rem; 
 }
 .svc-search { flex:1; border:none; outline:none; font-size:.9rem; font-family:inherit; background:transparent; }
-.svc-result-count { font-size:.82rem; font-weight:800; color:#64748b; white-space:nowrap; }
+.svc-result-count { font-size:.82rem; font-weight:800; color:#465c6b; white-space:nowrap; }
 
 /* Grid */
 .services-content { max-width:1220px; margin:0 auto; padding:0 1.25rem 2rem; }
@@ -78,10 +78,10 @@
 }
 .svc-card-body { padding:.9rem 1rem 1rem; display:flex; flex-direction:column; gap:.35rem; flex:1; }
 .svc-card-name { font-size:1rem; font-weight:900; color:#1a2433; line-height:1.15; }
-.svc-card-city { font-size:.78rem; color:#64748b; font-weight:700; }
-.svc-card-desc { font-size:.82rem; color:#64748b; line-height:1.45; margin:0; }
+.svc-card-city { font-size:.78rem; color:#465c6b; font-weight:700; }
+.svc-card-desc { font-size:.82rem; color:#465c6b; line-height:1.45; margin:0; }
 .svc-card-rating { font-size:.82rem; font-weight:900; color:#1a2433; display:flex; gap:.3rem; }
-.svc-card-rating span { font-weight:600; color:#64748b; }
+.svc-card-rating span { font-weight:600; color:#465c6b; }
 .svc-card-price { font-size:.82rem; font-weight:700; color:#0b7a75; }
 .svc-view-btn { 
   margin-top:auto; background:#0b2d42; color:#fff; border:none; 
@@ -93,7 +93,7 @@
 /* States */
 .svc-loading,.svc-empty { 
   display:flex; flex-direction:column; align-items:center; 
-  padding:4rem 1rem; gap:.75rem; color:#64748b; text-align:center; 
+  padding:4rem 1rem; gap:.75rem; color:#465c6b; text-align:center; 
 }
 .svc-spinner { 
   width:36px; height:36px; border:3px solid #e8f7f5; 

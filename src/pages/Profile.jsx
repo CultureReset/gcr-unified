@@ -332,7 +332,7 @@ export default function Profile() {
       </div>
 
       {tripCountdown && (
-        <div style={{background:'linear-gradient(135deg,rgba(124,106,247,.18),rgba(14,165,233,.12))',border:'1px solid rgba(124,106,247,.3)',borderRadius:14,padding:'12px 14px',display:'flex',alignItems:'center',gap:10}}>
+        <div style={{background:'linear-gradient(135deg,rgba(11,122,117,.12),rgba(14,165,233,.12))',border:'1px solid rgba(124,106,247,.3)',borderRadius:14,padding:'12px 14px',display:'flex',alignItems:'center',gap:10}}>
           <span style={{fontSize:22}}>{tripCountdown.emoji}</span>
           <span style={{fontWeight:700,color:'var(--text)',fontSize:14}}>{tripCountdown.label}</span>
         </div>
@@ -350,7 +350,7 @@ export default function Profile() {
           </div>
           {points.next && (
             <div style={{marginTop:10}}>
-              <div style={{height:6,background:'rgba(255,255,255,.3)',borderRadius:4,overflow:'hidden'}}>
+              <div style={{height:6,background:'var(--bg3)',borderRadius:4,overflow:'hidden'}}>
                 <div style={{height:'100%',background:'#fff',width:`${Math.min(100, Math.round(((points.balance || 0) / points.next.min) * 100))}%`}} />
               </div>
               <div style={{fontSize:11,marginTop:4,opacity:.95}}>{Math.max(0, points.next.min - (points.balance || 0))} pts to {points.next.name}</div>
@@ -571,16 +571,16 @@ export default function Profile() {
 
         {savedPlaces.length > 0 && (categories.length > 0 || superCount > 0) && (
           <div style={{display:'flex',gap:6,overflowX:'auto',paddingBottom:8,marginBottom:8,scrollbarWidth:'none'}}>
-            <button onClick={() => setFilterCategory('all')} style={{flexShrink:0,padding:'6px 12px',borderRadius:20,fontSize:12,fontWeight:600,border:`1px solid ${filterCategory==='all'?'rgba(124,106,247,.6)':'rgba(255,255,255,.15)'}`,background:filterCategory==='all'?'rgba(124,106,247,.18)':'transparent',color:filterCategory==='all'?'#c4b5fd':'rgba(255,255,255,.7)'}}>
+            <button onClick={() => setFilterCategory('all')} style={{flexShrink:0,padding:'6px 12px',borderRadius:20,fontSize:12,fontWeight:600,border:`1px solid ${filterCategory==='all'?'rgba(11,122,117,.6)':'var(--border)'}`,background:filterCategory==='all'?'rgba(11,122,117,.12)':'transparent',color:filterCategory==='all'?'#08615d':'var(--text2)'}}>
               All
             </button>
             {superCount > 0 && (
-              <button onClick={() => setFilterCategory('__super')} style={{flexShrink:0,padding:'6px 12px',borderRadius:20,fontSize:12,fontWeight:600,border:`1px solid ${filterCategory==='__super'?'rgba(252,211,77,.6)':'rgba(255,255,255,.15)'}`,background:filterCategory==='__super'?'rgba(252,211,77,.15)':'transparent',color:filterCategory==='__super'?'#fcd34d':'rgba(255,255,255,.7)'}}>
+              <button onClick={() => setFilterCategory('__super')} style={{flexShrink:0,padding:'6px 12px',borderRadius:20,fontSize:12,fontWeight:600,border:`1px solid ${filterCategory==='__super'?'rgba(252,211,77,.6)':'var(--border)'}`,background:filterCategory==='__super'?'rgba(252,211,77,.15)':'transparent',color:filterCategory==='__super'?'#8a5a00':'var(--text2)'}}>
                 ⭐ Must Do
               </button>
             )}
             {categories.map(cat => (
-              <button key={cat} onClick={() => setFilterCategory(cat)} style={{flexShrink:0,padding:'6px 12px',borderRadius:20,fontSize:12,fontWeight:600,border:`1px solid ${filterCategory===cat?'rgba(124,106,247,.6)':'rgba(255,255,255,.15)'}`,background:filterCategory===cat?'rgba(124,106,247,.18)':'transparent',color:filterCategory===cat?'#c4b5fd':'rgba(255,255,255,.7)',textTransform:'capitalize'}}>
+              <button key={cat} onClick={() => setFilterCategory(cat)} style={{flexShrink:0,padding:'6px 12px',borderRadius:20,fontSize:12,fontWeight:600,border:`1px solid ${filterCategory===cat?'rgba(11,122,117,.6)':'var(--border)'}`,background:filterCategory===cat?'rgba(11,122,117,.12)':'transparent',color:filterCategory===cat?'#08615d':'var(--text2)',textTransform:'capitalize'}}>
                 {cat}
               </button>
             ))}
@@ -588,21 +588,21 @@ export default function Profile() {
         )}
 
         {savedPlaces.length === 0 ? (
-          <div style={{background:'rgba(255,255,255,.04)',border:'1px solid rgba(255,255,255,.08)',borderRadius:14,padding:20,textAlign:'center'}}>
+          <div style={{background:'var(--bg2)',border:'1px solid var(--bg2)',borderRadius:14,padding:20,textAlign:'center'}}>
             <div style={{fontSize:32,marginBottom:8}}>💫</div>
             <div style={{color:'var(--text2)',marginBottom:12}}>No saves yet</div>
             <button className="btn-primary" onClick={() => navigate('/home')} style={{padding:'10px 18px'}}>Start Swiping</button>
           </div>
         ) : filteredSaves.length === 0 ? (
-          <div style={{background:'rgba(255,255,255,.04)',border:'1px solid rgba(255,255,255,.08)',borderRadius:14,padding:20,textAlign:'center',color:'var(--text2)',fontSize:13}}>
+          <div style={{background:'var(--bg2)',border:'1px solid var(--bg2)',borderRadius:14,padding:20,textAlign:'center',color:'var(--text2)',fontSize:13}}>
             Nothing in this category yet.
           </div>
         ) : (
           <div style={{display:'flex',flexDirection:'column',gap:10}}>
             {filteredSaves.map(p => (
-              <div key={p.id} style={{position:'relative',background:'rgba(255,255,255,.04)',border:`1px solid ${p.is_super_like?'rgba(252,211,77,.35)':'rgba(255,255,255,.08)'}`,borderRadius:12,padding:10,display:'flex',alignItems:'center',gap:12}}>
+              <div key={p.id} style={{position:'relative',background:'var(--bg2)',border:`1px solid ${p.is_super_like?'rgba(252,211,77,.35)':'var(--bg2)'}`,borderRadius:12,padding:10,display:'flex',alignItems:'center',gap:12}}>
                 {p.is_super_like && (
-                  <span title="Must Do" style={{position:'absolute',top:-6,left:-6,background:'#fcd34d',color:'#78350f',fontSize:11,fontWeight:800,padding:'2px 6px',borderRadius:8,boxShadow:'0 2px 6px rgba(0,0,0,.3)'}}>⭐</span>
+                  <span title="Must Do" style={{position:'absolute',top:-6,left:-6,background:'#8a5a00',color:'#78350f',fontSize:11,fontWeight:800,padding:'2px 6px',borderRadius:8,boxShadow:'0 2px 6px rgba(0,0,0,.3)'}}>⭐</span>
                 )}
                 {p.hero_image_url && (
                   <img src={p.hero_image_url} alt="" style={{width:64,height:64,borderRadius:10,objectFit:'cover',flexShrink:0,cursor:'pointer'}} onClick={() => navigate(`/business/${p.slug}`)} />
@@ -655,7 +655,7 @@ export default function Profile() {
           )}
 
           {myPhotos.length === 0 ? (
-            <div style={{background:'rgba(255,255,255,.04)',border:'1px solid rgba(255,255,255,.08)',borderRadius:14,padding:20,textAlign:'center'}}>
+            <div style={{background:'var(--bg2)',border:'1px solid var(--bg2)',borderRadius:14,padding:20,textAlign:'center'}}>
               <div style={{fontSize:32,marginBottom:8}}>📸</div>
               <div style={{color:'var(--text2)',fontSize:14}}>No photos yet</div>
               <div style={{color:'var(--text3)',fontSize:12,marginTop:4}}>Photos you share after visiting places will appear here</div>
@@ -674,7 +674,7 @@ export default function Profile() {
                         onError={e => { e.target.style.display='none' }} />
                   }
                   <div style={{position:'absolute',bottom:0,left:0,right:0,padding:'4px 6px',background:'rgba(0,0,0,.6)'}}>
-                    <span style={{fontSize:9,fontWeight:600,color:p.status==='approved'?'#86efac':p.status==='rejected'?'#fca5a5':'#fcd34d',textTransform:'uppercase',letterSpacing:.5}}>
+                    <span style={{fontSize:9,fontWeight:600,color:p.status==='approved'?'#86efac':p.status==='rejected'?'#fca5a5':'#8a5a00',textTransform:'uppercase',letterSpacing:.5}}>
                       {p.status}
                     </span>
                   </div>
@@ -780,7 +780,7 @@ export default function Profile() {
                       <button className="btn-primary" onClick={sendAddEmailCode} disabled={emailBusy || !newEmail || newPassword.length < 6} style={{flex:1}}>
                         {emailBusy ? 'Sending…' : 'Send code →'}
                       </button>
-                      <button onClick={() => { setAddEmailOpen(false); setEmailErr(''); setEmailInfo('') }} style={{background:'transparent',border:'1px solid rgba(255,255,255,.2)',color:'var(--text)',borderRadius:10,padding:'10px 14px'}}>Cancel</button>
+                      <button onClick={() => { setAddEmailOpen(false); setEmailErr(''); setEmailInfo('') }} style={{background:'transparent',border:'1px solid var(--border)',color:'var(--text)',borderRadius:10,padding:'10px 14px'}}>Cancel</button>
                     </div>
                   </>
                 ) : (
@@ -797,7 +797,7 @@ export default function Profile() {
                       <button className="btn-primary" onClick={confirmAddEmail} disabled={emailBusy || emailCode.length < 6} style={{flex:1}}>
                         {emailBusy ? 'Confirming…' : 'Confirm →'}
                       </button>
-                      <button onClick={() => setAddEmailStep('input')} style={{background:'transparent',border:'1px solid rgba(255,255,255,.2)',color:'var(--text)',borderRadius:10,padding:'10px 14px'}}>Back</button>
+                      <button onClick={() => setAddEmailStep('input')} style={{background:'transparent',border:'1px solid var(--border)',color:'var(--text)',borderRadius:10,padding:'10px 14px'}}>Back</button>
                     </div>
                   </>
                 )}

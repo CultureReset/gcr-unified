@@ -1,6 +1,6 @@
 .artist-profile {
   min-height: 100vh;
-  background: #f5f5f5;
+  background: var(--bg);
   padding-bottom: 40px;
 }
 
@@ -233,12 +233,15 @@
   transition: all 0.2s;
 }
 
-.btn-primary {
+/* Scoped. A bare .btn-primary here overrode index.css's teal button for
+   the whole app — last stylesheet in the bundle won, which is why the
+   "Start Swiping" button on Profile came out periwinkle. */
+.artist-profile .btn-primary {
   background: #667eea;
   color: white;
 }
 
-.btn-primary:hover {
+.artist-profile .btn-primary:hover {
   background: #764ba2;
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
@@ -254,7 +257,7 @@
 }
 
 .artist-profile-error {
-  color: #d32f2f;
+  color: #b3261e;
 }
 
 @media (max-width: 768px) {

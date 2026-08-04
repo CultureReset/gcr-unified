@@ -1,6 +1,6 @@
 .category-listings {
   min-height: 100vh;
-  background: #f4f7fb;
+  background: var(--bg);
 }
 
 /* Hero */
@@ -157,7 +157,7 @@
 .listings-error {
   text-align: center;
   padding: 52px 24px;
-  color: #dc2626;
+  color: #b3261e;
   font-weight: 700;
 }
 .listings-empty {

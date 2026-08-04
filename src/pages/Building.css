@@ -55,11 +55,11 @@
   font-size: 12px;
   font-weight: 800;
   flex-shrink: 0;
-  background: rgba(255,255,255,0.08);
+  background: var(--card);
   color: var(--text3);
 }
 .building-step.done .step-icon { background: rgba(34,197,94,0.2); color: var(--green); }
-.building-step.active .step-icon { background: rgba(124,106,247,0.2); color: var(--primary); }
+.building-step.active .step-icon { background: rgba(11,122,117,0.14); color: var(--primary); }
 
 .spinner {
   display: inline-block;

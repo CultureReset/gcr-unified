@@ -1,12 +1,12 @@
 .search-page {
-  background: #f7f9fc;
+  background: var(--bg);
   min-height: 100vh;
 }
 
 .search-hero {
   /* GCRHeader already renders the blue gradient band directly above this;
      repeating it here made the two stack into one oversized blue mass. */
-  background: #f7f9fc;
+  background: var(--bg);
   padding: 10px 16px 12px;
 }
 
@@ -17,7 +17,7 @@
    date-search panel) so only this compact slice stays pinned while
    scrolling through results. */
 .search-sticky {
-  background: rgba(247,249,252,.92);
+  background: rgba(217,233,244,.92);
   backdrop-filter: blur(8px);
   padding: 10px 16px 8px;
   border-bottom: 1px solid #e2e8f0;
@@ -81,7 +81,7 @@
 
 .search-suggest-city {
   font-size: 12px;
-  color: #8fa3b1;
+  color: #4e6b79;
 }
 
 /* ── Category tabs — horizontally scrollable, same slide-left-right pill
@@ -346,7 +346,7 @@
 .search-empty {
   padding: 60px 20px;
   text-align: center;
-  color: #8fa3b1;
+  color: #4e6b79;
   display: flex;
   flex-direction: column;
   align-items: center;

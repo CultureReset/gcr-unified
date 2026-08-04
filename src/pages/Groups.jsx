@@ -95,14 +95,14 @@ export default function Groups() {
 
       <div style={{padding:16}}>
         {mode === 'mine' && (
-          loading ? <div style={{color:'rgba(255,255,255,.6)'}}>Loading…</div>
+          loading ? <div style={{color:'var(--text2)'}}>Loading…</div>
           : myGroups.length === 0 ? (
-            <div style={{textAlign:'center',color:'rgba(255,255,255,.6)',padding:40}}>
+            <div style={{textAlign:'center',color:'var(--text2)',padding:40}}>
               <div style={{fontSize:48,marginBottom:12}}>👥</div>
               <div>No group trips yet.</div>
               <div style={{marginTop:16,display:'flex',gap:8,justifyContent:'center'}}>
                 <button className="btn-primary" onClick={() => setMode('create')} style={{padding:'10px 18px'}}>Create one</button>
-                <button className="btn-primary" onClick={() => setMode('join')} style={{padding:'10px 18px',background:'rgba(255,255,255,.08)'}}>Join via code</button>
+                <button className="btn-outline" onClick={() => setMode('join')} style={{width:'auto',padding:'10px 18px'}}>Join via code</button>
               </div>
             </div>
           ) : (
@@ -112,7 +112,7 @@ export default function Groups() {
                   <div style={{width:48,height:48,borderRadius:12,background:'linear-gradient(135deg,#0ea5e9,#7c6af7)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:22}}>🧭</div>
                   <div style={{flex:1,minWidth:0}}>
                     <div style={{fontWeight:700,color:'#fff'}}>{g.name}</div>
-                    <div style={{fontSize:12,color:'rgba(255,255,255,.6)'}}>
+                    <div style={{fontSize:12,color:'var(--text2)'}}>
                       {g.destination || 'Trip'}
                       {g.arrival && ` · ${new Date(g.arrival).toLocaleDateString('en-US',{month:'short',day:'numeric'})}`}
                     </div>
@@ -131,16 +131,16 @@ export default function Groups() {
             <input className="setup-input" type="date" value={departure} onChange={e => setDeparture(e.target.value)} placeholder="Departure" />
 
             <div style={{marginTop:8}}>
-              <div style={{fontSize:13,color:'rgba(255,255,255,.7)',marginBottom:8}}>How long should sharing last?</div>
+              <div style={{fontSize:13,color:'var(--text2)',marginBottom:8}}>How long should sharing last?</div>
               <div style={{display:'flex',flexDirection:'column',gap:6}}>
-                <label style={{display:'flex',alignItems:'center',gap:10,padding:12,background:sharingMode==='trip_end'?'rgba(124,106,247,.2)':'rgba(255,255,255,.04)',border:'1px solid '+(sharingMode==='trip_end'?'rgba(124,106,247,.5)':'rgba(255,255,255,.1)'),borderRadius:10,cursor:'pointer'}}>
+                <label style={{display:'flex',alignItems:'center',gap:10,padding:12,background:sharingMode==='trip_end'?'rgba(11,122,117,.12)':'var(--bg2)',border:'1px solid '+(sharingMode==='trip_end'?'rgba(11,122,117,.5)':'var(--border)'),borderRadius:10,cursor:'pointer'}}>
                   <input type="radio" checked={sharingMode==='trip_end'} onChange={() => setSharingMode('trip_end')} />
                   <div>
                     <div style={{fontWeight:600}}>Until the trip ends</div>
-                    <div style={{fontSize:12,color:'rgba(255,255,255,.5)'}}>Auto-disconnect the day after departure</div>
+                    <div style={{fontSize:12,color:'var(--text3)'}}>Auto-disconnect the day after departure</div>
                   </div>
                 </label>
-                <label style={{display:'flex',alignItems:'center',gap:10,padding:12,background:sharingMode==='custom_date'?'rgba(124,106,247,.2)':'rgba(255,255,255,.04)',border:'1px solid '+(sharingMode==='custom_date'?'rgba(124,106,247,.5)':'rgba(255,255,255,.1)'),borderRadius:10,cursor:'pointer'}}>
+                <label style={{display:'flex',alignItems:'center',gap:10,padding:12,background:sharingMode==='custom_date'?'rgba(11,122,117,.12)':'var(--bg2)',border:'1px solid '+(sharingMode==='custom_date'?'rgba(11,122,117,.5)':'var(--border)'),borderRadius:10,cursor:'pointer'}}>
                   <input type="radio" checked={sharingMode==='custom_date'} onChange={() => setSharingMode('custom_date')} />
                   <div style={{flex:1}}>
                     <div style={{fontWeight:600}}>Until a specific date</div>
@@ -149,11 +149,11 @@ export default function Groups() {
                     )}
                   </div>
                 </label>
-                <label style={{display:'flex',alignItems:'center',gap:10,padding:12,background:sharingMode==='ongoing'?'rgba(124,106,247,.2)':'rgba(255,255,255,.04)',border:'1px solid '+(sharingMode==='ongoing'?'rgba(124,106,247,.5)':'rgba(255,255,255,.1)'),borderRadius:10,cursor:'pointer'}}>
+                <label style={{display:'flex',alignItems:'center',gap:10,padding:12,background:sharingMode==='ongoing'?'rgba(11,122,117,.12)':'var(--bg2)',border:'1px solid '+(sharingMode==='ongoing'?'rgba(11,122,117,.5)':'var(--border)'),borderRadius:10,cursor:'pointer'}}>
                   <input type="radio" checked={sharingMode==='ongoing'} onChange={() => setSharingMode('ongoing')} />
                   <div>
                     <div style={{fontWeight:600}}>Ongoing</div>
-                    <div style={{fontSize:12,color:'rgba(255,255,255,.5)'}}>For friend groups who travel together often</div>
+                    <div style={{fontSize:12,color:'var(--text3)'}}>For friend groups who travel together often</div>
                   </div>
                 </label>
               </div>
@@ -162,7 +162,7 @@ export default function Groups() {
             <button className="btn-primary" onClick={createGroup} disabled={!name.trim() || busy} style={{marginTop:12}}>
               {busy ? 'Creating…' : 'Create group →'}
             </button>
-            <p style={{color:'rgba(255,255,255,.5)',fontSize:12,margin:0}}>You'll get one-time invite links to share. Each link works for exactly one friend.</p>
+            <p style={{color:'var(--text3)',fontSize:12,margin:0}}>You'll get one-time invite links to share. Each link works for exactly one friend.</p>
           </div>
         )}
 

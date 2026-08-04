@@ -83,7 +83,7 @@ export default function Group() {
         </button>
         <div style={{flex:1,minWidth:0}}>
           <h2 style={{margin:0}}>{group.name}</h2>
-          <div style={{fontSize:13,color:'rgba(255,255,255,.6)'}}>
+          <div style={{fontSize:13,color:'var(--text2)'}}>
             {group.destination || 'Trip'}
             {group.arrival && ` · ${new Date(group.arrival).toLocaleDateString('en-US',{month:'short',day:'numeric'})}`}
             {group.departure && `–${new Date(group.departure).toLocaleDateString('en-US',{month:'short',day:'numeric'})}`}
@@ -97,19 +97,19 @@ export default function Group() {
         </div>
       )}
       {!group.sharing_expired && group.sharing_ends_on && (
-        <div style={{margin:'8px 16px',fontSize:12,color:'rgba(255,255,255,.5)',textAlign:'center'}}>
+        <div style={{margin:'8px 16px',fontSize:12,color:'var(--text3)',textAlign:'center'}}>
           Sharing ends {new Date(group.sharing_ends_on).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}
         </div>
       )}
       {!group.sharing_expired && !group.sharing_ends_on && (
-        <div style={{margin:'8px 16px',fontSize:12,color:'rgba(255,255,255,.5)',textAlign:'center'}}>
+        <div style={{margin:'8px 16px',fontSize:12,color:'var(--text3)',textAlign:'center'}}>
           ♾️ Ongoing sharing
         </div>
       )}
 
       <div className="group-code-card">
         <div>
-          <div style={{fontSize:11,color:'rgba(255,255,255,.5)',textTransform:'uppercase',letterSpacing:1}}>Invite code</div>
+          <div style={{fontSize:11,color:'var(--text3)',textTransform:'uppercase',letterSpacing:1}}>Invite code</div>
           <div style={{fontSize:26,fontWeight:800,letterSpacing:4,color:'#fff'}}>{group.invite_code}</div>
         </div>
         <button className="btn-primary" onClick={nativeShare} style={{padding:'10px 16px'}}>↗️ Share</button>
@@ -129,7 +129,7 @@ export default function Group() {
             {(m.display_name || m.email || '?')[0]?.toUpperCase()}
           </div>
         ))}
-        <div style={{fontSize:13,color:'rgba(255,255,255,.6)'}}>{memberCount} member{memberCount !== 1 ? 's' : ''}</div>
+        <div style={{fontSize:13,color:'var(--text2)'}}>{memberCount} member{memberCount !== 1 ? 's' : ''}</div>
       </div>
 
       <div className="group-tabs">
@@ -139,7 +139,7 @@ export default function Group() {
 
       <div style={{padding:'12px 16px'}}>
         {(tab === 'mustdo' ? mustDo : overlaps).length === 0 ? (
-          <div style={{textAlign:'center',color:'rgba(255,255,255,.6)',padding:40}}>
+          <div style={{textAlign:'center',color:'var(--text2)',padding:40}}>
             {tab === 'mustdo'
               ? `Nothing yet — once ${mustDoThreshold}+ people save the same place, it'll show here.`
               : 'No saves yet. Have everyone start swiping!'}
@@ -154,8 +154,8 @@ export default function Group() {
                 {o.hero_image_url && <img src={o.hero_image_url} alt="" />}
                 <div style={{flex:1,minWidth:0}}>
                   <div style={{fontWeight:700,color:'#fff',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{o.business_name}</div>
-                  {o.subtitle && <div style={{fontSize:12,color:'rgba(255,255,255,.6)'}}>{o.subtitle}</div>}
-                  <div style={{fontSize:11,color:'rgba(255,255,255,.5)',marginTop:4}}>
+                  {o.subtitle && <div style={{fontSize:12,color:'var(--text2)'}}>{o.subtitle}</div>}
+                  <div style={{fontSize:11,color:'var(--text3)',marginTop:4}}>
                     Saved by {o.savers.map(s => s.display_name).join(', ')}
                   </div>
                 </div>

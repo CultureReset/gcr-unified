@@ -43,7 +43,7 @@ export default function Invite() {
     finally { setBusy(false) }
   }
 
-  if (loading) return <div className="page safe-top" style={{padding:20,color:'#fff'}}>Loading invite…</div>
+  if (loading) return <div className="page safe-top" style={{padding:20,color:'var(--text)'}}>Loading invite…</div>
 
   return (
     <div className="auth-page page">

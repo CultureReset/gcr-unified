@@ -1,13 +1,15 @@
 /* ── DEALS PAGE ─────────────────────────────────────────────────── */
-:root {
+/* Scoped rather than :root — these are this page's colours, and at
+   :root they were in every other page's cascade too. */
+.deals-page {
   --deal-navy: #0b2d42;
   --deal-teal: #0a8472;
   --deal-gold: #f5b731;
   --deal-coral: #e85d3a;
   --deal-ink: #111d27;
-  --deal-muted: #5e7080;
+  --deal-muted: #465c6b;
   --deal-sand: #f2e8d5;
-  --deal-cream: #fffcf5;
+  --deal-cream: var(--bg);
   --deal-line: rgba(11,45,66,.11);
   --deal-r: 18px;
   --deal-shadow: 0 12px 36px rgba(0,0,0,.1);

@@ -660,12 +660,15 @@
   font-size: 1rem;
 }
 
-.btn-primary {
+/* Scoped. A bare .btn-primary here overrode index.css's teal button for
+   the whole app — last stylesheet in the bundle won, which is why the
+   "Start Swiping" button on Profile came out periwinkle. */
+.detail-page .btn-primary {
   background: #00a8cc;
   color: white;
 }
 
-.btn-primary:hover:not(:disabled) {
+.detail-page .btn-primary:hover:not(:disabled) {
   background: #0089a8;
 }
 

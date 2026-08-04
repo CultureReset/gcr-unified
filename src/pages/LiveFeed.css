@@ -1,12 +1,12 @@
 .live-feed-page {
   min-height: 100vh;
-  background: #0a0f1e;
-  color: #fff;
+  background: var(--bg);
+  color: var(--text);
 }
 
 .live-feed-header {
   padding: 24px 20px 16px;
-  border-bottom: 1px solid rgba(255,255,255,.08);
+  border-bottom: 1px solid var(--border);
   margin-bottom: 16px;
 }
 
@@ -14,9 +14,9 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: rgba(239,68,68,.15);
-  border: 1px solid rgba(239,68,68,.4);
-  color: #f87171;
+  background: rgba(239,68,68,.12);
+  border: 1px solid rgba(239,68,68,.35);
+  color: #b91c1c;
   font-size: 11px;
   font-weight: 800;
   letter-spacing: .08em;
@@ -35,12 +35,12 @@
   font-size: 26px;
   font-weight: 900;
   margin: 0 0 4px;
-  color: #fff;
+  color: var(--text);
 }
 
 .live-feed-header p {
   font-size: 14px;
-  color: rgba(255,255,255,.5);
+  color: var(--text2);
   margin: 0;
 }
 
@@ -53,7 +53,7 @@
 
 .feed-skeleton {
   height: 400px;
-  background: linear-gradient(90deg, #1e293b 25%, #263347 50%, #1e293b 75%);
+  background: linear-gradient(90deg, var(--bg3) 25%, var(--bg2) 50%, var(--bg3) 75%);
   background-size: 200% 100%;
   animation: shimmer 1.4s infinite;
   border-radius: 16px;
@@ -71,7 +71,7 @@
   justify-content: center;
   padding: 80px 20px;
   gap: 12px;
-  color: rgba(255,255,255,.4);
+  color: var(--text2);
   font-size: 15px;
 }
 
@@ -79,11 +79,18 @@
 .feed-posts {
   display: flex;
   flex-direction: column;
-  gap: 0;
+  gap: 14px;
+  padding: 0 16px;
 }
 
+/* Was a hairline divider on black. On the tinted page each post reads
+   better as its own card, the same way every other list in the app does. */
 .feed-post {
-  border-bottom: 1px solid rgba(255,255,255,.06);
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: var(--card-shadow);
+  overflow: hidden;
   padding: 16px 0 20px;
 }
 
@@ -100,30 +107,30 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  background: rgba(255,255,255,.08);
+  background: var(--bg3);
   border-radius: 999px;
   padding: 4px 10px;
   font-size: 12px;
   font-weight: 700;
-  color: rgba(255,255,255,.8);
+  color: var(--text2);
 }
 
 .feed-biz-name {
   font-size: 14px;
   font-weight: 700;
-  color: #38bdf8;
+  color: #0369a1;
 }
 
 .feed-date {
   font-size: 12px;
-  color: rgba(255,255,255,.35);
+  color: var(--text3);
   margin-left: auto;
 }
 
 /* ── iFrame embed ───────────────────────────────────── */
 .feed-embed-wrap {
   width: 100%;
-  background: #111827;
+  background: var(--bg3);
   /* Let the iframe determine its own height via aspect ratio */
   position: relative;
 }
@@ -140,7 +147,7 @@
 .feed-caption {
   padding: 10px 16px 0;
   font-size: 13px;
-  color: rgba(255,255,255,.6);
+  color: var(--text2);
   line-height: 1.5;
 }
 
@@ -148,5 +155,5 @@
   text-align: center;
   padding: 32px 20px;
   font-size: 14px;
-  color: rgba(255,255,255,.3);
+  color: var(--text3);
 }

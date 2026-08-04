@@ -1,4 +1,9 @@
-:root {
+/* Scoped, not :root. These are this page's own palette; declared at
+   :root they leaked into every other page in the bundle — whichever
+   stylesheet loaded last won. That is how the bottom nav's active tab
+   ended up the wrong colour, and why the global --border/--card were being
+   silently replaced app-wide. */
+.browse-container {
   --teal: #0b7a75;
   --teal-light: #13a89e;
   --sky: #e8f4f8;
@@ -68,7 +73,7 @@
   padding: 0 20px;
 }
 
-.category-card {
+.browse-container .category-card {
   background: white;
   padding: 28px 20px;
   border-radius: var(--radius-lg);
@@ -79,14 +84,14 @@
   border: 2px solid transparent;
 }
 
-.category-card:hover {
+.browse-container .category-card:hover {
   transform: translateY(-4px);
   box-shadow: 0 8px 30px rgba(0,0,0,.15);
   border-color: var(--teal-light);
   background: var(--sky);
 }
 
-.category-card h3 {
+.browse-container .category-card h3 {
   margin: 0;
   font-size: 17px;
   font-weight: 700;

@@ -11,7 +11,7 @@
 }
 
 .confirmation-container {
-  background: white;
+  background: var(--card);
   border-radius: 16px;
   padding: 60px 40px;
   max-width: 500px;

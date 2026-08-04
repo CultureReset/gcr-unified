@@ -1,5 +1,5 @@
 .saves-page {
-  background: #fff;
+  background: var(--bg);
   min-height: 100vh;
 }
 
