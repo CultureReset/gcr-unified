@@ -192,11 +192,43 @@ function dedupeBusinesses(raw) {
   })
 }
 
+/**
+ * Fetch entities from /api/gcr/entities.
+ *
+ * `limit: 'all'` walks every page instead of guessing a ceiling. The swipe
+ * deck used to ask for a flat 2000, which is a number somebody picked — the
+ * moment the catalogue passes it, the extra businesses stop appearing in the
+ * deck at all and nothing says so. The API hard-caps a single request at
+ * 5000 (routes/gcr.js: Math.min(limit, 5000)) but accepts `offset` and pages
+ * with .range(), so paging is the only way to actually mean "all of them".
+ *
+ * A short page means the end of the catalogue. PAGE_CAP is a runaway guard,
+ * not a content limit — if it ever trips, the catalogue outgrew it and the
+ * cap is what needs raising.
+ */
+const PAGE_SIZE = 1000
+const PAGE_CAP = 40   // 40k entities before we refuse to keep going
+
 export async function fetchBusinesses({ limit = 50 } = {}) {
-  const r = await fetch(`${GCR_API}/entities?limit=${limit}`)
-  if (!r.ok) throw new Error(`Failed to load businesses (HTTP ${r.status})`)
-  const d = await r.json()
-  const entities = d.entities || d.businesses || []
+  let entities = []
+  if (limit === 'all') {
+    for (let page = 0; page < PAGE_CAP; page++) {
+      const r = await fetch(`${GCR_API}/entities?limit=${PAGE_SIZE}&offset=${page * PAGE_SIZE}`)
+      if (!r.ok) throw new Error(`Failed to load businesses (HTTP ${r.status})`)
+      const d = await r.json()
+      const batch = d.entities || d.businesses || []
+      entities = entities.concat(batch)
+      if (batch.length < PAGE_SIZE) break
+      if (page === PAGE_CAP - 1) {
+        console.warn(`[gcrApi] stopped at ${PAGE_CAP * PAGE_SIZE} entities — raise PAGE_CAP if the catalogue is genuinely larger`)
+      }
+    }
+  } else {
+    const r = await fetch(`${GCR_API}/entities?limit=${limit}`)
+    if (!r.ok) throw new Error(`Failed to load businesses (HTTP ${r.status})`)
+    const d = await r.json()
+    entities = d.entities || d.businesses || []
+  }
   const clean = dedupeBusinesses(entities.filter(e => e && e.id && e.name && !isTestEntity(e)))
   const cards = clean.map(e => toCard(e, e.photos || []))
 

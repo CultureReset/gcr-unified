@@ -366,16 +366,13 @@ export default function Swipe() {
   useEffect(() => {
     let cancelled = false
     setLoading(true)
-    // fetchBusinesses() defaults to limit:50 -- fine for a quick preview list
-    // elsewhere, but the swipe deck is the ONE place meant to draw from the
-    // platform's real full catalog (270+ restaurants alone, before nightlife/
-    // shopping/activities/stay). At the old default, every swipe session --
-    // no matter how much you swiped or how many times you reloaded -- only
-    // ever pulled the same first 50 entities the API happened to return,
-    // split five ways across category tabs. That's the real cause of "same
-    // ~25 cards over and over no matter what" -- a fetch-size bug, not a
-    // shuffle bug (shuffle() itself is a correct Fisher-Yates).
-    Promise.all([fetchBusinesses({ limit: 2000 }), fetchPreferences(), fetchSocialCards(), fetchFeedCards()])
+    // The swipe deck is the ONE place meant to draw from the platform's real
+    // full catalogue, so it asks for all of it rather than a number someone
+    // picked. It was 2000 — above the old 50 default that caused "the same
+    // ~25 cards over and over", but still a ceiling: entity 2001 simply
+    // never appeared in the deck, silently. 'all' pages through instead, so
+    // the catalogue can grow without anyone remembering to bump a constant.
+    Promise.all([fetchBusinesses({ limit: 'all' }), fetchPreferences(), fetchSocialCards(), fetchFeedCards()])
       .then(([all, prefs, social, feed]) => {
         if (cancelled) return
         setPrefMap(prefs)
