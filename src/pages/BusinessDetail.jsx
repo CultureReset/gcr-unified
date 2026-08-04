@@ -10,6 +10,7 @@ import PoliciesSection from '../components/PoliciesSection'
 import IndustryFacts from '../components/IndustryFacts'
 import BookingCalendar from '../components/BookingCalendar'
 import HubTemplate from '../components/HubTemplate'
+import ClaimBusiness from '../components/ClaimBusiness'
 import { fetchChildRentals, cachedFetchJson, fixUrl } from '../services/gcrApi'
 import './BusinessDetail.css'
 import '../components/MiniSiteComponents.css'
@@ -2433,6 +2434,10 @@ export default function RestaurantDetail() {
               </button>
             </div>
           )}
+
+          {/* Claim this listing. Carries the slug, so the lead that reaches
+              the admin dashboard is already tied to this business. */}
+          <ClaimBusiness slug={business.slug || slug} businessName={business.name} />
         </aside>
       </div>
 
