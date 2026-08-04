@@ -1,4 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
+
+// How far above the bottom nav the banner floats — enough to clear the
+// "Ask a local" FAB, which owns the corner just above the nav (AiChat.css).
+const BANNER_OFFSET = 72
 
 export default function InstallBanner() {
   const [prompt, setPrompt] = useState(null)
@@ -34,6 +38,23 @@ export default function InstallBanner() {
     return () => window.removeEventListener('beforeinstallprompt', handler)
   }, [])
 
+  // Publish how far this banner reaches above the nav's top edge, so pages
+  // can reserve that strip the same way they reserve the nav itself — see
+  // .app-shell.has-nav .app-main > * in index.css. Without it the banner
+  // covers the last card of the page while it's showing. Measured in the
+  // same frame of reference as --gcr-fab-h (distance up from the nav, not
+  // from the bottom of the screen) so index.css can just take the larger
+  // of the two. The callback ref fires again on the collapsed/expanded
+  // swap, and with null once the banner unmounts.
+  const measure = useCallback(node => {
+    const h = node ? BANNER_OFFSET + node.offsetHeight : 0
+    document.documentElement.style.setProperty('--gcr-banner-h', h + 'px')
+  }, [])
+
+  useEffect(() => () => {
+    document.documentElement.style.setProperty('--gcr-banner-h', '0px')
+  }, [])
+
   function dismiss() {
     localStorage.setItem('gcr_install_dismissed', '1')
     setDismissed(true)
@@ -51,13 +72,16 @@ export default function InstallBanner() {
 
   if (installed || dismissed || (!prompt && !isIOS)) return null
 
-  // Sits above the "Ask a local" FAB (which owns the bottom-right corner at
-  // bottom:76px) instead of overlapping it — see AiChat.css .ai-chat-fab.
-  const bannerBottom = 'calc(148px + env(safe-area-inset-bottom))'
+  // Stacks above the "Ask a local" FAB (which owns the bottom-right corner
+  // just above the nav) instead of overlapping it — see AiChat.css
+  // .ai-chat-fab. --gcr-nav-h is the nav's measured height, home-indicator
+  // inset included (BottomNav.jsx).
+  const bannerBottom = `calc(var(--gcr-nav-h, 64px) + ${BANNER_OFFSET}px)`
 
   if (collapsed) {
     return (
       <button
+        ref={measure}
         onClick={() => setCollapsed(false)}
         aria-label="Add Gulf Coast Radar to your home screen"
         style={{
@@ -81,6 +105,7 @@ export default function InstallBanner() {
   return (
     <>
       <div
+        ref={measure}
         onClick={isIOS ? () => setShowInstructions(true) : undefined}
         style={{
           position: 'fixed', bottom: bannerBottom,

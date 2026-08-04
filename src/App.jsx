@@ -126,63 +126,65 @@ function AppRoutes() {
   }, [location.pathname])
 
   return (
-    <div className={`app-shell${hideHeader ? ' no-header' : ''}`}>
+    <div className={`app-shell${hideHeader ? ' no-header' : ''}${hideNav ? '' : ' has-nav'}`}>
       {!hideHeader && <GCRHeader />}
-      <Routes>
-        <Route path="/" element={<Landing />} />
-        <Route path="/browse" element={<Navigate to="/" replace />} />
-        <Route path="/search" element={<Search />} />
-        <Route path="/category/:category" element={<CategoryListings />} />
-        <Route path="/auth" element={<Auth />} />
-        <Route path="/reset" element={<Reset />} />
-        <Route path="/join" element={<Invite />} />
-        <Route path="/privacy" element={<Privacy />} />
-        <Route path="/terms" element={<Terms />} />
-        <Route path="/review/:slug" element={<ReviewUpload />} />
-        <Route path="/menu/:slug" element={<RestaurantMenu />} />
-        <Route path="/artists" element={<ArtistListings />} />
-        <Route path="/artist/:slug" element={<ArtistProfile />} />
-        <Route path="/staying" element={<RentalListings />} />
-        <Route path="/stays" element={<Navigate to="/staying" replace />} />
-        <Route path="/rental/:slug" element={<RentalDetail />} />
-        <Route path="/book-rental/:slug" element={<BookRental />} />
-        <Route path="/confirmation/:type/:id" element={<Confirmation />} />
-        <Route path="/services" element={<ServiceListings />} />
-        <Route path="/service/:slug" element={<ServiceDetail />} />
-        <Route path="/book-service/:slug" element={<BookService />} />
-        <Route path="/reserve/:slug" element={<Reserve />} />
-        <Route path="/transportation/:slug" element={<TransportationRequest />} />
-        <Route path="/setup/*" element={<RequireAuth><Setup /></RequireAuth>} />
-        <Route path="/home" element={<RequireAuth><Home /></RequireAuth>} />
-        <Route path="/swipe/:category" element={<Swipe />} />
-        <Route path="/artist/:slug/live" element={<ArtistLive />} />
-        <Route path="/business/:slug" element={<BusinessDetail />} />
-        <Route path="/links/:slug" element={<LinksPage />} />
-        <Route path="/list" element={<RequireAuth><MyList /></RequireAuth>} />
-        <Route path="/building" element={<RequireAuth><Building /></RequireAuth>} />
-        <Route path="/itinerary" element={<RequireAuth><Itinerary /></RequireAuth>} />
-        <Route path="/profile" element={<RequireAuth><Profile /></RequireAuth>} />
-        <Route path="/saves" element={<RequireAuth><Saves /></RequireAuth>} />
-        <Route path="/groups" element={<RequireAuth><Groups /></RequireAuth>} />
-        <Route path="/group/:slug" element={<RequireAuth><Group /></RequireAuth>} />
+      <main className="app-main">
+        <Routes>
+          <Route path="/" element={<Landing />} />
+          <Route path="/browse" element={<Navigate to="/" replace />} />
+          <Route path="/search" element={<Search />} />
+          <Route path="/category/:category" element={<CategoryListings />} />
+          <Route path="/auth" element={<Auth />} />
+          <Route path="/reset" element={<Reset />} />
+          <Route path="/join" element={<Invite />} />
+          <Route path="/privacy" element={<Privacy />} />
+          <Route path="/terms" element={<Terms />} />
+          <Route path="/review/:slug" element={<ReviewUpload />} />
+          <Route path="/menu/:slug" element={<RestaurantMenu />} />
+          <Route path="/artists" element={<ArtistListings />} />
+          <Route path="/artist/:slug" element={<ArtistProfile />} />
+          <Route path="/staying" element={<RentalListings />} />
+          <Route path="/stays" element={<Navigate to="/staying" replace />} />
+          <Route path="/rental/:slug" element={<RentalDetail />} />
+          <Route path="/book-rental/:slug" element={<BookRental />} />
+          <Route path="/confirmation/:type/:id" element={<Confirmation />} />
+          <Route path="/services" element={<ServiceListings />} />
+          <Route path="/service/:slug" element={<ServiceDetail />} />
+          <Route path="/book-service/:slug" element={<BookService />} />
+          <Route path="/reserve/:slug" element={<Reserve />} />
+          <Route path="/transportation/:slug" element={<TransportationRequest />} />
+          <Route path="/setup/*" element={<RequireAuth><Setup /></RequireAuth>} />
+          <Route path="/home" element={<RequireAuth><Home /></RequireAuth>} />
+          <Route path="/swipe/:category" element={<Swipe />} />
+          <Route path="/artist/:slug/live" element={<ArtistLive />} />
+          <Route path="/business/:slug" element={<BusinessDetail />} />
+          <Route path="/links/:slug" element={<LinksPage />} />
+          <Route path="/list" element={<RequireAuth><MyList /></RequireAuth>} />
+          <Route path="/building" element={<RequireAuth><Building /></RequireAuth>} />
+          <Route path="/itinerary" element={<RequireAuth><Itinerary /></RequireAuth>} />
+          <Route path="/profile" element={<RequireAuth><Profile /></RequireAuth>} />
+          <Route path="/saves" element={<RequireAuth><Saves /></RequireAuth>} />
+          <Route path="/groups" element={<RequireAuth><Groups /></RequireAuth>} />
+          <Route path="/group/:slug" element={<RequireAuth><Group /></RequireAuth>} />
 
-        {/* GCR Category Pages */}
-        <Route path="/restaurants" element={<CategoryPage />} />
-        <Route path="/coffee" element={<CategoryPage />} />
-        <Route path="/happy-hours" element={<CategoryPage />} />
-        <Route path="/events" element={<Events />} />
-        <Route path="/deals" element={<Deals />} />
-        <Route path="/things-to-do" element={<CategoryPage />} />
-        <Route path="/ar-hunts" element={<ArHunts />} />
-        <Route path="/public-spots" element={<CategoryPage />} />
-        <Route path="/feed" element={<LiveFeed />} />
-        <Route path="/shopping" element={<CategoryPage />} />
-        <Route path="/nightlife" element={<CategoryPage />} />
-        <Route path="/wellness" element={<CategoryPage />} />
-        <Route path="/marinas" element={<CategoryPage />} />
+          {/* GCR Category Pages */}
+          <Route path="/restaurants" element={<CategoryPage />} />
+          <Route path="/coffee" element={<CategoryPage />} />
+          <Route path="/happy-hours" element={<CategoryPage />} />
+          <Route path="/events" element={<Events />} />
+          <Route path="/deals" element={<Deals />} />
+          <Route path="/things-to-do" element={<CategoryPage />} />
+          <Route path="/ar-hunts" element={<ArHunts />} />
+          <Route path="/public-spots" element={<CategoryPage />} />
+          <Route path="/feed" element={<LiveFeed />} />
+          <Route path="/shopping" element={<CategoryPage />} />
+          <Route path="/nightlife" element={<CategoryPage />} />
+          <Route path="/wellness" element={<CategoryPage />} />
+          <Route path="/marinas" element={<CategoryPage />} />
 
-        <Route path="*" element={<NotFound />} />
-      </Routes>
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </main>
       {!hideNav && <BottomNav />}
       {!hideNav && <InstallBanner />}
       {!hideNav && <AiChat />}

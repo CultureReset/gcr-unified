@@ -1,10 +1,12 @@
 /* ── FAB ── */
 .ai-chat-fab {
   position: fixed;
-  /* BottomNav is ~64px tall plus the home-indicator safe area — a flat
-     80px offset didn't clear that on notched phones, so the FAB sat on
-     top of the nav bar. */
-  bottom: calc(76px + env(safe-area-inset-bottom));
+  /* Sit 12px above whatever the nav actually measures — a hardcoded
+     offset has to guess at the home-indicator inset, and guessing low
+     parked the FAB on top of the nav bar. --gcr-nav-h already includes
+     that inset (see BottomNav.jsx), and falls back to 0 on the routes
+     that hide the nav entirely. */
+  bottom: calc(var(--gcr-nav-h, 64px) + 12px);
   /* Hug the right edge of the centered app column rather than the browser
      window — on a tablet/desktop the window is wider than the column, so a
      flat right:18px left this floating out in the empty side margin,
@@ -240,5 +242,5 @@
     max-height: 75dvh;
     border-radius: 20px 20px 0 0;
   }
-  .ai-chat-fab { bottom: calc(70px + env(safe-area-inset-bottom)); right: 14px; }
+  .ai-chat-fab { bottom: calc(var(--gcr-nav-h, 64px) + 8px); right: 14px; }
 }

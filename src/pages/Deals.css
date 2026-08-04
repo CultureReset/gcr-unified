@@ -16,7 +16,6 @@
 .deals-page {
   min-height: 100vh;
   background: var(--deal-cream);
-  padding-bottom: calc(80px + env(safe-area-inset-bottom));
 }
 
 /* ── HERO ── */

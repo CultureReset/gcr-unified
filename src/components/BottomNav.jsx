@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import './BottomNav.css'
@@ -6,6 +7,38 @@ export default function BottomNav() {
   const navigate = useNavigate()
   const location = useLocation()
   const { userId } = useApp()
+  const navRef = useRef(null)
+
+  // Publish the nav's real rendered height (safe-area padding included) as
+  // --gcr-nav-h, so index.css can reserve exactly that much room at the
+  // bottom of every page. Before this, each page guessed its own clearance
+  // — 210px here, 80px there, nothing at all on Saves/Profile/Itinerary —
+  // and the guesses that were too small (Home's 90px vs. a 64px nav plus a
+  // 34px home-indicator inset) left the last card wedged under the footer.
+  // Same measure-and-publish pattern as GCRHeader's --gcr-header-h.
+  useEffect(() => {
+    const el = navRef.current
+    if (!el) return
+    const root = document.documentElement
+    const update = () => {
+      root.style.setProperty('--gcr-nav-h', el.offsetHeight + 'px')
+    }
+    update()
+    const ro = new ResizeObserver(update)
+    ro.observe(el)
+    // The home-indicator inset changes when iOS Safari's toolbar collapses
+    // or expands, which resizes the nav without resizing its content.
+    window.addEventListener('resize', update)
+    window.addEventListener('orientationchange', update)
+    return () => {
+      ro.disconnect()
+      window.removeEventListener('resize', update)
+      window.removeEventListener('orientationchange', update)
+      // Routes that hide the nav (Landing, Auth, Setup, Swipe…) must not
+      // inherit a stale reservation.
+      root.style.setProperty('--gcr-nav-h', '0px')
+    }
+  }, [])
 
   const isActive = (path) => {
     if (path === '/') return location.pathname === '/'
@@ -35,7 +68,7 @@ export default function BottomNav() {
   }
 
   return (
-    <nav className="bottom-nav">
+    <nav className="bottom-nav" ref={navRef}>
       {visibleItems.map(item => (
         <button
           key={item.path}

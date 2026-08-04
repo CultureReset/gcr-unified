@@ -3,7 +3,6 @@
   min-height: 100dvh;
   background: #0a0a14;
   color: #fff;
-  padding-bottom: calc(80px + env(safe-area-inset-bottom));
 }
 
 .group-header {

@@ -1,4 +1,4 @@
-.staying-page { min-height: 100vh; background: #fffcf5; padding-bottom: calc(80px + env(safe-area-inset-bottom)); }
+.staying-page { min-height: 100vh; background: #fffcf5; }
 
 .staying-hero { background: linear-gradient(135deg,#0b2d42 0%,#0e5f8a 60%,#0a8472 100%); color:#fff; padding:2rem 1.25rem 1.75rem; }
 .staying-hero-inner { max-width:1220px; margin:auto; }

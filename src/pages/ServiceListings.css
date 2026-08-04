@@ -1,4 +1,4 @@
-.services-page { min-height:100vh; background:#f5f7fb; padding-bottom:calc(80px + env(safe-area-inset-bottom)); }
+.services-page { min-height:100vh; background:#f5f7fb; }
 
 /* Hero — matches GCR navy/teal theme */
 .services-hero { 

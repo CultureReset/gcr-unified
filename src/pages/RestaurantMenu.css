@@ -1,9 +1,6 @@
 .restaurant-menu {
   background: #f5f5f5;
   min-height: 100vh;
-  /* Clears BottomNav + the "Ask a local" FAB + the install banner (see
-     InstallBanner.jsx / AiChat.css) so the last section isn't hidden behind them. */
-  padding-bottom: 210px;
 }
 
 .menu-header {
