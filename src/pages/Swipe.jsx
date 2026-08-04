@@ -5,7 +5,7 @@ import { useApp } from '../context/AppContext'
 import { CATEGORIES } from '../data/categories'
 import { TAG_EMOJI } from '../components/GCRCard'
 import { fetchBusinesses, calcDistance, formatDistance, fetchPreferences, personalizeAndSort, searchProperties, fetchHomeFeed } from '../services/gcrApi'
-import { API_BASE, SMS_NUMBER } from '../config'
+import { API_BASE } from '../config'
 import { CAT_TABS, matchesCategory } from '../data/catTabs'
 import './Swipe.css'
 
@@ -114,11 +114,6 @@ async function fetchFeedCards() {
 }
 
 // Same Twilio number used across the app (GCRHeader/Auth/Landing) — texting
-// SWIPE here (vs BEACH elsewhere) just tells the inbound webhook this signup
-// came from the swipe-deck prompt.
-const SMS_SIGNUP_NUMBER = SMS_NUMBER
-const SMS_SIGNUP_LINK = `sms:${SMS_SIGNUP_NUMBER}?body=${encodeURIComponent('SWIPE')}`
-
 // Fetch social post cards (IG Reels, FB videos) to inject into the swipe deck
 async function fetchSocialCards() {
   try {
@@ -300,8 +295,6 @@ export default function Swipe() {
   const [view, setView] = useState('swipe')
   const [showBackTop, setShowBackTop] = useState(false)
   const [locPrompt, setLocPrompt] = useState(false)
-  const [smsPrompt, setSmsPrompt] = useState(false)
-  const [smsDone, setSmsDone] = useState(() => !!localStorage.getItem('gcr_sms_opted'))
   const [prefMap, setPrefMap] = useState({})
   const [swipingDir, setSwipingDir] = useState(null)
   const [undoStack, setUndoStack] = useState([]) // { business, action: 'like'|'nope'|'super' }
@@ -311,7 +304,6 @@ export default function Swipe() {
   // Show a caption under each once, dismissed on first interaction with
   // either or after a few seconds, never shown again on this device.
   const [showCornerHint, setShowCornerHint] = useState(() => !localStorage.getItem('gcr_corner_hint_seen'))
-  const swipeCountRef = useRef(0)
   const pageRef = useRef(null)
   const personalizationCounterRef = useRef(0)
 
@@ -424,35 +416,6 @@ export default function Swipe() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // Fetch SMS config and set up opt-in trigger
-  useEffect(() => {
-    if (smsDone) return
-    const token = localStorage.getItem('gcr_access_token')
-    const isGuest = !token
-    let timer = null
-    fetch(`${API_BASE}/api/admin/sms-config`)
-      .then(r => r.json())
-      .then(cfg => {
-        if (!cfg.popup_enabled) return
-        const val = parseInt(cfg.popup_value) || 5
-        if (cfg.popup_trigger === 'time') {
-          timer = setTimeout(() => setSmsPrompt(true), val * 60 * 1000)
-        } else {
-          // Guests: show after they finish the 15-card free deck, not mid-deck
-          // Logged-in: use configured value
-          swipeCountRef.current = isGuest ? -DECK_SIZE : -val
-        }
-      })
-      .catch(() => {
-        // default: guests see prompt after finishing the deck, others after 5 min
-        if (isGuest) {
-          swipeCountRef.current = -DECK_SIZE
-        } else {
-          timer = setTimeout(() => setSmsPrompt(true), 5 * 60 * 1000)
-        }
-      })
-    return () => { if (timer) clearTimeout(timer) }
-  }, [smsDone])
 
   useEffect(() => {
     if (allBusinesses.length === 0) return
@@ -630,11 +593,6 @@ export default function Swipe() {
       setUndoStack(prev => [...prev.slice(-4), { business, action: 'nope' }])
     }
     bumpPersonalizationCounter()
-    // swipe-count based SMS trigger
-    if (!smsDone && swipeCountRef.current < 0) {
-      swipeCountRef.current += 1
-      if (swipeCountRef.current === 0) setSmsPrompt(true)
-    }
   }
 
   function onCardLeftScreen(business) {
@@ -1009,31 +967,6 @@ export default function Swipe() {
       )}
 
       {/* ── SMS Opt-in Card: one-tap "Text SWIPE" (autofills Messages, they just hit send) ── */}
-      {smsPrompt && !smsDone && (
-        <div style={{position:'fixed',inset:0,zIndex:9000,display:'flex',alignItems:'flex-end',justifyContent:'center',background:'rgba(0,0,0,.5)'}}
-             onClick={e => { if(e.target===e.currentTarget) setSmsPrompt(false) }}>
-          <div style={{position:'relative',width:'calc(100% - 32px)',maxWidth:400,margin:'0 0 100px',background:'var(--card)',borderRadius:18,padding:'16px 20px 18px',boxShadow:'0 -8px 40px rgba(0,0,0,.3)'}}>
-            <button
-              onClick={() => { setSmsPrompt(false); localStorage.setItem('gcr_sms_opted','skip'); setSmsDone(true) }}
-              style={{position:'absolute',top:8,right:10,background:'none',border:'none',color:'var(--text3)',fontSize:20,lineHeight:1,cursor:'pointer',padding:6}}
-              aria-label="Dismiss"
-            >×</button>
-            <div style={{fontSize:20,textAlign:'center',marginBottom:2}}>📲</div>
-            <h3 style={{textAlign:'center',color:'var(--text)',fontSize:16,fontWeight:900,margin:'0 0 4px'}}>Save your picks + get local deals</h3>
-            <p style={{textAlign:'center',color:'var(--text2)',fontSize:13,margin:'0 0 14px',lineHeight:1.4}}>
-              One tap texts us — we'll set up your account and send same-day specials your way.
-            </p>
-            <a
-              href={SMS_SIGNUP_LINK}
-              onClick={() => { localStorage.setItem('gcr_sms_opted', '1'); setSmsDone(true); setSmsPrompt(false) }}
-              style={{display:'block',width:'100%',boxSizing:'border-box',textAlign:'center',textDecoration:'none',background:'linear-gradient(135deg, var(--primary), var(--primary-dark))',color:'#fff',borderRadius:10,padding:'13px',fontSize:15,fontWeight:800}}
-            >
-              Text SWIPE to sign up
-            </a>
-          </div>
-        </div>
-      )}
-
       {/* ── LIST VIEW ── */}
       {view === 'list' && (
         <div className="list-view">
