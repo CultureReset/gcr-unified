@@ -4,6 +4,31 @@ import './ArtistProfile.css'
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'https://gcr-api-clean.vercel.app'
 
+/**
+ * A show date the way someone reads it off a poster. A recurring weekly slot
+ * has no date at all, only a day, so fall back to that rather than printing
+ * nothing.
+ */
+function fmtShowDate(date, dayOfWeek) {
+  if (!date) return dayOfWeek ? `Every ${dayOfWeek}` : ''
+  const [y, m, d] = date.split('-').map(Number)
+  if (!y || !m || !d) return date
+  return new Date(y, m - 1, d).toLocaleDateString('en-US', {
+    weekday: 'short', month: 'short', day: 'numeric',
+  })
+}
+
+/** "19:00:00" -> "7:00 PM". */
+function fmtShowTime(t) {
+  if (!t) return ''
+  const [hRaw, min] = t.split(':')
+  const h = Number(hRaw)
+  if (Number.isNaN(h)) return ''
+  const period = h >= 12 ? 'PM' : 'AM'
+  const h12 = h % 12 === 0 ? 12 : h % 12
+  return `${h12}:${min ?? '00'} ${period}`
+}
+
 export default function ArtistProfile() {
   const { slug } = useParams()
   const navigate = useNavigate()
@@ -91,10 +116,15 @@ export default function ArtistProfile() {
   const photos = artist.photos || (artist.photo_url ? [{ url: artist.photo_url }] : [])
   const galleryTotal = Math.ceil(photos.length / GALLERY_PER_PAGE)
 
+  const links = artist.links || {}
+  const requests = artist.requests || {}
+  const setlist = artist.setlist || []
+  const shows = artist.upcoming_shows || []
+
   const tabs = [
     { id: 'about', label: 'About' },
-    ...(artist.songs?.length ? [{ id: 'songs', label: `🎵 Songs (${artist.songs.length})` }] : []),
-    ...(artist.events?.length ? [{ id: 'events', label: '📅 Events' }] : []),
+    ...(setlist.length ? [{ id: 'songs', label: `🎵 Songs (${setlist.length})` }] : []),
+    ...(shows.length ? [{ id: 'events', label: `📅 Shows (${shows.length})` }] : []),
     { id: 'book', label: '📅 Book Me' },
     { id: 'reviews', label: reviewStats?.total ? `⭐ Reviews (${reviewStats.total})` : '⭐ Reviews' },
     ...(photos.length > 1 ? [{ id: 'gallery', label: `📸 Photos (${photos.length})` }] : []),
@@ -105,18 +135,21 @@ export default function ArtistProfile() {
       {/* Hero */}
       <div className="artist-hero">
         {artist.photo_url && (
-          <img src={artist.photo_url} alt={artist.artist_name} className="artist-hero-image" />
+          <img src={artist.photo_url} alt={artist.name} className="artist-hero-image" />
         )}
         <div className="artist-hero-overlay">
           <div style={{display:'flex',alignItems:'center',gap:10}}>
             <button className="back-btn-artist" onClick={() => navigate('/artists')}>← Artists</button>
             <button className={`save-btn-detail ${saved ? 'saved' : ''}`} onClick={() => setSaved(s => !s)} style={{marginLeft:'auto'}}>{saved ? '❤️' : '🤍'}</button>
           </div>
-          <h1>{artist.artist_name}</h1>
-          {(artist.genre || artist.hometown) && (
+          <h1>{artist.name}</h1>
+          {(artist.genre || artist.hometown || shows.length > 0) && (
             <div className="artist-hero-meta">
               {artist.genre && <span>🎵 {artist.genre}</span>}
               {artist.hometown && <span>📍 {artist.hometown}</span>}
+              {shows[0] && (
+                <span>📅 Next: {fmtShowDate(shows[0].date)} at {shows[0].venue_name}</span>
+              )}
             </div>
           )}
         </div>
@@ -124,20 +157,26 @@ export default function ArtistProfile() {
 
       {/* Social / Contact quick row */}
       <div className="artist-quick-links">
-        {artist.instagram_url && (
-          <a href={artist.instagram_url} target="_blank" rel="noopener noreferrer" className="artist-quick-btn">📸 Instagram</a>
+        {links.instagram && (
+          <a href={links.instagram} target="_blank" rel="noopener noreferrer" className="artist-quick-btn">📸 Instagram</a>
         )}
-        {artist.spotify_url && (
-          <a href={artist.spotify_url} target="_blank" rel="noopener noreferrer" className="artist-quick-btn">🎵 Spotify</a>
+        {links.facebook && (
+          <a href={links.facebook} target="_blank" rel="noopener noreferrer" className="artist-quick-btn">👥 Facebook</a>
         )}
-        {artist.youtube_url && (
-          <a href={artist.youtube_url} target="_blank" rel="noopener noreferrer" className="artist-quick-btn">▶️ YouTube</a>
+        {links.spotify && (
+          <a href={links.spotify} target="_blank" rel="noopener noreferrer" className="artist-quick-btn">🎵 Spotify</a>
         )}
-        {artist.venmo && (
-          <a href={`https://venmo.com/${artist.venmo}`} target="_blank" rel="noopener noreferrer" className="artist-quick-btn">💜 Tip</a>
+        {links.youtube && (
+          <a href={links.youtube} target="_blank" rel="noopener noreferrer" className="artist-quick-btn">▶️ YouTube</a>
         )}
-        {artist.cashtag && (
-          <a href={`https://cash.app/$${artist.cashtag}`} target="_blank" rel="noopener noreferrer" className="artist-quick-btn">💵 Tip</a>
+        {links.website && (
+          <a href={links.website} target="_blank" rel="noopener noreferrer" className="artist-quick-btn">🔗 Website</a>
+        )}
+        {requests.venmo && (
+          <a href={`https://venmo.com/${requests.venmo}`} target="_blank" rel="noopener noreferrer" className="artist-quick-btn">💜 Tip</a>
+        )}
+        {requests.cashtag && (
+          <a href={`https://cash.app/$${requests.cashtag}`} target="_blank" rel="noopener noreferrer" className="artist-quick-btn">💵 Tip</a>
         )}
       </div>
 
@@ -157,8 +196,12 @@ export default function ArtistProfile() {
         {activeTab === 'about' && (
           <section className="artist-section">
             {artist.bio && <p className="bio">{artist.bio}</p>}
-            {artist.booking_url && (
-              <a href={artist.booking_url} target="_blank" rel="noopener noreferrer" className="artist-book-btn">
+            {artist.members && <p className="bio">{artist.members}</p>}
+            {artist.also_known_as?.length > 0 && (
+              <p className="artist-aka">Also known as {artist.also_known_as.map(a => a.alias).join(', ')}</p>
+            )}
+            {links.booking && (
+              <a href={links.booking} target="_blank" rel="noopener noreferrer" className="artist-book-btn">
                 📅 Book via External Site
               </a>
             )}
@@ -166,14 +209,13 @@ export default function ArtistProfile() {
         )}
 
         {/* Songs */}
-        {activeTab === 'songs' && artist.songs?.length > 0 && (
+        {activeTab === 'songs' && setlist.length > 0 && (
           <section className="artist-section">
-            <h2>🎵 Song List ({artist.songs.length})</h2>
+            <h2>🎵 Song List ({setlist.length})</h2>
             <div className="songs-grid">
-              {artist.songs.map((song, idx) => (
-                <div key={idx} className="song-card">
+              {setlist.map(song => (
+                <div key={song.id} className="song-card">
                   <div className="song-title">{song.title}</div>
-                  <div className="song-artist">{song.artist}</div>
                   {song.price && <div className="song-price">${song.price}</div>}
                 </div>
               ))}
@@ -181,17 +223,26 @@ export default function ArtistProfile() {
           </section>
         )}
 
-        {/* Events */}
-        {activeTab === 'events' && artist.events?.length > 0 && (
+        {/* Shows — real dates from entity_events, each one tapping through to
+            the venue's own page. */}
+        {activeTab === 'events' && shows.length > 0 && (
           <section className="artist-section">
-            <h2>📅 Upcoming Events</h2>
+            <h2>📅 Upcoming Shows</h2>
             <div className="events-list">
-              {artist.events.map((event, idx) => (
-                <div key={idx} className="event-item">
-                  <div className="event-date">{event.date}</div>
-                  <div className="event-venue">{event.venue_name}</div>
-                  {event.time && <div className="event-time">{event.time}</div>}
-                </div>
+              {shows.map(show => (
+                <button
+                  key={show.id}
+                  type="button"
+                  className="event-item event-item-link"
+                  onClick={() => show.venue_slug && navigate(`/business/${show.venue_slug}`)}
+                >
+                  <div className="event-date">{fmtShowDate(show.date, show.day_of_week)}</div>
+                  <div className="event-venue">{show.venue_name}</div>
+                  <div className="event-time">
+                    {[fmtShowTime(show.start_time), show.venue_city].filter(Boolean).join(' · ')}
+                  </div>
+                  {show.cover_charge && <div className="event-cover">{show.cover_charge}</div>}
+                </button>
               ))}
             </div>
           </section>
@@ -200,7 +251,7 @@ export default function ArtistProfile() {
         {/* Book */}
         {activeTab === 'book' && (
           <section className="artist-section">
-            <h2>📅 Book {artist.artist_name}</h2>
+            <h2>📅 Book {artist.name}</h2>
             {!bookingStatus ? (
               <div className="booking-form">
                 <input className="booking-input" placeholder="Your name *" value={bookingForm.name}
@@ -294,7 +345,7 @@ export default function ArtistProfile() {
               {photos.slice(galleryPage * GALLERY_PER_PAGE, (galleryPage + 1) * GALLERY_PER_PAGE).map((photo, idx) => (
                 <img key={idx}
                   src={photo.url || photo}
-                  alt={`${artist.artist_name} ${galleryPage * GALLERY_PER_PAGE + idx + 1}`}
+                  alt={`${artist.name} ${galleryPage * GALLERY_PER_PAGE + idx + 1}`}
                   className="gallery-preview-img"
                   onClick={() => setLightboxIdx(galleryPage * GALLERY_PER_PAGE + idx)} />
               ))}

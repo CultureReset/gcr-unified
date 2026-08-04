@@ -1,0 +1,138 @@
+/* ── Listing rail ─────────────────────────────────────────────────────────── */
+
+.lr {
+  /* No horizontal padding on the section itself — the scroller needs to run to
+     the viewport edge so cards bleed off it. Padding lives on .lr-head and on
+     the scroller's own inline padding instead. */
+  margin-bottom: 26px;
+}
+
+/* ── Header ── */
+.lr-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 12px;
+  padding: 0 16px;
+  margin-bottom: 10px;
+}
+
+.lr-head-text { min-width: 0; }
+
+.lr-eyebrow {
+  font-size: 10px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: .18em;
+  color: var(--primary, #0b7a75);
+  margin: 0 0 3px;
+}
+
+.lr-title {
+  font-size: 18px;
+  font-weight: 900;
+  letter-spacing: -.025em;
+  line-height: 1.15;
+  color: var(--text, #1a2433);
+  margin: 0;
+}
+
+.lr-view-all {
+  flex-shrink: 0;
+  background: #fff;
+  border: 1.5px solid var(--border, #e2e8f0);
+  color: var(--primary, #0b7a75);
+  border-radius: 999px;
+  padding: 7px 12px;
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background .14s, border-color .14s;
+}
+
+.lr-view-all:hover {
+  background: #e8f7f5;
+  border-color: #80cbc4;
+}
+
+.lr-view-all:focus-visible {
+  outline: 3px solid var(--primary, #0b7a75);
+  outline-offset: 2px;
+}
+
+/* ── Scroller ── */
+.lr-wrap { position: relative; }
+
+.lr-scroll {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x proximity;
+  -webkit-overflow-scrolling: touch;
+  /* Left inset aligns cards with the header; the right side gets NO matching
+     inset, so the next card runs off the edge and stays visibly cut. That peek
+     is the affordance that tells people the row scrolls — don't pad it away. */
+  padding: 4px 0 14px 16px;
+  scrollbar-width: none;
+}
+
+.lr-scroll::-webkit-scrollbar { display: none; }
+
+/* Lets the final card scroll clear of the right-hand arrow button. */
+.lr-tail { flex: 0 0 46px; }
+
+/* ── Arrows (pointer devices only — on touch you just swipe) ── */
+.lr-arrow { display: none; }
+
+@media (hover: hover) and (pointer: fine) {
+  .lr-arrow {
+    position: absolute;
+    top: calc(50% - 12px);
+    transform: translateY(-50%);
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #fff;
+    border: 1px solid var(--border, #e2e8f0);
+    color: var(--text, #1a2433);
+    font-size: 21px;
+    font-weight: 900;
+    line-height: 1;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(15,34,51,.18);
+    z-index: 5;
+    transition: opacity .16s ease, background .14s;
+  }
+
+  .lr-arrow:hover { background: #f0f4f8; }
+
+  .lr-arrow:focus-visible {
+    outline: 3px solid var(--primary, #0b7a75);
+    outline-offset: 2px;
+  }
+
+  .lr-arrow-prev { left: 6px; }
+  .lr-arrow-next { right: 6px; }
+
+  /* Hidden rather than removed so the button doesn't reflow the row as it
+     appears and disappears mid-scroll. */
+  .lr-arrow.hidden {
+    opacity: 0;
+    pointer-events: none;
+  }
+}
+
+@media (min-width: 700px) {
+  .lr-title { font-size: 21px; }
+  .lr-head  { padding: 0 20px; }
+  .lr-scroll { padding-left: 20px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lr-scroll { scroll-behavior: auto; }
+  .lr-arrow  { transition: none; }
+}

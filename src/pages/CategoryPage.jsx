@@ -2,6 +2,12 @@ import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import GCRCard from '../components/GCRCard'
+import GCRMiniCard from '../components/GCRMiniCard'
+import ListingRail from '../components/ListingRail'
+import ViewToggle from '../components/ViewToggle'
+import { buildRails, buildPrefs } from '../lib/railEngine'
+import { useListingView } from '../lib/useListingView'
+import { fetchPreferences } from '../services/gcrApi'
 import { API_BASE } from '../config'
 import { subtypeToCategory, formatSubtypeLabel } from '../categoryMap'
 import './CategoryPage.css'
@@ -44,7 +50,7 @@ const HERO_GRADIENTS = {
 export default function CategoryPage() {
   const location = useLocation()
   const navigate = useNavigate()
-  const { savedPlaces, addSavedPlace, removeSavedPlace } = useApp()
+  const { savedPlaces, addSavedPlace, removeSavedPlace, userLocation, userId } = useApp()
   const category = location.pathname.slice(1) // Remove leading slash
   const [entities, setEntities] = useState([])
   const [allTags, setAllTags] = useState([])
@@ -53,7 +59,18 @@ export default function CategoryPage() {
   const [error, setError] = useState(null)
   const [offset, setOffset] = useState(0)
   const [hasMore, setHasMore] = useState(true)
+  // Set when a rail's "View all" is used — narrows the list view to that rail's
+  // members. Kept separate from selectedTag because rails like "Open right now"
+  // are computed predicates, not tags, and so can't be expressed as a chip.
+  const [activeSection, setActiveSection] = useState(null)
+  // Trip Swipe preference scores, used to rank and reorder the Browse rows.
+  // Null until they load (or forever, for someone with no swipe history) — the
+  // engine treats that as "anonymous" and falls back to Top rated.
+  const [prefs, setPrefs] = useState(null)
   const savedSlugs = new Set((savedPlaces || []).map(p => p.slug))
+
+  const tagActive = !!selectedTag && selectedTag !== 'All'
+  const [view, setView] = useListingView(tagActive || !!activeSection)
 
   const handleSave = async (entity) => {
     const slug = entity.slug || entity.id
@@ -69,6 +86,15 @@ export default function CategoryPage() {
       console.error('Failed to save:', err)
     }
   }
+
+  // Loaded once, not per category — the same scores drive every listing page.
+  useEffect(() => {
+    let cancelled = false
+    fetchPreferences()
+      .then(raw => { if (!cancelled) setPrefs(buildPrefs(raw)) })
+      .catch(() => { /* personalization is a bonus, never a blocker */ })
+    return () => { cancelled = true }
+  }, [])
 
   const config = CATEGORY_CONFIG[category]
   const heroGradient = HERO_GRADIENTS[category] || 'linear-gradient(135deg, #334155, #1e293b)'
@@ -90,6 +116,9 @@ export default function CategoryPage() {
         // to another (e.g. Happy Hours) -- reset it on every category change so
         // it can't silently filter out results that should show.
         setSelectedTag(null)
+        // Same reasoning for a rail-derived filter: "Happy hour" carried over
+        // from Restaurants would narrow Marinas to nothing.
+        setActiveSection(null)
 
         let ents = []
 
@@ -103,8 +132,13 @@ export default function CategoryPage() {
           let all = []
           let offset = 0
           const BATCH = 1000
+          // lat/lng turn on distance_miles (and the "Near you" row); user_id
+          // turns on the API's own preference-weighted ranking, which has
+          // existed since Trip Swipe shipped but was never passed from here.
+          const locParams = userLocation ? `&lat=${userLocation.lat}&lng=${userLocation.lng}` : ''
+          const userParams = userId ? `&user_id=${encodeURIComponent(userId)}` : ''
           while (true) {
-            const res = await fetch(`${API_BASE}/api/gcr/entities?limit=${BATCH}&offset=${offset}`)
+            const res = await fetch(`${API_BASE}/api/gcr/entities?limit=${BATCH}&offset=${offset}${locParams}${userParams}`)
             if (!res.ok) break
             const data = await res.json()
             const batch = data.entities || []
@@ -112,14 +146,20 @@ export default function CategoryPage() {
             if (batch.length < BATCH) break
             offset += BATCH
           }
-          // feed = show everything; otherwise filter by subtype. Hub children
-          // (entity.parent_slug set — e.g. a marina's individual charter
-          // boats, a complex's individual restaurants) are meant to be found
-          // by drilling into their parent hub, not as their own standalone
-          // card on the main category grid — without this they'd show twice.
+          // feed = show everything; otherwise filter by subtype.
+          //
+          // Children are NOT excluded. A fishing charter that runs out of a
+          // marina, a dolphin cruise sold by a tour agency, a unit inside a
+          // condo complex — each has its own slug and its own page, and is the
+          // thing a visitor is actually looking for. The parent is a second
+          // thing they might look for, not a folder the child hides inside.
+          // Both are listable in their own right.
+          //
+          // The risk this trades for is one operator flooding a row with eight
+          // near-identical children; buildRails caps per-parent for that.
           ents = category === 'feed'
             ? all
-            : all.filter(e => subtypeToCategory(e) === category && !e.parent_slug)
+            : all.filter(e => subtypeToCategory(e) === category)
         }
 
         // Deduplicate: same name → keep the one with a proper subtype / no hash slug
@@ -172,10 +212,10 @@ export default function CategoryPage() {
     }
 
     loadEntities()
-  }, [category])
+  }, [category, userLocation, userId])
 
   const SKIP_CATS = new Set(['google_type', 'google_primary_type', 'google_secondary_type'])
-  const filtered = !selectedTag || selectedTag === 'All'
+  const tagFiltered = !tagActive
     ? entities
     : entities.filter(e => {
         if (formatSubtypeLabel(e.entity_subtype) === selectedTag) return true
@@ -187,6 +227,25 @@ export default function CategoryPage() {
           return tag === selectedTag
         })
       })
+
+  const filtered = activeSection ? tagFiltered.filter(activeSection.match) : tagFiltered
+
+  // Only worth building when Browse is on screen — the engine walks the full
+  // entity list once per candidate row.
+  const sections = view === 'browse' ? buildRails(filtered, { prefs }) : []
+
+  const openSection = (section) => {
+    // A rail and a chip narrowing the list at the same time reads as a bug —
+    // whichever the user picked last wins outright.
+    setSelectedTag(null)
+    setActiveSection(section)
+    setView('list')
+  }
+
+  const pickTag = (tag) => {
+    setActiveSection(null)
+    setSelectedTag(tag)
+  }
 
   const handleLoadMore = () => {
     // All entities loaded upfront — no pagination needed
@@ -217,13 +276,16 @@ export default function CategoryPage() {
 
       {/* Toolbar */}
       <div className="category-toolbar">
-        <h2 className="results-title">{filtered.length} results</h2>
+        <div className="toolbar-row">
+          <h2 className="results-title">{filtered.length} results</h2>
+          <ViewToggle view={view} onChange={setView} />
+        </div>
         <div className="filter-chips">
           {allTags.map(tag => (
             <button
               key={tag}
               className={`chip ${selectedTag === tag ? 'active' : ''}`}
-              onClick={() => setSelectedTag(tag)}
+              onClick={() => pickTag(tag)}
             >
               {tag}
             </button>
@@ -231,16 +293,48 @@ export default function CategoryPage() {
         </div>
       </div>
 
+      {/* Which rail the list view is currently narrowed to, plus the way back
+          out of it — arriving via "View all" otherwise looks identical to the
+          unfiltered page, just shorter. */}
+      {activeSection && (
+        <div className="active-section-bar">
+          <span>Showing <strong>{activeSection.title}</strong></span>
+          <button onClick={() => setActiveSection(null)}>Clear ✕</button>
+        </div>
+      )}
+
       {/* Listings */}
-      <div className="listings-stack">
-        {loading && !entities.length ? (
-          <div className="loading">Loading...</div>
-        ) : error ? (
-          <div className="error">{error}</div>
-        ) : filtered.length === 0 ? (
-          <div className="empty">No results found</div>
-        ) : (
-          filtered.map(entity => (
+      {loading && !entities.length ? (
+        <div className="listings-stack"><div className="loading">Loading...</div></div>
+      ) : error ? (
+        <div className="listings-stack"><div className="error">{error}</div></div>
+      ) : filtered.length === 0 ? (
+        <div className="listings-stack"><div className="empty">No results found</div></div>
+      ) : view === 'browse' && sections.length > 0 ? (
+        <div className="listings-browse">
+          {sections.map(section => (
+            <ListingRail
+              key={section.key}
+              eyebrow={section.eyebrow}
+              title={section.title}
+              count={section.total}
+              onViewAll={() => openSection(section)}
+            >
+              {section.items.map(entity => (
+                <GCRMiniCard
+                  key={entity.id || entity.slug}
+                  entity={entity}
+                  category={category}
+                  onSave={() => handleSave({ ...entity, category })}
+                  savedSlugs={savedSlugs}
+                />
+              ))}
+            </ListingRail>
+          ))}
+        </div>
+      ) : (
+        <div className="listings-stack">
+          {filtered.map(entity => (
             <GCRCard
               key={entity.id || entity.slug}
               entity={entity}
@@ -248,9 +342,9 @@ export default function CategoryPage() {
               onSave={handleSave}
               savedSlugs={savedSlugs}
             />
-          ))
-        )}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
