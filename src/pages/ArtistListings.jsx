@@ -4,6 +4,21 @@ import './ArtistListings.css'
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'https://gcr-api-clean.vercel.app'
 
+/** "Sat, Aug 8 · Lulu's" — or "Every Friday · Lulu's" for a recurring slot. */
+function fmtNextShow(show) {
+  if (!show) return ''
+  let when = show.day_of_week ? `Every ${show.day_of_week}` : ''
+  if (show.date) {
+    const [y, m, d] = show.date.split('-').map(Number)
+    if (y && m && d) {
+      when = new Date(y, m - 1, d).toLocaleDateString('en-US', {
+        weekday: 'short', month: 'short', day: 'numeric',
+      })
+    }
+  }
+  return [when, show.venue_name].filter(Boolean).join(' · ')
+}
+
 export default function ArtistListings() {
   const navigate = useNavigate()
   const [artists, setArtists] = useState([])
@@ -67,15 +82,26 @@ export default function ArtistListings() {
         ) : (
           <div className="artists-grid">
             {filteredArtists.slice(0, visibleCount).map((artist) => (
-              <div key={artist.id} className="artist-card">
+              <div key={artist.slug} className="artist-card">
                 {artist.photo_url && (
                   <img src={artist.photo_url} alt={artist.artist_name} className="artist-image" />
                 )}
                 <div className="artist-info">
                   <h3>{artist.artist_name}</h3>
-                  {artist.bio && <p className="artist-bio">{artist.bio}</p>}
+                  {/* Where they're playing next beats a bio nobody filled in —
+                      6 of 396 artists have one, 317 have real dates. */}
+                  {artist.next_show ? (
+                    <p className="artist-next-show">
+                      📅 {fmtNextShow(artist.next_show)}
+                    </p>
+                  ) : (
+                    artist.bio && <p className="artist-bio">{artist.bio}</p>
+                  )}
 
                   <div className="artist-meta">
+                    {artist.upcoming_count > 1 && (
+                      <span className="shows-count">{artist.upcoming_count} upcoming shows</span>
+                    )}
                     {artist.default_min_request_amount && (
                       <span className="price">From ${artist.default_min_request_amount}</span>
                     )}

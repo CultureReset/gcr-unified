@@ -1,0 +1,41 @@
+/* ── View toggle ──────────────────────────────────────────────────────────── */
+
+.vt {
+  display: inline-flex;
+  flex-shrink: 0;
+  background: #eef2f7;
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 999px;
+  padding: 3px;
+  gap: 2px;
+}
+
+.vt-btn {
+  border: none;
+  background: transparent;
+  border-radius: 999px;
+  padding: 6px 13px;
+  font-size: 12.5px;
+  font-weight: 800;
+  color: var(--text2, #64748b);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background .14s, color .14s;
+}
+
+.vt-btn:hover { color: var(--text, #1a2433); }
+
+.vt-btn.active {
+  background: #fff;
+  color: var(--primary, #0b7a75);
+  box-shadow: 0 1px 4px rgba(15,34,51,.14);
+}
+
+.vt-btn:focus-visible {
+  outline: 3px solid var(--primary, #0b7a75);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vt-btn { transition: none; }
+}

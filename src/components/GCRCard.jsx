@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { subtypeToCategory } from '../categoryMap'
+import { fmt12, computeStatus, computeHoursLine, fmtDist } from '../lib/hours'
 import './GCRCard.css'
 
 // ── Map API tag_category → display section ────────────────────────────────────
@@ -35,69 +36,6 @@ export const TAG_EMOJI = {
 }
 
 const FOOD_CATEGORIES = new Set(['restaurants','coffee-sweets','coffee','nightlife','happy-hours'])
-
-function fmt12(t) {
-  if (!t) return ''
-  const [h, m] = t.split(':').map(Number)
-  const ap = h >= 12 ? 'pm' : 'am'
-  const h12 = h % 12 || 12
-  return m ? `${h12}:${String(m).padStart(2,'0')}${ap}` : `${h12}${ap}`
-}
-
-function getTodayHours(hours) {
-  if (!hours || !hours.length) return null
-  const todayIdx = new Date().getDay() // 0=Sun, 1=Mon...
-  const DAYS = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday']
-  const todayName = DAYS[todayIdx]
-  return hours.find(h => {
-    // day_of_week can be a number (0-6) or a string ("monday")
-    if (typeof h.day_of_week === 'number') return h.day_of_week === todayIdx
-    const s = String(h.day_of_week || h.day || '').toLowerCase()
-    return s === todayName || s === String(todayIdx)
-  }) || null
-}
-
-function computeStatus(hours) {
-  if (!hours || !hours.length) return null
-  const h = getTodayHours(hours)
-  if (!h) return null
-  if (h.is_closed) return { label: 'Closed Today', cls: 'closed' }
-
-  const openStr  = h.open_time  || h.opens_at  || h.open  || ''
-  const closeStr = h.close_time || h.closes_at || h.close || ''
-  if (!openStr || !closeStr) return null
-
-  const cur = new Date().getHours() * 60 + new Date().getMinutes()
-  const [oh, om] = openStr.split(':').map(Number)
-  const [ch, cm] = closeStr.split(':').map(Number)
-  const openMin  = oh * 60 + om
-  const closeMin = ch * 60 + cm
-
-  if (cur < openMin - 60) return null
-  if (cur < openMin)       return { label: `Opens ${fmt12(openStr)}`,           cls: 'opening' }
-  if (cur < closeMin - 30) return { label: `Open · Closes ${fmt12(closeStr)}`,  cls: 'open'    }
-  if (cur < closeMin)      return { label: `Closing Soon · ${fmt12(closeStr)}`, cls: 'closing' }
-  return { label: 'Closed', cls: 'closed' }
-}
-
-function computeHoursLine(hours) {
-  const h = getTodayHours(hours)
-  if (!h) return ''
-  if (h.is_closed) return 'Closed Today'
-  const o = h.open_time  || h.opens_at  || h.open  || ''
-  const c = h.close_time || h.closes_at || h.close || ''
-  if (!o || !c) return ''
-  return `${fmt12(o)} – ${fmt12(c)}`
-}
-
-const STATUS_LABELS = { open: 'Open Now', opening: 'Opening Soon', closing: 'Closing Soon', closed: 'Closed' }
-
-function fmtDist(miles) {
-  if (miles == null) return null
-  if (miles < 0.1) return 'Here'
-  if (miles < 10) return `${miles.toFixed(1)} mi`
-  return `${Math.round(miles)} mi`
-}
 
 export default function GCRCard({ entity, category, onSave, savedSlugs }) {
   const navigate = useNavigate()
