@@ -70,7 +70,7 @@
 
 .home-stats {
   display: flex;
-  background: var(--bg2);
+  background: rgba(255,255,255,0.05);
   border: 1px solid var(--border);
   border-radius: 16px;
   padding: 16px;
@@ -80,8 +80,12 @@
 }
 
 .stat { text-align: center; }
+/* These two only ever rendered dark by luck: Profile.css declares the same
+   two class names and loads later in the bundle, so its var(--text) won
+   over the `white` that used to be here. Stated outright rather than left
+   depending on another page's stylesheet — no visual change either way. */
 .stat-num { font-size: 24px; font-weight: 800; color: var(--text); }
-.stat-label { font-size: 11px; color: var(--text2); font-weight: 600; text-transform: uppercase; margin-top: 2px; }
+.stat-label { font-size: 11px; color: var(--text3); font-weight: 600; text-transform: uppercase; margin-top: 2px; }
 .stat-divider { width: 1px; height: 36px; background: var(--border); }
 
 .section-title {
