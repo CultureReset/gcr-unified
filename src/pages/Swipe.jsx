@@ -1106,7 +1106,15 @@ function BusinessCard({ business, isTop, onDetail, userLocation, swipingDir, sav
     ...(business.photos || []).filter(p => p !== business.hero_image_url)
   ].filter(Boolean)
 
-  const photo = allPhotos[photoIdx] || null
+  // A URL existing is not the same as an image loading. A lot of the older
+  // Google Places URLs in the catalogue have expired, and the card used to
+  // answer a failed load by hiding the <img> and showing a blue gradient —
+  // so a business with nineteen good photos rendered blank because photo #1
+  // happened to be a dead link. Track the ones that fail and skip past them,
+  // and only fall back to the gradient once nothing is left to try.
+  const [deadPhotos, setDeadPhotos] = useState(() => new Set())
+  const livePhotos = allPhotos.filter(p => !deadPhotos.has(p))
+  const photo = livePhotos[photoIdx % Math.max(livePhotos.length, 1)] || null
 
   function handleImgDown(e) {
     ptrRef.current = { x: e.clientX, y: e.clientY }
@@ -1117,9 +1125,9 @@ function BusinessCard({ business, isTop, onDetail, userLocation, swipingDir, sav
     const dx = Math.abs(e.clientX - ptrRef.current.x)
     const dy = Math.abs(e.clientY - ptrRef.current.y)
     ptrRef.current = null
-    if (dx < 8 && dy < 8 && allPhotos.length > 1) {
+    if (dx < 8 && dy < 8 && livePhotos.length > 1) {
       e.stopPropagation()
-      setPhotoIdx(i => (i + 1) % allPhotos.length)
+      setPhotoIdx(i => (i + 1) % Math.max(livePhotos.length, 1))
     }
   }
 
@@ -1143,8 +1151,13 @@ function BusinessCard({ business, isTop, onDetail, userLocation, swipingDir, sav
         onPointerUp={handleImgUp}
       >
         {photo && (
-          <img src={photo} alt={business.name} className="swipe-card-photo"
-            onError={e => { try { e.target.style.display='none'; if (e.target.parentNode) e.target.parentNode.style.background='linear-gradient(135deg,#1a3a5c,#0ea5e9)' } catch {} }} />
+          <img
+            key={photo}
+            src={photo}
+            alt={business.name}
+            className="swipe-card-photo"
+            onError={() => setDeadPhotos(prev => new Set(prev).add(photo))}
+          />
         )}
 
         {/* Drag direction tint + stamp */}
@@ -1182,8 +1195,8 @@ function BusinessCard({ business, isTop, onDetail, userLocation, swipingDir, sav
         >
           {isSaved ? '❤️' : '🤍'}
         </button>
-        {allPhotos.length > 1 && (
-          <div className="card-photo-counter card-photo-counter-stacked">{photoIdx + 1}/{allPhotos.length}</div>
+        {livePhotos.length > 1 && (
+          <div className="card-photo-counter card-photo-counter-stacked">{photoIdx + 1}/{livePhotos.length}</div>
         )}
       </div>
 
