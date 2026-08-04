@@ -106,6 +106,18 @@ function AppRoutes() {
     return () => window.removeEventListener('gcr:unauthorized', onUnauth)
   }, [location.pathname, location.search, logout, navigate])
 
+  // The app column is capped at --max-w (900px from 1000px up), so on any
+  // wider screen the document background shows down both sides of it. That
+  // background is white, which is right for most pages but framed the two
+  // dark ones — the landing page and the swipe deck — in a pair of bright
+  // bars. Publish the current page's colour so the gutters match what is
+  // actually on screen instead.
+  useEffect(() => {
+    const path = location.pathname
+    const shell = path === '/' ? 'navy' : path.startsWith('/swipe') ? 'black' : 'light'
+    document.documentElement.dataset.shell = shell
+  }, [location.pathname])
+
   // Track route changes — fires on every page navigation
   useEffect(() => {
     const API = import.meta.env.VITE_API_BASE || 'https://gcr-api-clean.vercel.app'

@@ -83,6 +83,20 @@ html, body {
   overflow-x: clip;
 }
 
+/* Gutter colour for the space either side of the capped app column. App.jsx
+   sets data-shell on <html> per route; without it everything stays white,
+   which is the correct default for every light page. Only the two dark
+   pages opt out. */
+html[data-shell='navy'],
+html[data-shell='navy'] body,
+html[data-shell='navy'] #root,
+html[data-shell='navy'] .app-shell { background: #071827; }
+
+html[data-shell='black'],
+html[data-shell='black'] body,
+html[data-shell='black'] #root,
+html[data-shell='black'] .app-shell { background: #000; }
+
 .app-shell {
   width: 100%;
   max-width: var(--max-w);
