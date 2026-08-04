@@ -102,7 +102,7 @@ function fmtDist(miles) {
 export default function GCRCard({ entity, category, onSave, savedSlugs }) {
   const navigate = useNavigate()
   const [showHH, setShowHH] = useState(false)
-  const [imgFailed, setImgFailed] = useState(false)
+  const [deadImages, setDeadImages] = useState(() => new Set())
 
   if (!entity) return null
 
@@ -120,11 +120,19 @@ export default function GCRCard({ entity, category, onSave, savedSlugs }) {
   const addr = entity.address_line_1 || entity.address || ''
   const fullAddr = [addr, city, state].filter(Boolean).join(', ')
 
-  // Find best photo: prefer cover photo, then first photo, then hero/cover fields
+  // Every image this listing could show, best first: the cover photo, then
+  // hero/cover fields, then the rest of the gallery. A URL existing is not
+  // the same as it loading — a lot of the older Google Places URLs in the
+  // catalogue have expired — and this used to hold exactly one candidate, so
+  // a single dead link dropped the card to a grey placeholder even when the
+  // business had other photos that work. Dead ones get recorded and skipped.
   const coverPhoto = entity.photos?.find(p => p.is_cover) || entity.photos?.[0]
-  const hero = entity.hero_image_url || entity.cover_url ||
-    coverPhoto?.url || coverPhoto?.image_url ||
-    null
+  const candidates = [...new Set([
+    coverPhoto?.url, coverPhoto?.image_url,
+    entity.hero_image_url, entity.cover_url,
+    ...(entity.photos || []).flatMap(ph => [ph?.url, ph?.image_url]),
+  ].filter(Boolean))]
+  const hero = candidates.find(u => !deadImages.has(u)) || null
 
   const phone = entity.phone || ''
   const dir = entity.directions_url || ''
@@ -265,18 +273,19 @@ export default function GCRCard({ entity, category, onSave, savedSlugs }) {
     <div className="gcr-card" onClick={() => navigate(profileUrl)}>
       {/* Image */}
       <div className="gcr-card-img">
-        {hero && !imgFailed ? (
+        {hero ? (
           <img
+            key={hero}
             src={hero}
             alt=""
             className="gcr-card-img-bg"
-            onError={() => setImgFailed(true)}
+            onError={() => setDeadImages(prev => new Set(prev).add(hero))}
             loading="lazy"
           />
         ) : (
-          // No photo, or the photo URL is dead — a remote fallback image can
-          // itself go dead, so this placeholder is CSS-only with no network
-          // dependency, rather than looping back to another external URL.
+          // Nothing left to try: either the business has no images at all, or
+          // every one of them failed. A remote fallback image can itself go
+          // dead, so this placeholder is CSS-only with no network dependency.
           <div className="gcr-card-img-placeholder">
             <span>{icon}</span>
           </div>
