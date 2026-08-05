@@ -297,7 +297,13 @@ No registry, so this is extracted from the source:
 
 ---
 
-## 7. The screens — `src/pages/` (38, ~15,600 lines JSX)
+## 7. The screens — `src/pages/` (⟲ **42**, ~15,600 lines JSX)
+
+⟲ Recounted on the visual-document pass: `src/pages/*.jsx` is **42 files**, not
+38, of which 35 have a co-located stylesheet and 7 do not (`Groups`, `Invite`,
+`NotFound`, `Privacy`, `Reset`, `ReviewUpload`, `Terms`). Likewise
+`src/components/` holds **22 components** plus 13 stylesheets — the "35" in the
+heading below is the directory's file count, not its component count.
 
 ### 7.1 The four giants
 
@@ -378,7 +384,7 @@ still compiles and ships.
 
 ---
 
-## 8. Components — `src/components/` (35, ~6,000 lines)
+## 8. Components — `src/components/` (⟲ **22 components** + 13 stylesheets = 35 files, ~6,000 lines)
 
 | Component | Lines | Role |
 |---|---|---|
@@ -441,7 +447,7 @@ Env: `VITE_API_BASE`, `SITE_BASE_URL` (default `gulfcoastradar.com`),
 
 ---
 
-## 11. The static surface — `public/` (24 files)
+## 11. The static surface — `public/` (⟲ **23 files**)
 
 Not part of the React build. Nine are routed by `vercel.json` rewrites; the rest
 are reachable by direct filename.
