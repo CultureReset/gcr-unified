@@ -504,44 +504,505 @@ dependency.
 | Device APIs | Geolocation (`locationService`), DeviceOrientation (`compassService`), camera (`ArCameraOverlay`), PWA install prompt |
 | Everything else | transitively through the API |
 
+**Correction from the every-line pass:** the static surface calls the API too, and not always successfully — `song-request.html` reaches `/api/cooperatives`, while `rides.html` and `review.html` call routes that do not exist. See Appendix F.
+
+---
+
+# EVERY-LINE PASS — Appendices
+
+Reading the actual page and component code, not just routes and endpoints. The
+reasoning in this codebase lives in its inline comments, and this pass reads
+them.
+
+## APPENDIX A — `BusinessDetail.jsx` (2,467 lines) — the largest file on the platform
+
+`/business/:slug`. Renders everything `buildFullEntity` assembles. Read in full.
+
+**The industry-first ordering rule (L96)** is the file's organising idea, and
+the comment is careful about *how* it is applied:
+
+> The DOM order of content sections follows the industry tab order (rank map
+> filled during render). **Applied directly as each section's own
+> `style={{ order }}` in JSX — not as a post-paint DOM mutation** — so it's never
+> dependent on ref-collection timing, object key insertion order, or guessing the
+> flex parent from an arbitrary child.
+
+**`TAB_PRIORITY` (L536–546)** encodes what each industry's visitors came for:
+food → menu & specials · activities → trips & pricing · stays → rooms &
+amenities · services → service list · shops → products · parks → park info.
+Tabs not named keep their relative order after the prioritised ones. The stated
+model is *"Yelp-style top-down flow: lead with what the visitor came for, put the
+'about' overview right after it (not buried at the bottom), then the supporting
+detail, social proof (reviews), photos, and finally the logistics."*
+
+**The default tab (L145)** follows the same rule per entity: *"a hotel opens on
+Rooms, a shop on Products, a service on Services, a park on Park Info. A
+restaurant opens on its MENU even when it also has offerings — **the industry's
+primary content wins over generic booking content.**"*
+
+**Click attribution — two functions, deliberately (L43, L60).** `trackAndOpen`
+logs an outbound booking/order click and opens the destination with a `gcr_ref`
+so the conversion attributes back. `trackAndNavigate` is *"the same click
+attribution, but for internal GCR pages (e.g. the Reserve flow) — navigates
+in-app instead of opening a new tab, **so we know this session came specifically
+from the booking CTA, not a generic page visit.**"*
+
+**A bug ledger in the comments**, each entry naming the symptom it fixed:
+
+- **L188 / L658 — dead photo URLs.** The carousel steps over photos whose URL
+  failed to load: *"without this the carousel parks on a blank fallback tile every
+  time it cycles onto one, which reads as 'images aren't loading' even when most
+  of them are fine."* If the dead photo is the one on screen, it moves off
+  immediately rather than showing a blank tile until the next tick.
+- **L203 — the sticky-header measurement.** A `ResizeObserver` on
+  `.detail-header` so `.sticky-tabs` can stack beneath it. It depends on
+  `business` rather than `[]` because *"`.detail-header` doesn't exist in the DOM
+  yet during the initial mount — this component early-returns a loading
+  placeholder until `business` resolves, so the ref is still null on a mount-only
+  effect."*
+- **L924** — section scrolling used *"a flat −130 that ignored the real
+  (ResizeObserver-measured) header height, so section tops could land partially
+  behind the sticky header/tabs bars."*
+- **L371** — `entity_specials` rows use `special_name`/`discount_*` where menu
+  items use `item_name`/`price`; without the fallback *"every special rendered
+  through this shared renderer showed a blank name and no discount."*
+- **L383** — `image_url` is returned flat; `item.images[]` was *"the old shape,
+  never matched."*
+- **L1395** — `price_label` sometimes carries a raw internal unit token
+  (`flat`, `person`, `trip`) rather than a price string. Those *"only ever make
+  sense appended to a dollar amount, never shown alone […] **no badge beats a fake
+  one.**"*
+
+**Two suppression rules that prevent duplicate content:**
+
+- **L307 — flat pricing vs rich sections.** Rich offerings come from real
+  `entity_sections` (uuid ids) and already group their priced items; offerings
+  synthesised from the `offerings`/marina tables use negative numeric ids. When a
+  business has rich sections, the separate flat `pricing_items` list is a
+  redundant duplicate — *"e.g. Coyote's 6 rental sections vs its 11 identical
+  pricing_items"* — so it is suppressed. **A business whose only structured
+  pricing IS the flat list keeps it.**
+- **L268 — leaked subtypes.** Raw `entity_subtype` values that ended up in
+  `entity_tags` *"belong on the backend for filtering, not displayed as
+  human-readable chips."* `GOOGLE_TYPE_NOISE` (L264) and `GOOGLE_TYPE_CATS`
+  (L279) do the same for the raw Google Places taxonomy.
+
+**Meal-period grouping (L338, L575, L1848).** `MEAL_ORDER` is
+Breakfast → Brunch → Lunch → Dinner → Late Night → All Day. Sub-section chips
+use period dividers for menus and plain section names for drinks/happy-hour
+*"since they don't have period grouping."* Section labels drop the period prefix
+when the period chip already shows it — *"'Lunch Desserts' → 'Desserts' under 🥗
+Lunch."*
+
+Also: an `IntersectionObserver` highlighting the active sub-section chip on
+scroll (L223); two-level amenities — the unit's own plus the complex's (L460);
+related-profile rails for same-parent businesses (L104); `GALLERY_PER_PAGE` /
+`REVIEWS_PER_PAGE` at 10; a 220-char description clamp (L757); and a shared
+cache entry with `fetchBusinessBySlug` so *"if this business was already fetched
+anywhere else (a card preview, etc.) this returns instantly with no network round
+trip."*
+
+## APPENDIX B — `Swipe.jsx` (1,583 lines) — the deck
+
+`/swipe/:category`. Five card types, a resumable queue, and a live-learning
+ranking loop. Read in full.
+
+### The five cards
+
+`BusinessCard` (L1161) · `SocialCard` (L1099, IG Reels and FB video injected
+into the deck) · `PromoCard` (L1336) · `DealSwipeCard` (L1390, with
+`DEAL_COLORS`) · `EventSwipeCard` (L1497) — *"live music/concerts, events
+tonight, happy hours right now, and daily specials — **one card, four looks**
+(`KIND_STYLE`), so they all reuse the same business-card/deal-swipe-card CSS."*
+
+Those event cards come from `fetchHomeFeed` — *"the same source the Home page's
+slide rows use, reshaped into swipeable cards"* — with synthetic ids that
+`resolveReal()` deliberately does not remap, so swiping right saves the card
+object itself.
+
+### The fetch-size bug, diagnosed in the file (L377)
+
+> `fetchBusinesses()` defaults to `limit:50` — fine for a quick preview list
+> elsewhere, but the swipe deck is the ONE place meant to draw from the platform's
+> real full catalog (270+ restaurants alone, before nightlife/shopping/
+> activities/stay). At the old default, every swipe session — no matter how much
+> you swiped or how many times you reloaded — only ever pulled the same first 50
+> entities the API happened to return, split five ways across category tabs.
+> **That's the real cause of "same ~25 cards over and over no matter what" — a
+> fetch-size bug, not a shuffle bug** (`shuffle()` itself is a correct
+> Fisher-Yates).
+
+### The resumable deck
+
+`SWIPE_QUEUE_PREFIX = 'gcr_swipe_queue_'`, `DECK_SIZE = 15`. Per-category
+*"where they left off"* — **ids only**, *"looked up against freshly-fetched
+businesses on restore so the data itself never goes stale"* (L272). On return it
+restores whichever queued cards are still unseen, in the same order so the last
+item stays on top, then fills remaining capacity with fresh personalised cards
+added to the front (L471).
+
+**Guests get a fresh deck deliberately** — *"don't filter by `seenSlugs` so the
+first 15 cards always show regardless of prior localStorage state"* (L462).
+
+### The refill loop, and the bug it fixed (L576)
+
+> Allow the same business (slug) to appear multiple times in the INITIAL deck
+> (once per exploded photo-card) — but not once its slug has actually been swiped.
+> Without the `seenSlugs` check, once the real unseen supply in `pool` ran low this
+> refilled from already-decided cards forever: `cards.length` never reached 0, so
+> `allGone` (which requires exactly that) never fired and **the deck looped through
+> repeats instead of ever reaching "You've seen them all!"**
+
+### Live personalisation (L595, L612)
+
+Every 10 swipes it re-fetches preference scores and re-sorts **the remaining
+pool, not the visible deck** — *"that would yank cards out from under the user and
+reset `likedCount`"* — so cards pulled in from then on reflect patterns from *this
+session*. A small delay first, because *"the swipe batch itself flushes to the
+backend on its own timer (see AppContext's `flushSwipes`), which is what actually
+updates the preference scores we're about to re-fetch."*
+
+### Four actions, not two
+
+`pressLike` · `pressNope` · **`pressMaybe`** (L707) — *"'Not sure yet' — distinct
+from Pass (rejected) and Like (want to go). Mild positive signal for preference
+scoring (see `SWIPE_WEIGHTS.maybe` on the backend), doesn't save the place, but is
+undo-able"* — and **`pressUndo`** (L718), which is *"best-effort: pull the swipe
+back out of the not-yet-sent queue so an undone action doesn't still get counted
+toward preference scoring."*
+
+**The heart button is separate from the gesture** (L644, L654): quick
+save/unsave that doesn't dismiss the card — but it still records the same
+preference and seen signal, because *"a heart-save is just as real an endorsement
+as swiping right, it just doesn't dismiss the card, so it shouldn't be invisible
+to the algorithm that's supposed to be learning from likes."*
+
+**A one-time discovery hint** (L308, L417): Maybe and Undo float quietly in the
+card corners — *"that's deliberately subtle, but a first-time visitor has no way
+to discover them on their own."* Shown once per device, dismissed on first
+interaction or after a few seconds.
+
+### Category routing (L329, L337)
+
+`CAT_TABS` (from `src/data/catTabs.js`, shared with Search) is now the real
+section list. `/swipe/events` and `/swipe/drinks` are not real sections and are
+redirected — drinks to Nightlife, *"the closest real section"* — and the comment
+notes `/swipe/restaurants` **is** real now and is deliberately no longer
+redirected.
+
+Also: a trip-context "Change" modal for dates and group type, with destination
+deliberately not editable *"the app is Orange Beach/Gulf Shores only today"*
+(L318); `PropertyAutocomplete` reusing Setup's live property search (L156); and
+`SMS_SIGNUP_LINK` texting `SWIPE` rather than `BEACH` *"just tells the inbound
+webhook this signup came from the swipe-deck prompt"* (L116).
+
+## APPENDIX C — `Landing.jsx` (915) and `Profile.jsx` (844)
+
+### `Landing.jsx` — the homepage, `data-shell="navy"`
+
+Nine card components, each a distinct layout: `BizCard` (tall, full-bleed photo),
+`MiniCard`, `HHCard`, `MusicCard`, `ActivityCard`, `EmptyCard`, plus `Rail`,
+`SectionHead`, and a full **`MasterCalendar`** (L312–482) with `CalSection` and
+`CalRow`.
+
+**`dedupeByName` (L12)** guards the same problem `CategoryPage` does: *"a
+business scraped from more than one source can end up as multiple entity rows
+with slightly different name strings. Without this, the homepage rails could
+feature the same business twice among only ~10-12 slots."* The row whose slug
+has no hash suffix wins.
+
+**`CATEGORIES` (L52)** carries a placement note: AR Hunt was moved up from
+last-of-nine because *"the category rail only shows ~2-3 cards before needing a
+scroll on a phone-width viewport, so at the end it was effectively invisible — no
+other nav entry links to `/ar-hunts` at all."*
+
+`imgUrl` (L67) reconstructs a Supabase storage URL from a broken
+`/photos/slug/file.jpg` path — the hardcoded host noted in §16.9. `WX_ICON` /
+`WX_LABEL` map weather codes; `HERO_IMG` is a hotlinked Unsplash URL.
+
+### `Profile.jsx` — the account hub
+
+The widest API fan-out of any page: `/api/tourist/{profile,points,photos,reviews,
+groups,upload-media}`, `/api/tourist-auth/{add-email,verify-add-email}`, and five
+`/api/platform/*` routes (`my-bookings`, `rewards/:slug`, `redeem`, `my-share`,
+`my/videos`).
+
+**`compressImage` (L10)** downscales to max 1200px wide at 0.8 JPEG quality
+before upload *"so we're not shipping multi-MB originals into the photos table"* —
+images become a JPEG blob, videos upload as-is. Also `hasRealEmail` (phone-only
+accounts carry a derived address), `formatPhone`, `daysBetween`, and
+`copyShareLink` for the referral code.
+
+## APPENDIX D — the remaining 34 pages
+
+**Discovery.** `CategoryPage` (256, serves nine routes) and `CategoryListings`
+(257) share three deliberately identical rules, *"kept identical so the two pages
+agree on which of a duplicate pair wins"*: hub children are excluded because
+*"a marina's individual charter boats […] are meant to be found by drilling into
+their parent hub, not as their own standalone card"*; duplicates dedupe on name
+preferring a proper subtype and no hash slug; and filter chips dedupe on a
+normalised key so *"'1950s themed' / '1950s-themed' become a single chip."*
+`CategoryPage` also uses solid CSS gradients rather than hotlinked photos,
+because *"the previous Unsplash URLs had no fallback, so a single blocked/dead
+link showed as a blank gray hero banner across every category."*
+
+`Search` (769) runs two searches with different debounces — a fast autocomplete
+*"so they don't have to finish (or correctly spell) the query by hand"* and the
+full keyword search — plus date search over `/api/gcr/availability-search` with
+six vertical filters. Saved availability searches are device-local, *"a
+cross-device table is specced in the API's migration file."*
+
+`Events` (408) sorts *"playing now / starting soon today first, later dates
+pushed to the bottom"* — and notes that *"previously this list had no sort at all
+and just rendered in API order."* Today-but-already-ended (assumed 3-hour window)
+drops out of the top group. `Deals` (713) has its own header block naming every
+source and where deals resurface. `LiveFeed` (152), `Browse` (67), `ArHunts`
+(263, with per-hunt admin-settable capture radius and a live location watcher).
+
+**Verticals.** `RentalListings` (378) → `RentalDetail` (537) → `BookRental`
+(199); `ServiceListings` (231) → `ServiceDetail` (455) → `BookService` (159).
+`ServiceListings` derives its fetch filter from `SERVICE_TABS` — *"single source
+of truth for which subtypes count as a 'service' […] so the fetch filter can never
+drift out of sync with the tab bar again"* — and its booking badge *"reflects
+where THIS business actually takes bookings — derived from its real
+`booking_url`, never assumed from the business type."*
+
+**`Reserve` (396)** is the richest flow and reads as a specification of the
+booking policy: a fallback 30-minute dinner grid used *"whenever a business
+hasn't set up (or synced from FareHarbor/Peak/Airbnb) real per-slot capacity"*,
+with real slots always taking priority; an **opt-in gate captured before the rest
+of the flow** *"so the business has a name + phone on file even if the customer
+abandons checkout, and so SMS only ever goes to numbers with explicit consent
+(required until A2P 10DLC approval is in place)"*; a clickwrap waiver shown only
+when `waiver_required` is on; and a transportation add-on available on **any**
+booking, *"not just pickup/delivery businesses […] GCR brokers this out via SMS
+dispatch, separate from the reservation itself."*
+
+**Account.** `Auth` (538) is the most detailed: **WebOTP** auto-fills the code
+straight from the incoming SMS (*"Android Chrome only; other browsers fall back to
+`autoComplete="one-time-code"`"*), auto-submits the instant six digits are
+present, treats keyboard-suggestion autofill as a paste, and pre-fills the phone
+from `?phone=`. It also records a **deliberate dead-end**: the tap-to-sign-in
+magic link is disabled — *"every account/session must come through the Twilio
+Verify phone flow […] this page just no longer calls out to it, so a stray
+`?token=` in the URL does nothing instead of creating a session."* The backend
+route and SMS webhook are untouched.
+
+`Setup` (313) filters out the destination question *"app is Alabama Gulf Coast
+only"*. `Saves` (114) reads through `AppContext` rather than its own fetch —
+*"this used to be a second, disconnected copy of 'my saved places' […] so removing
+or adding a save on one screen wouldn't show up on the other."* `Building` (127)
+falls back to a local plan from saves when signed out. `Groups` (187), `Group`
+(172), `Invite` (94), `Itinerary` (168), `MyList` (107), `Reset` (94),
+`ReviewUpload` (123), `Home` (339), `Confirmation` (115), `Privacy` (52),
+`Terms` (50), `NotFound` (18).
+
+**Artist + menu.** `ArtistLive` (231) — *"standalone live-artist page
+(headerless, QR/link-tree style) […] shows the live-show money layer instead of
+the directory/booking layer. **Every section is gated on real data — nothing
+renders unless the artist actually has it filled in, and every action writes to a
+real endpoint (no demo/fake sections).**"* `ArtistProfile` (326),
+`ArtistListings` (123), `RestaurantMenu` (249), `LinksPage` (211).
+
+**`LinksPage` carries the module-gating rule** (L79): a business can turn a
+module off even while still collecting its data, and *"default to shown when
+there's no `entity_modules` row for that key at all — most of the ~2,900 entities
+don't have every module configured yet, and **'no record' should never mean
+'hidden.'** Only an explicit `enabled:false` hides it."* Its key names match the
+App Store module keys.
+
+## APPENDIX E — the 35 components
+
+**`GCRCard.jsx` (470)** — the universal card. Tags are *"fully dynamic: display
+whatever is in the DB, use `tag_category` from API"*, skipping the raw Google
+Places taxonomy and *"any label that's still a machine slug (snake_case like
+`point_of_interest`, or camelCase like `wheelchairAccessibleParking`)."* Its
+things-to-do test reads from `categoryMap.js` deliberately — *"a separately
+maintained list here drifts out of sync as new subtypes get added there."*
+Routing is explicit: *"All entity table records go to `/business/:slug` […]
+`/rental/:slug` and `/service/:slug` are for `bookable_resources` (separate
+booking system)."* Its no-photo placeholder is **CSS-only with no network
+dependency**, because *"a remote fallback image can itself go dead."*
+
+**`ArCameraOverlay.jsx` (203)** — the most device-specific code in the repo, and
+honest about its limits: `ASSUMED_FOV` is *"a reasonable average […] this isn't
+true 3D-anchored AR, just a heading-driven overlay."* iOS 13+ needs the
+permission call *"directly inside a user-gesture handler […] no awaited work
+before it, or the browser silently treats it as not user-initiated and denies
+it."* It prefers `deviceorientationabsolute` and falls back to
+`deviceorientation`; if no heading arrives in time it degrades *"to a centered
+marker driven by distance alone rather than leaving it stuck loading."* The video
+stream attaches in its own effect because *"the `<video>` element only exists once
+`permissionState` is 'granted'."*
+
+**`ClaimBusiness.jsx` (193)** — on every profile page, and the comment states the
+whole point: *"The button already knows which listing the visitor is looking at,
+so the claim carries the slug. That is the whole point: an admin opening the lead
+sees the business it is about instead of matching a typed name back to one of four
+thousand listings."* Submitting grants nothing — it writes a `business_claims`
+row with status `new`. `role` rides in the note because *"role isn't a column on
+`business_claims`."* It uses its own overlay classes rather than the page's
+`.modal-overlay`, *"which is `display:none` until an `.open` class is added.
+Self-contained means this component drops onto any page."*
+
+**`AvailabilityCalendar.jsx` (194)** — two modes: `select` (range picker with a
+live quote) and `view` (read-only blocked nights). *"Any blocked night strictly
+between two dates makes the range invalid."*
+**`BookingCalendar.jsx` (162)** resets everything when the slug changes —
+*"previously nothing here depended on slug at all, so a previously-picked date,
+guest count, and availability from one business carried straight into a different
+business's booking form."*
+
+**`SectionRenderer.jsx` (163)** maps `entity_sections.layout` to a render style,
+*"falls back to 'grid' for unset/unknown values so nothing breaks if a section was
+created before layout existed."* **`IndustryFacts.jsx` (109)** renders the
+industry table row the API resolves through `industry_table_contract` —
+*"generic on purpose: **any column added to an industry table shows up here with
+no frontend change.**"* **`PoliciesSection.jsx` (67)** shows both real
+`entity_policies` rows and FAQs whose category matches a policy type, *"so both
+sources show even if only one has data."*
+
+**`ReviewsSection.jsx` (253)** resets to page 1 on business change, posts
+authentic reviews tied to the phone account (*"name/email come from the account —
+no anonymous typing"*), and falls back to the business's aggregate rating when
+there are no on-platform reviews yet.
+
+**`InstallBanner.jsx` (183)** shrinks to a tappable icon after a few seconds
+*"so it stops competing with the 'Ask a local' FAB"*, and sits above it rather
+than overlapping. **`AiChat.jsx` (203)** grabs location best-effort — *"never
+blocks the chat — resolves null on denial/timeout"* — and posts to
+`/api/tourist/ai-chat`, the modern concierge. Plus `HubTemplate` (219),
+`GallerySection` (127), `GCRHeader` (114), `BlogSection` (102), `EntityCard`
+(98), `LocationPicker` (133), `TeamSection` (61), `BottomNav` (52),
+`SkeletonLoader` (40), `PageHeader` (37), `Toast` (25).
+
+## APPENDIX F — the static surface (`public/`, 24 files), read
+
+Nine are live production URLs via `vercel.json`; the rest are reachable by
+filename. **This pass found three broken ones and corrected one earlier claim.**
+
+| File | KB | Serves | Calls |
+|---|---:|---|---|
+| `book.html` | 34 | `/book/:slug/:app` | `/api/platform/page/:slug`, `/api/stripe/config`, `/api/stripe/create-payment-intent` |
+| `biz.html` | 29 | `/p/:slug` | `/api/platform/page/:slug` |
+| `song-request.html` | 26 | `/:slug/profile` | `/api/artists/:slug`, `/queue`, `/request`, **`/api/cooperatives/:slug/cooperatives`**, `/contribute` |
+| `menu-update.html` | 19 | direct | `/api/gcr` (daily-update, PIN via `x-menu-pin`) |
+| `card.html` | 16 | direct | `/api/gcr/nfc-card-lead` |
+| `review.html` | 13 | direct | **`/api/reviews/request`, `/api/reviews/submit` — neither exists** |
+| `rides.html` | 13 | direct | **`/api/rides/request` — router is commented out** |
+| `manage.html` | 10 | `/manage/:id` | `/api/platform/manage/:id`, `/page/` |
+| `reviews-api.html` | 10 | `/developers/reviews` | docs for `/api/platform/reviews/` |
+| `booking.html` | 9 | direct | — (an earlier booking page) |
+| `verified-review.html` | 6 | `/r/:slug` | `/api/platform/review-token/`, `/reviews` |
+| `waiver.html` | 5 | `/waiver/:slug` | `/api/platform/waiver-info/`, `/waiver-sign/` |
+| `review-wall.html` | 4 | `/reviews/:slug` | `/api/platform/reviews/` |
+| `user.html` | 3 | `/u/:code` | `/api/platform/u/:code` |
+| `q.html` | 1.5 | direct | `/api/qr/scan/` |
+| `qr-menu.html` | **0** | — | **empty file** |
+| `embed.js` · `reviews-embed.js` | 1.5 · 7 | third-party sites | the availability + review widgets |
+
+### ⚠ `rides.html` posts to a route that is commented out
+
+`POST /api/rides/request`. `server.js:336` — *"UNMOUNTED: backing tables don't
+exist in the live DB, and this used the legacy `site_id` convention. Superseded
+by `/api/transportation`."* The live replacement is
+`POST /api/transportation/request`, which `TransportationRequest.jsx` and
+`Reserve.jsx` both already use. **This page is dead and cannot work.**
+
+### ⚠ `review.html` hits the exact shadowed-route hazard the admin console refuses to reproduce
+
+It calls `GET /api/reviews/request/<token>` and `POST /api/reviews/submit`.
+`routes/reviews.js` has only `GET /:slug`, `GET /:slug/stats`,
+`POST /:slug` (ownerRequired), `PUT /:slug/:id`, `DELETE /:slug/:id`.
+
+- `GET /api/reviews/request/<token>` → no match → 404.
+- **`POST /api/reviews/submit` → matches `POST /api/reviews/:slug` with
+  `slug = "submit"`.** It does not 404. `ownerRequired` is what stops it — an
+  unauthenticated visitor gets 401 rather than a review filed against a business
+  named "submit."
+
+`Admin-dashboard-main/src/modules/menu/Reviews.jsx` documents this precise trap
+and **refuses to reproduce the legacy flow**; `scripts/audit-endpoints.mjs` was
+written to catch it. It is live here, in a page no audit covers.
+
+### ✅ Correction — the crowdfunding economy *does* have a fan surface
+
+The main paper (and backlog item 21) recorded `/api/cooperatives` and
+`/api/goals` as having no fan-facing surface. **Half of that is wrong.**
+
+`song-request.html` — served at the live URL `/:slug/profile` — calls
+`GET /api/cooperatives/:slug/cooperatives` and
+`POST /api/cooperatives/:slug/cooperatives/:id/contribute`, matching
+`cooperatives.js:71` and `:150` exactly.
+
+**`/api/goals` remains genuinely unreachable** — `grep` over both `src/` and
+`public/` finds no caller for it anywhere. So the correct statement is: song
+crowdfunding is wired through the static surface; artist *goals* are not wired at
+all.
+
+This is the clearest argument in the paper for §16.7 — a live product surface
+outside the React app, outside every audit, holding both a working feature nobody
+had counted and two broken pages nobody had noticed.
+
+## APPENDIX G — the 16 root scripts (1,284 lines)
+
+Database dump/export/convert/import one-offs and Playwright-ish verifiers, all at
+the repo root rather than in `scripts/`.
+
+**Five reference the production project directly:** `dump-entire-db` (119),
+`export-supabase-complete` (235), `export-complete-all-data` (104),
+`convert-sql-to-json` (101), `convert-db-to-organized-json` (70). **Two of those
+carry the committed `service_role` key** — §16.1. They are why `pg` is a runtime
+dependency (§16.2).
+
+The rest: `extract-all-businesses` (83), `import-from-backup` (104),
+`insert-restaurants-from-backup` (112), `import-restaurants` (67),
+`add-ob-gs-restaurants` (28), and five verifiers — `verify-gcr` (73),
+`verify-live` (67), `verify-app` (31), `verify-navigation` (29),
+`inspect-page` (31), `debug-error` (30).
+
+None are referenced by `package.json`. None have run in CI. They are working
+notes that were committed.
+
 ---
 
 ## 14. Honesty ledger
 
 **Read in full, line by line:** `App.jsx`, `config.js`, `main.jsx`,
 `ErrorBoundary.jsx`, `utils/templateCategory.js`, `services/compassService.js`,
-`index.html`, `vercel.json`, `package.json`, `.gitignore`, and the headers of
-`scripts/prerender.mjs`.
+`index.html`, `vercel.json`, `package.json`, `.gitignore`; and — in the
+every-line pass — **all 38 pages and all 35 components**, including the four
+giants (`BusinessDetail` 2,467, `Swipe` 1,583, `Landing` 915, `Profile` 844),
+whose structure, state, effects, helper functions and inline reasoning are
+recorded in Appendices A–E.
 
-**Read substantially (head + structure + full API extraction):**
-`services/gcrApi.js` (first 150 of 680 in full, all 15 export signatures, and
-every API call site), `context/AppContext.jsx` (first 50 in full — the identity
-model — plus its full endpoint set), `categoryMap.js`,
-`services/locationService.js`, `services/supabaseAuth.js`,
-`services/firebaseAuth.js`.
+**Read substantially:** `services/gcrApi.js` (all 15 export signatures, the
+cache, `fixUrl`, `toCard`, the preference engine, and every call site),
+`context/AppContext.jsx` (the identity model in full plus its complete endpoint
+set), `categoryMap.js`, `services/locationService.js`,
+`services/supabaseAuth.js`, `services/firebaseAuth.js`,
+`scripts/prerender.mjs` (header + schema mapping).
 
-**Characterized by route, size, API calls and opening comments — not read
-line-by-line:** all 38 pages and all 35 components. Their 101 API paths were
-extracted mechanically from source and are exact; the internal render logic of
-the four giants (`BusinessDetail` 2,467, `Swipe` 1,583, `Landing` 915,
-`Profile` 844) is **not** claimed as read. That is ~15,000 lines of JSX and the
-largest remaining gap in this paper.
+**Read for wiring, not implementation:** the 24 files in `public/` — every one
+opened and its API calls extracted and checked against the API's routers
+(Appendix F), but the page markup and inline JS not read line by line. The 16
+root scripts — purpose, credentials and dependencies established, bodies not
+read (Appendix G).
 
-**Not read at all:** the 38 page stylesheets and 15 component stylesheets
-(~13,000 lines of CSS); the 24 files in `public/` (characterized from name,
-size and the `vercel.json` rewrite that serves them); the bodies of the 16 root
-scripts past their credential/dependency signals.
+**Not read:** the 38 page stylesheets and 15 component stylesheets — ~13,000
+lines of CSS. That is the one remaining gap, and it is presentation only; every
+behavioural claim in this paper comes from code that was read.
 
-**Verified rather than assumed:** the routes in `App.jsx` against the pages
-that exist; the API path extraction against every `.js`/`.jsx` under `src/`;
-the dead status of `supabaseAuth`/`firebaseAuth` by grepping every import; the
-committed key by decoding its JWT payload locally (§16.1).
-
----
+**Verified rather than assumed:** the 53 routes in `App.jsx` against the pages
+that exist; the 101 API paths extracted mechanically from every `.js`/`.jsx`
+under `src/`; the dead status of `supabaseAuth`/`firebaseAuth` by grepping every
+import; the committed key by decoding its JWT payload locally; and — new in this
+pass — `rides.html`, `review.html` and `song-request.html` checked call-by-call
+against `server.js`, `routes/reviews.js` and `routes/cooperatives.js`.
 
 ## 15. Findings — ordered by what they cost
 
-### 16.1 A live `service_role` key is committed to this repository
+### 15.1 A live `service_role` key is committed to this repository
 
 **`dump-entire-db.mjs` and `export-supabase-complete.mjs` each contain a
 hardcoded Supabase JWT.** Decoded locally, both are:
@@ -574,7 +1035,7 @@ root to `.gitignore` or move all 16 scripts into an ignored directory.
 
 This is the highest-severity finding across all four repos.
 
-### 16.2 Three dead dependencies, one of them a Postgres driver
+### 15.2 Three dead dependencies, one of them a Postgres driver
 
 | Package | Why it is there | Reachable? |
 |---|---|---|
@@ -590,7 +1051,7 @@ defaults to `''`, so nothing leaks today, but a well-meaning
 bundle. **Delete `supabaseAuth.js`, `firebaseAuth.js`, the two config exports,
 and move `pg` out of `dependencies`.**
 
-### 16.3 The tourist site calls four admin endpoints
+### 15.3 The tourist site calls four admin endpoints
 
 `Swipe.jsx` calls `/api/admin/sms-config`; `services/gcrApi.js` calls
 `/api/admin/tripswipe/{settings,sponsored,promo-cards}`.
@@ -606,7 +1067,7 @@ The fix is on the API side: a public, read-only projection of sponsored/promo
 data (the pattern `mcp-public.js` already uses). Until then the calls are
 guaranteed-dead weight on every deck load.
 
-### 16.4 No shared HTTP client and no endpoint registry
+### 15.4 No shared HTTP client and no endpoint registry
 
 Both sibling dashboards centralise this and say why. Here, ~40 files call
 `fetch` directly, `API_BASE` is re-derived from `import.meta.env` in at least
@@ -620,7 +1081,7 @@ tell "you have no saves" from "the request failed." `Admin-dashboard-main`
 distinguishes those three cases explicitly and built its whole
 honest-about-gaps behaviour on top of it.
 
-### 16.5 One error boundary for the whole app
+### 15.5 One error boundary for the whole app
 
 `ErrorBoundary` wraps `<BrowserRouter>`. Any render error in any of 38 pages
 blanks the entire site to *"Something went wrong / Reload."*
@@ -629,7 +1090,7 @@ blank the whole dashboard."* Given `BusinessDetail` is 2,467 lines rendering a
 payload assembled from ~90 tables, per-route boundaries would pay for
 themselves.
 
-### 16.6 `Dashboard.jsx` — 434 unreachable lines on the legacy API
+### 15.6 `Dashboard.jsx` — 434 unreachable lines on the legacy API
 
 Not routed in `App.jsx`, so nothing can navigate to it. It is also the only
 consumer of `/api/dashboard/*`, the `site_id`-keyed legacy router that
@@ -637,15 +1098,33 @@ consumer of `/api/dashboard/*`, the `site_id`-keyed legacy router that
 unroutable page that still ships in the bundle and pins a legacy dependency is
 the worst of both.
 
-### 16.7 The static surface has no owner
+### 15.7 The static surface has no owner — and two of its pages are broken
 
-24 files in `public/`, nine of them load-bearing production URLs wired by
+24 files in `public/`, nine of them live production URLs wired by
 `vercel.json`, carrying the entire consumer face of the universal booking
 engine — with no build step, no lint, no test, and no documentation anywhere in
-this repo. `qr-menu.html` is **0 bytes** and would serve a blank page if
-anything links to it.
+this repo.
 
-### 16.8 `README.md` is the stock Vite template
+The every-line pass (Appendix F) opened all 24 and checked their calls:
+
+- **`rides.html` posts to `/api/rides/request`,** a router commented out in
+  `server.js:336`. The live replacement is `/api/transportation/request`, which
+  two React pages already use. **The page cannot work.**
+- **`review.html` calls `/api/reviews/request` and `/api/reviews/submit`,**
+  neither of which exists. The second does not 404 — it binds to
+  `POST /api/reviews/:slug` with `slug = "submit"`. Only `ownerRequired` stops it.
+  This is the exact shadowed-route hazard `Admin-dashboard-main` documents,
+  refuses to reproduce, and wrote `audit-endpoints.mjs` to catch.
+- **`qr-menu.html` is 0 bytes.**
+- **`song-request.html` works, and does something nothing else does:** it is the
+  only fan-facing surface for `/api/cooperatives`. Song crowdfunding is live
+  through the static surface. `/api/goals` still has no caller anywhere.
+
+So the surface holds a working feature that was not counted, two pages that
+cannot work, and an empty file — none of it covered by any check in any repo.
+That is the argument for giving it an owner.
+
+### 15.8 `README.md` is the stock Vite template
 
 50 lines about `@vitejs/plugin-react` and the React Compiler. Not one word about
 Gulf Coast Radar, the routes, the API, the static surface, or how to run it
@@ -653,7 +1132,7 @@ against a local API. The largest and most user-facing repo in the platform is
 the only one with no documentation at all — this file is the first attempt at
 any.
 
-### 16.9 Smaller notes
+### 15.9 Smaller notes
 
 - **`categoryMap.js` ↔ `gcr-api-clean/utils/listing-category-map.js` is a
   declared mirror.** `hydrateTaxonomy()` mitigates drift at runtime but does not
@@ -669,7 +1148,7 @@ any.
 
 ---
 
-## 17. What this repo is, in one paragraph
+## 16. What this repo is, in one paragraph
 
 `gcr-unified` is the consumer product: the public Gulf Coast directory, the
 Trip Swipe deck, the tourist account, and every booking flow a visitor touches
