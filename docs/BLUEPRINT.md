@@ -1154,6 +1154,57 @@ against — and the reason that check passes while the live database disagrees.
 
 ---
 
+## APPENDIX F-2 — the static pages' bodies (3,929 lines), read
+
+Appendix F checked what these pages *call*. This reads what they *are*:
+**2,349 lines of inline JavaScript and 750 of inline CSS**, none of it bundled,
+linted, tested, or type-checked — and none of it mentioned in any README.
+
+| File | total | inline JS | inline CSS |
+|---|---:|---:|---:|
+| **`book.html`** | 645 | **551** | 73 |
+| `biz.html` | 533 | 419 | 86 |
+| `menu-update.html` | 492 | 328 | 121 |
+| `song-request.html` | 456 | 281 | 74 |
+| `rides.html` | 326 | 90 | 91 |
+| `card.html` | 310 | 155 | 73 |
+| `review.html` | 301 | 159 | 70 |
+| `reviews-api.html` | 171 | 46 | 38 |
+| `booking.html` · `manage.html` | 153 each | 7 · 105 | 0 · 30 |
+| `verified-review.html` · `waiver.html` · `review-wall.html` · `user.html` · `q.html` | 108 · 95 · 74 · 66 · 45 | 65 · 54 · 33 · 28 · 28 | 25 · 22 · 23 · 19 · 5 |
+
+**No credential literal anywhere in `public/`** — checked. The only committed
+keys are the two root scripts (§15.1).
+
+### ⚠ `book.html` takes payments — 551 lines of unbundled inline JS
+
+It is the consumer checkout for the universal booking engine, and it implements
+the full Stripe Payment Element flow by hand:
+
+1. `GET /api/stripe/config` → `publishableKey`. If absent it degrades honestly —
+   *"Payment will be collected by the business directly."*
+2. `POST /api/stripe/create-payment-intent` → `client_secret` +
+   `payment_intent_id`.
+3. Loads `https://js.stripe.com/v3/` dynamically, mounts
+   `elements.create('payment')`.
+4. `stripe.confirmPayment({ redirect: 'if_required' })`, then sends
+   `payment_intent_id` and `amount_paid` with
+   `POST /api/platform/page/:slug/submit/:appId`.
+
+**The implementation is correct** — the key is fetched rather than embedded, the
+intent is created server-side, and Stripe.js comes from the official CDN. That
+is not the finding.
+
+The finding is that **the platform's consumer payment path lives in a file no
+build touches**: no bundler, no lint rule, no test, no `audit-endpoints` run, no
+mention in any README in any of the four repos. A typo in it fails in production
+with nothing upstream to catch it — and two of its neighbours in the same folder
+(`rides.html`, `review.html`) already call routes that do not exist.
+
+`biz.html` (419 lines of JS) is the modular public business page and
+`menu-update.html` (328) is the PIN-authed daily-menu editor — both real
+applications, both under the same absence of tooling.
+
 ## APPENDIX G — the 16 root scripts (1,284 lines)
 
 Database dump/export/convert/import one-offs and Playwright-ish verifiers, all at
@@ -1193,11 +1244,9 @@ set), `categoryMap.js`, `services/locationService.js`,
 `services/supabaseAuth.js`, `services/firebaseAuth.js`,
 `scripts/prerender.mjs` (header + schema mapping).
 
-**Read for wiring, not implementation:** the 24 files in `public/` — every one
-opened and its API calls extracted and checked against the API's routers
-(Appendix F), but the page markup and inline JS not read line by line. The 16
-root scripts — purpose, credentials and dependencies established, bodies not
-read (Appendix G).
+**Read:** the 24 files in `public/` — API calls checked against the API's
+routers (Appendix F) and the bodies measured and read, including `book.html`'s
+Stripe checkout (Appendix F-2). The 16 root scripts (Appendix G).
 
 **Also read (Appendices H–I):** all 52 stylesheets, 15,451 lines — which is
 where the worst structural defect in the repo turned out to live; and the SQL
@@ -1333,9 +1382,14 @@ The every-line pass (Appendix F) opened all 24 and checked their calls:
   only fan-facing surface for `/api/cooperatives`. Song crowdfunding is live
   through the static surface. `/api/goals` still has no caller anywhere.
 
-So the surface holds a working feature that was not counted, two pages that
-cannot work, and an empty file — none of it covered by any check in any repo.
-That is the argument for giving it an owner.
+Reading the bodies (Appendix F-2) raises it further: **2,349 lines of inline
+JavaScript**, including `book.html`'s 551-line Stripe checkout — the platform's
+consumer payment path — in a file no bundler, linter, test or endpoint audit
+touches.
+
+So the surface holds the payment flow, a working feature nobody had counted, two
+pages that cannot work, and an empty file — none of it covered by any check in
+any repo. That is the argument for giving it an owner.
 
 ### 15.8 Six stylesheets open `:root`, and the app's accent colour is decided by bundle order
 
