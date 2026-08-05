@@ -944,6 +944,216 @@ This is the clearest argument in the paper for §16.7 — a live product surface
 outside the React app, outside every audit, holding both a working feature nobody
 had counted and two broken pages nobody had noticed.
 
+## APPENDIX H — the 52 stylesheets (15,451 lines), read
+
+Skipped in the first pass on the grounds that it was "presentation only." That
+was wrong twice over: this CSS encodes real layout contracts, and reading it
+found the single worst structural defect in the repo.
+
+### H.1 ⚠ Six files define `:root`, and eight global tokens collide
+
+`index.css` defines the token layer. **Five other stylesheets also open
+`:root`**, and three of them redefine tokens `index.css` already owns — at
+identical specificity, so **whichever stylesheet the bundler emits last wins for
+the entire application.**
+
+| Token | `index.css` | overridden by | consumers |
+|---|---|---|---:|
+| **`--accent`** | `#0b7a75` teal | `BusinessDetail.css` → **`#e85d04` orange** | **36** |
+| `--border` | `#e2e8f0` | `BusinessDetail.css` → `#e6ecf3` | **72** |
+| `--text` | `#1a2433` | `GCRCard.css` → `#12263a` · `Browse.css` → `#1a2332` | 27 |
+| `--muted` | — | `GCRCard.css` `#66788a` vs `BusinessDetail.css` `#5c6b81` | 38 |
+| `--ink` | `#1a2433` | `BusinessDetail.css` → `#0e1726` | 15 |
+| `--card` | `#ffffff` | `BusinessDetail.css` → `#fff` | 21 |
+| `--shadow` | — | three different values in `GCRCard` / `Browse` / `BusinessDetail` | 7 |
+| `--radius` | `20px` | `GCRCard.css` → `18px` | 1 |
+
+**This is live, not theoretical.** `App.jsx` imports every page statically — there
+is no lazy loading in this app — so every page stylesheet is always in the bundle
+and always loads after `index.css`. In a production build **`--accent` resolves to
+orange `#e85d04` application-wide.**
+
+Seven files outside `BusinessDetail.css` consume it: `BottomNav.css` (the active
+nav item), `Home.css`, `Profile.css`, `Swipe.css`, `MyList.css`,
+`Itinerary.css`, `Building.css`.
+
+Two of those are the tell. `Home.css:28` and `Profile.css:6` both write:
+
+```css
+background: linear-gradient(135deg, var(--primary), var(--accent));
+```
+
+`index.css` sets `--primary` and `--accent` to the *same* teal, which would make
+that gradient flat — so whoever wrote it expected two colours. Under the real
+cascade it renders **teal → orange**. Whichever was intended, the fact is that
+the app's accent colour is decided by stylesheet emission order rather than by
+the token file.
+
+**The fix is a scope change, not a colour change:** page-specific palettes belong
+on a page class (`.business-detail { --accent: … }`), not on `:root`.
+
+### H.2 The token system barely exists
+
+| | raw hex | `var(--…)` | ratio |
+|---|---:|---:|---|
+| `gcr-unified` | **1,617** | 673 | **71% hardcoded** |
+| `Admin-dashboard-main` | 36 outside `theme.css` | — | ~5% |
+| `Dashboards-users-` | **0** outside `:root` | — | **0%** |
+
+Reading all three repos' CSS confirms the same split the JavaScript read found.
+`Dashboards-users-` has 45 tokens and **not one raw hex outside `:root`**.
+`Admin-dashboard-main` has 72 tokens in `styles/theme.css`, **no colliding
+`:root` blocks at all**, and one `!important` in 3,139 lines. `gcr-unified` has
+six competing `:root` blocks and 1,617 hardcoded colours.
+
+**And no dark theme.** No `prefers-color-scheme`, no `data-theme`, anywhere in
+15,451 lines. Both dashboards support both themes through the same three-tier
+pattern; the front end tourists actually use is light-only. With 71% of colour
+hardcoded, that is not a small change — it is the concrete cost of H.2.
+
+### H.3 `z-index` has no scale
+
+Ten separate rules sit at `z-index: 1000` — `GCRHeader` (the fixed header),
+`AiChat`'s FAB and panel, `LocationPicker`'s dropdown, `MiniSiteComponents`,
+`RestaurantMenu`, `RentalDetail`. When ten things share a level, **DOM order
+decides**, which is why the stacking bugs the comments record keep recurring.
+
+Above them: `Toast` 9999 · `ClaimBusiness` 2100 · `ArCameraOverlay` 2000 ·
+`GCRHeader`'s dropdown 2000 · `MiniSiteComponents` 1001.
+
+### H.4 The fixed-chrome offset is copy-pasted into seven files
+
+Six stylesheets carry a near-identical comment:
+
+> Clears BottomNav + the "Ask a local" FAB + the install banner, which stack
+> above it at up to ~200px from the viewport bottom (see InstallBanner.jsx /
+> AiChat.css) — without this the last card is hidden behind them.
+
+`BusinessDetail.css`, `CategoryListings.css`, `CategoryPage.css`, `Events.css`,
+`LiveFeed.css`, `RestaurantMenu.css`, `Search.css`. `Deals.css` has its own
+variant pushing the FAB up *"specifically on this page rather than changing its
+position app-wide."*
+
+Move the FAB and seven stylesheets need editing. `--max-w` and `--gcr-header-h`
+prove the pattern is already understood here — the bottom stack just never got
+its own variable.
+
+### H.5 What the CSS gets right, and documents
+
+Sixty substantive comments, each recording a real fix:
+
+**`index.css`** is the strongest file in the repo. It explains
+`-webkit-text-size-adjust` (*"WebKit/Blink can auto-boost font sizes in narrow
+flex columns […] every font-size in this app is an intentional px value"*); why
+`--max-w` is `100%` on phones (*"a hardcoded 430px left a sliver of background
+down both sides of a 440pt iPhone Pro Max"*); why `overflow-x` sits on `body` as
+well (*"fixed-position elements aren't contained by `#root`'s clip"*); and —
+the best comment in any of the four repos — **why it is `clip` and not `hidden`**:
+
+> `overflow-x:hidden` forces the browser to also treat `overflow-y` as auto (per
+> the CSS overflow spec, a non-visible value on one axis converts a visible value
+> on the other to auto), which quietly turns `#root` into a scroll container that
+> never actually scrolls — **breaking `position:sticky` for every descendant in the
+> app**, since sticky elements then anchor to `#root`'s frozen scrollport.
+
+**`Swipe.css`** documents its interaction with `react-tinder-card`: the library
+*"only ever sets an inline `transform` for the drag gesture — it never touches
+top/left/width/height/bottom, so pinning all four sides here doesn't conflict with
+it."* It uses `svh` rather than `dvh` because *"this page has no scrollable
+content to ever trigger the browser chrome to collapse, and `dvh` can resolve
+larger than what's actually visible […] leaving a permanent dead gap."* It records
+a skeleton loader that *"referenced a `shimmer` keyframe that was never defined
+anywhere, so the loading card just sat static."* And it states the theme
+exception plainly: this page is black by design, so *"`var(--text)`/`rgba(0,0,0,…)`
+were tuned for a light page and would be invisible here."* At L637 it notes using
+compound selectors *"(not `!important`)"* to win a cascade fight — deliberate
+restraint.
+
+**`BusinessDetail.css`** documents the three-deep sticky stack — global header,
+then `.detail-header`, then `.sticky-tabs` — and why both offsets are needed:
+*"using only `--detail-header-h` parked these ~48px from the top, i.e. behind the
+global header, so the tab row vanished under it while scrolling."*
+
+**`BottomNav.css`** records a real accessibility fix: it *"used to be hidden at
+≥769px, which left tablet and desktop visitors with no way to reach
+Home/Search/Saves/Profile at all — the header has no equivalent."*
+
+**`AiChat.css`** hugs the right edge of the *centred app column* rather than the
+window, because *"on a tablet/desktop the window is wider than the column, so a
+flat `right:18px` left this floating out in the empty side margin."*
+
+**`ClaimBusiness.css`** is fully self-contained by design — every class prefixed
+`claim-`, its own overlay rather than the page's `.modal-overlay` — so *"dropping
+`<ClaimBusiness />` on a new page needs no other stylesheet."*
+
+### H.6 Dead CSS
+
+**133 of 1,842 classes (7%) are never referenced** in any `.jsx`, `.js`,
+`public/*.html`, or `index.html`. Examples: `artist-profile-page`,
+`badge-status-open`/`closed`/`closing`/`opening`, `btn-accent`/`green`/`red`/
+`order`/`reserve`, `card-image-overlay`, `card-tagline`, `carousel-hero`,
+`ar-cam-edge-left`/`right`.
+
+One is dead for a reason worth noting: `index.css:294` hides
+`.grecaptcha-badge` — reCAPTCHA belongs to `firebaseAuth.js`, which is dead
+(§15.2). That rule can go with it.
+
+**16 `!important` in 15,451 lines**, ten of them in one `BusinessDetail.css`
+block (L1189–1196) overriding a shared section-header style.
+
+---
+
+## APPENDIX I — the SQL layer, and what is missing from it
+
+Read across `gcr-api-clean`: `schema.sql` (663) + 13 files in `sql/` (1,846) +
+3 in `migrations/` (254).
+
+**80 `CREATE TABLE` · 59 policies · 121 indexes · and zero `CREATE FUNCTION`.**
+
+### ⚠ Ten of the eleven RPCs the API depends on have no definition in any repo
+
+| RPC | Call sites | Defined in repo? |
+|---|---:|---|
+| `fuzzy_entity_search` | 4 | **no** |
+| `create_booking_if_available` | 3 | **no** |
+| `create_booking_hold` | 2 | **no** |
+| `find_existing_entity` | 1 | **no** |
+| `upsert_preference_score` | 1 | **no** |
+| `resource_is_available` | 1 | **no** |
+| `resource_blocked_dates` | 1 | **no** |
+| `increment_deal_clicks` | 1 | **no** |
+| `increment_customer_bookings` | 1 | **no** |
+| `exec_sql` | 1 | **no** |
+| `entity_sections` | 1 | only as a *proposal* in another repo |
+
+These are not incidental. **`create_booking_if_available` is the atomic
+anti-overbook guarantee** that `dashboard.js` and `public.js` both rest on — the
+one the API blueprint contrasts favourably against `platform.js`'s wider race
+window. `find_existing_entity` and `fuzzy_entity_search` are the duplicate
+prevention behind the counterfeit gate. `upsert_preference_score` is Trip Swipe's
+ranking.
+
+**They exist only in the live database.** If the Supabase project were rebuilt
+from this repository, every one of them would be missing, and the failures would
+be silent — PostgREST returns an error the calling code mostly swallows.
+
+Two further notes:
+
+- **`entity_sections`** — the API calls it at `business-data.js:131`. Its only
+  DDL anywhere is `Dashboards-users-/sql/entity_sections.sql`, a file whose
+  siblings all open *"NEVER RUN. This is a proposal."* A live API dependency is
+  defined only in another repo's proposal folder.
+- **`exec_sql`** — an RPC that executes arbitrary SQL, called from
+  `tourist.js:322` to self-heal a missing table with `CREATE TABLE IF NOT
+  EXISTS`. Its definition, and therefore its grants, are not in version control
+  either.
+
+`sql/capability_tables.sql` (521 lines, 18 tables, 26 indexes) is the file
+`scripts/check-capability-columns.mjs` validates `routes/capabilities.js`
+against — and the reason that check passes while the live database disagrees.
+
+---
+
 ## APPENDIX G — the 16 root scripts (1,284 lines)
 
 Database dump/export/convert/import one-offs and Playwright-ish verifiers, all at
@@ -989,9 +1199,12 @@ opened and its API calls extracted and checked against the API's routers
 root scripts — purpose, credentials and dependencies established, bodies not
 read (Appendix G).
 
-**Not read:** the 38 page stylesheets and 15 component stylesheets — ~13,000
-lines of CSS. That is the one remaining gap, and it is presentation only; every
-behavioural claim in this paper comes from code that was read.
+**Also read (Appendices H–I):** all 52 stylesheets, 15,451 lines — which is
+where the worst structural defect in the repo turned out to live; and the SQL
+layer in `gcr-api-clean`, 2,765 lines across `schema.sql`, `sql/` and
+`migrations/`, which is where ten missing function definitions turned up.
+
+**Nothing in this repository is now unread.**
 
 **Verified rather than assumed:** the 53 routes in `App.jsx` against the pages
 that exist; the 101 API paths extracted mechanically from every `.js`/`.jsx`
@@ -1124,7 +1337,40 @@ So the surface holds a working feature that was not counted, two pages that
 cannot work, and an empty file — none of it covered by any check in any repo.
 That is the argument for giving it an owner.
 
-### 15.8 `README.md` is the stock Vite template
+### 15.8 Six stylesheets open `:root`, and the app's accent colour is decided by bundle order
+
+`index.css` owns the token layer. Five other stylesheets also open `:root`;
+three redefine tokens it already owns, at identical specificity.
+
+`--accent` is teal `#0b7a75` in `index.css` and **orange `#e85d04` in
+`BusinessDetail.css`**, with **36 consumers** across seven other files including
+the bottom nav's active state and the Home and Profile header gradients.
+`--border` collides across 72 consumers. Because `App.jsx` imports every page
+statically, page CSS always loads last — **so orange wins in production.**
+
+Page palettes belong on a page class, not on `:root`. Full table in Appendix H.1.
+
+### 15.9 71% of colour is hardcoded, and there is no dark theme
+
+1,617 raw hex values against 673 token uses. No `prefers-color-scheme` and no
+`data-theme` anywhere in 15,451 lines — the only front end without them.
+`Dashboards-users-` has zero raw hex outside `:root`; `Admin-dashboard-main` has
+36 in 3,139 lines. Appendix H.2.
+
+### 15.10 Ten RPCs the platform depends on exist only in the live database
+
+`create_booking_if_available` — the atomic anti-overbook guarantee under two
+booking paths — `create_booking_hold`, `fuzzy_entity_search`,
+`find_existing_entity`, `upsert_preference_score`, `resource_is_available`,
+`resource_blocked_dates`, `increment_deal_clicks`,
+`increment_customer_bookings`, and `exec_sql` have **no `CREATE FUNCTION`
+anywhere in any of the four repositories**.
+
+The SQL tree has 80 tables, 59 policies, 121 indexes and **zero functions**.
+Rebuild the database from this repo and the booking-correctness layer is gone —
+silently, because the calling code mostly swallows the error. Appendix I.
+
+### 15.11 `README.md` is the stock Vite template
 
 50 lines about `@vitejs/plugin-react` and the React Compiler. Not one word about
 Gulf Coast Radar, the routes, the API, the static surface, or how to run it
@@ -1132,7 +1378,7 @@ against a local API. The largest and most user-facing repo in the platform is
 the only one with no documentation at all — this file is the first attempt at
 any.
 
-### 15.9 Smaller notes
+### 15.12 Smaller notes
 
 - **`categoryMap.js` ↔ `gcr-api-clean/utils/listing-category-map.js` is a
   declared mirror.** `hydrateTaxonomy()` mitigates drift at runtime but does not
