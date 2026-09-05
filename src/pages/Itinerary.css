@@ -38,7 +38,7 @@
 .tc-top { display: flex; justify-content: space-between; align-items: flex-start; }
 .tc-name { font-size: 16px; font-weight: 800; color: var(--text); }
 .tc-sub { font-size: 12px; color: var(--accent); font-weight: 600; margin-top: 2px; }
-.tc-rating { font-size: 14px; font-weight: 700; color: #fbbf24; white-space: nowrap; }
+.tc-rating { font-size: 14px; font-weight: 700; color: #b45309; white-space: nowrap; }
 .tc-badges { display: flex; flex-wrap: wrap; gap: 5px; }
 .tc-meta { display: flex; gap: 4px; font-size: 12px; color: var(--text2); }
 .open-text { color: #86efac; font-weight: 600; }
