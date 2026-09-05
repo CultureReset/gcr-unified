@@ -705,7 +705,7 @@ export default function Profile() {
                   onClick={() => navigate(`/business/${rv.entity_slug}`)}>
                   <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:8,marginBottom:4}}>
                     <span style={{fontWeight:700,color:'var(--text)',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{rv.title}</span>
-                    <span style={{color:'#fbbf24',fontSize:13,flexShrink:0}}>{'★'.repeat(rv.rating)}{'☆'.repeat(Math.max(0, 5 - rv.rating))}</span>
+                    <span style={{color:'#b45309',fontSize:13,flexShrink:0}}>{'★'.repeat(rv.rating)}{'☆'.repeat(Math.max(0, 5 - rv.rating))}</span>
                   </div>
                   <div style={{fontSize:13,color:'var(--text2)',lineHeight:1.5,marginBottom:6}}>{rv.body}</div>
                   {rv.media_url && (rv.media_type === 'video'
@@ -742,7 +742,7 @@ export default function Profile() {
                   <div style={{fontSize:12,color:'var(--text3)',marginBottom:2}}>Phone</div>
                   <div style={{fontWeight:600}}>📱 {phoneFormatted}</div>
                 </div>
-                <span style={{fontSize:11,fontWeight:700,padding:'3px 8px',borderRadius:10,background:'rgba(34,197,94,.15)',color:'#86efac'}}>VERIFIED</span>
+                <span style={{fontSize:11,fontWeight:700,padding:'3px 8px',borderRadius:10,background:'rgba(34,197,94,.15)',color:'#15803d'}}>VERIFIED</span>
               </div>
             )}
 
@@ -774,13 +774,13 @@ export default function Profile() {
                       onChange={e => setNewPassword(e.target.value)}
                       className="setup-input" autoComplete="new-password" style={{fontSize:16,width:'100%',boxSizing:'border-box'}}
                     />
-                    {emailErr && <div style={{background:'rgba(239,68,68,.1)',border:'1px solid rgba(239,68,68,.3)',borderRadius:10,padding:'8px 12px',fontSize:13,color:'#fca5a5',marginTop:10}}>{emailErr}</div>}
-                    {emailInfo && <div style={{background:'rgba(34,197,94,.1)',border:'1px solid rgba(34,197,94,.3)',borderRadius:10,padding:'8px 12px',fontSize:13,color:'#86efac',marginTop:10}}>{emailInfo}</div>}
+                    {emailErr && <div style={{background:'rgba(239,68,68,.1)',border:'1px solid rgba(239,68,68,.3)',borderRadius:10,padding:'8px 12px',fontSize:13,color:'var(--red)',marginTop:10}}>{emailErr}</div>}
+                    {emailInfo && <div style={{background:'rgba(34,197,94,.1)',border:'1px solid rgba(34,197,94,.3)',borderRadius:10,padding:'8px 12px',fontSize:13,color:'#15803d',marginTop:10}}>{emailInfo}</div>}
                     <div style={{display:'flex',gap:8,marginTop:12}}>
                       <button className="btn-primary" onClick={sendAddEmailCode} disabled={emailBusy || !newEmail || newPassword.length < 6} style={{flex:1}}>
                         {emailBusy ? 'Sending…' : 'Send code →'}
                       </button>
-                      <button onClick={() => { setAddEmailOpen(false); setEmailErr(''); setEmailInfo('') }} style={{background:'transparent',border:'1px solid rgba(255,255,255,.2)',color:'var(--text)',borderRadius:10,padding:'10px 14px'}}>Cancel</button>
+                      <button onClick={() => { setAddEmailOpen(false); setEmailErr(''); setEmailInfo('') }} style={{background:'transparent',border:'1px solid var(--border)',color:'var(--text)',borderRadius:10,padding:'10px 14px'}}>Cancel</button>
                     </div>
                   </>
                 ) : (
@@ -791,13 +791,13 @@ export default function Profile() {
                       onChange={e => setEmailCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
                       className="setup-input" style={{fontSize:20,letterSpacing:6,textAlign:'center',width:'100%',boxSizing:'border-box'}}
                     />
-                    {emailErr && <div style={{background:'rgba(239,68,68,.1)',border:'1px solid rgba(239,68,68,.3)',borderRadius:10,padding:'8px 12px',fontSize:13,color:'#fca5a5',marginTop:10}}>{emailErr}</div>}
-                    {emailInfo && <div style={{background:'rgba(34,197,94,.1)',border:'1px solid rgba(34,197,94,.3)',borderRadius:10,padding:'8px 12px',fontSize:13,color:'#86efac',marginTop:10}}>{emailInfo}</div>}
+                    {emailErr && <div style={{background:'rgba(239,68,68,.1)',border:'1px solid rgba(239,68,68,.3)',borderRadius:10,padding:'8px 12px',fontSize:13,color:'var(--red)',marginTop:10}}>{emailErr}</div>}
+                    {emailInfo && <div style={{background:'rgba(34,197,94,.1)',border:'1px solid rgba(34,197,94,.3)',borderRadius:10,padding:'8px 12px',fontSize:13,color:'#15803d',marginTop:10}}>{emailInfo}</div>}
                     <div style={{display:'flex',gap:8,marginTop:12}}>
                       <button className="btn-primary" onClick={confirmAddEmail} disabled={emailBusy || emailCode.length < 6} style={{flex:1}}>
                         {emailBusy ? 'Confirming…' : 'Confirm →'}
                       </button>
-                      <button onClick={() => setAddEmailStep('input')} style={{background:'transparent',border:'1px solid rgba(255,255,255,.2)',color:'var(--text)',borderRadius:10,padding:'10px 14px'}}>Back</button>
+                      <button onClick={() => setAddEmailStep('input')} style={{background:'transparent',border:'1px solid var(--border)',color:'var(--text)',borderRadius:10,padding:'10px 14px'}}>Back</button>
                     </div>
                   </>
                 )}
