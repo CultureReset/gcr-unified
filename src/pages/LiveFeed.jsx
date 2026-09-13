@@ -37,7 +37,7 @@ export default function LiveFeed() {
 
   async function loadPosts(offset = 0) {
     try {
-      const res = await fetch(`${API_BASE}/api/gcr/social-posts/feed?limit=${LIMIT}&offset=${offset}`)
+      const res = await fetch(`${API_BASE}/api/gcr/social-posts/feed?placement=home&limit=${LIMIT}&offset=${offset}`)
       if (!res.ok) return
       const d = await res.json()
       const incoming = d.posts || []
@@ -99,19 +99,33 @@ export default function LiveFeed() {
 
       <div className="feed-posts">
         {posts.map(post => {
+          // A post is either an embeddable one from a social platform, or one
+          // written in the admin console. Both belong here.
+          //
+          // This used to `return null` for anything embedUrl() could not turn
+          // into an iframe, which is every authored post: they are saved with
+          // a post_url of `manual:<timestamp>` and match none of the platform
+          // patterns. So a notice written in the back end saved correctly,
+          // came back from the API correctly, and then rendered as nothing at
+          // all. Anything with an image or words to show now renders.
           const embed = embedUrl(post)
-          if (!embed) return null
+          const title = post.card_title
+          const who = post.entity_name || post.card_entity_name
+          if (!embed && !post.image_url && !title && !post.caption) return null
 
           return (
             <div key={post.id} className="feed-post">
               {/* Source label */}
               <div className="feed-post-meta">
-                <span className="feed-platform-badge">
-                  {platformIcon(post.source)} {platformLabel(post.source)}
-                </span>
-                {post.entity_name && (
-                  <span className="feed-biz-name">{post.entity_name}</span>
+                {embed ? (
+                  <span className="feed-platform-badge">
+                    {platformIcon(post.source)} {platformLabel(post.source)}
+                  </span>
+                ) : (
+                  <span className="feed-platform-badge">📡 Gulf Coast Radar</span>
                 )}
+                {who && <span className="feed-biz-name">{who}</span>}
+                {post.card_city && <span className="feed-biz-name">{post.card_city}</span>}
                 {post.post_date && (
                   <span className="feed-date">
                     {new Date(post.post_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
@@ -119,23 +133,54 @@ export default function LiveFeed() {
                 )}
               </div>
 
-              {/* iFrame embed — no controls, no click needed, just the post */}
-              <div className="feed-embed-wrap">
-                <iframe
-                  src={embed}
-                  className="feed-embed"
-                  frameBorder="0"
-                  scrolling="no"
-                  allowFullScreen
-                  allow="autoplay; encrypted-media"
-                  loading="lazy"
-                  title={post.caption || 'Social post'}
-                />
-              </div>
+              {embed ? (
+                /* iFrame embed — no controls, no click needed, just the post */
+                <div className="feed-embed-wrap">
+                  <iframe
+                    src={embed}
+                    className="feed-embed"
+                    frameBorder="0"
+                    scrolling="no"
+                    allowFullScreen
+                    allow="autoplay; encrypted-media"
+                    loading="lazy"
+                    title={post.caption || 'Social post'}
+                  />
+                </div>
+              ) : (
+                <>
+                  {title && <h2 className="feed-card-title">{title}</h2>}
+                  {post.image_url && (
+                    <div className="feed-card-image-wrap">
+                      <img
+                        className="feed-card-image"
+                        src={post.image_url}
+                        alt={title || post.caption || ''}
+                        loading="lazy"
+                      />
+                    </div>
+                  )}
+                </>
+              )}
 
-              {/* Caption if present */}
+              {/* Caption. An authored card is the whole story, so it is not
+                  clipped the way a borrowed social caption is. */}
               {post.caption && (
-                <div className="feed-caption">{post.caption.slice(0, 120)}{post.caption.length > 120 ? '…' : ''}</div>
+                embed
+                  ? <div className="feed-caption">{post.caption.slice(0, 120)}{post.caption.length > 120 ? '…' : ''}</div>
+                  : <div className="feed-caption feed-caption-full">{post.caption}</div>
+              )}
+
+              {/* An authored card may still point somewhere. */}
+              {!embed && post.post_url && !post.post_url.startsWith('manual:') && (
+                <a
+                  className="feed-card-link"
+                  href={post.post_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Read more →
+                </a>
               )}
             </div>
           )
