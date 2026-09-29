@@ -15,6 +15,61 @@ the business owner's dashboard live in `Admin-dashboard-main` and
 returns no listings, so the deal, happy-hour and event lists are empty ("0
 events"). They show the layout, not the live content.*
 
+<!-- branches:start -->
+## Branches
+
+*Read from GitHub on 2026-09-29. 37 branches.*
+
+- **Default branch on GitHub:** `master`.
+- **`claude/repo-code-analysis-y4n1k7`** is where this README and the audit fixes live. It contains every commit on `master` and more (this README, the audit fixes and the screenshots).
+- **27 other branches hold commits that `claude/repo-code-analysis-y4n1k7` does not have.** The newest is `claude/linux-build-cleanup-dfpu0e` (last commit 2026-09-15, 1 commit not in the work branch). Check those before assuming the work branch is the whole story.
+
+<details><summary>All 37 branches</summary>
+
+| Branch | Last commit | Not in the work branch | Last commit message |
+| --- | --- | --- | --- |
+| `claude/repo-code-analysis-y4n1k7` (work branch) | 2026-09-29 | - | this README and the audit fixes |
+| `claude/linux-build-cleanup-dfpu0e` | 2026-09-15 | 1 | docs: README, and this is the correctly-wired frontend |
+| `claude/admin-dashboard-repo-review-47q2vc` | 2026-09-13 | 2 | Stop the Live Feed throwing away every post written for it |
+| `claude/gcr-unified-login-styling-1mmsac` | 2026-09-05 | 5 | Fix remaining low-contrast colors in Profile's account/reviews section |
+| `claude/gcr-api-claim-docs-g4e42t` | 2026-08-05 | 5 | Correct the page, component and static-file counts |
+| `claude/platform-integration-launch-test-abi95i` | 2026-08-04 | 0 | Match the desktop gutters to the page, and stop tracking the Vercel toke |
+| `master` (default) | 2026-08-04 | 0 | Match the desktop gutters to the page, and stop tracking the Vercel toke |
+| `claude/tourist-dashboard-layout-hi2yxu` | 2026-08-04 | 7 | Listing cards: walk every image and skip the dead ones |
+| `claude/new-session-1e1dj0` | 2026-08-04 | 10 | Merge remote-tracking branch 'origin/claude/gcr-unified-listing-layouts- |
+| `claude/dashboard-inventory-purposes-m5wtba` | 2026-08-04 | 0 | Add "Claim this business" to every GCR profile page |
+| `claude/gcr-unified-listing-layouts-fmjr7q` | 2026-08-04 | 7 | Show artists where they are playing |
+| `claude/cybercheck-modular-react-dashboard-7on41c` | 2026-08-03 | 1 | Send the full page event, not just the path |
+| `claude/trip-swap-profile-issues-uyibtg` | 2026-07-29 | 2 | Add rain chance to weather bar, expand beach flag estimate |
+| `claude/booking-platforms-location-ie8zg9` | 2026-07-27 | 1 | Add full technical audit notes (pages, components, dead code, backend ga |
+| `chatgpt/slug-export-20260731` | 2026-07-26 | 0 | Fix more invisible white-on-light text (Building, Group states) |
+| `claude/cybercheck-twilio-hardcoding-pj7eyo` | 2026-07-26 | 0 | Fix more invisible white-on-light text (Building, Group states) |
+| `claude/gcr-api-sms-functionality-5r2zb5` | 2026-07-26 | 5 | Don't drop gallery-only businesses when rebuilding the swipe deck |
+| `claude/twilio-verification-sid-506poy` | 2026-07-26 | 0 | Fix invisible white-on-white text on the setup wizard |
+| `claude/gcr-unified-integration-6cghed` | 2026-07-25 | 2 | Add typo-tolerant search results, autocomplete, and category tabs |
+| `claude/session-lvki6x` | 2026-07-21 | 0 | Fix fake 'Ask Us' / raw unit tokens shown as prices on profile pages |
+| `claude/new-session-na3vlg` | 2026-07-21 | 4 | Fix undefined setUserPhone reference in RestaurantMenu.jsx |
+| `claude/universal-booking-platform-t3zdhu` | 2026-07-19 | 0 | Fix photo URLs with unencoded spaces failing to load |
+| `claude/database-repo-restructure-fyz0dx` | 2026-07-15 | 2 | Fix hub-page category grouping for business services and wellness |
+| `claude/data-structure-impl-sg0g6w` | 2026-07-12 | 1 | Render entity_sections content on RestaurantMenu for non-restaurant page |
+| `feature/universal-entity-graph` | 2026-07-12 | 0 | Make QR menu headerless; rebuild standalone artist live page |
+| `claude/trip-swipe-bug-tcue5d` | 2026-07-09 | 263 | feat: render deals on business profile pages |
+| `claude/gcr-unified-dashboard-sgmaeh` | 2026-07-09 | 260 | Point Reserve.jsx at the real universal booking engine |
+| `claude/open-all-757nqr` | 2026-07-08 | 259 | Merge branch 'claude/data-structure-assessment-80j1gq' into master |
+| `claude/data-structure-assessment-80j1gq` | 2026-07-08 | 257 | Add customer-facing transportation request page + CTA |
+| `claude/fishing-charter-booking-block-qy3l1o` | 2026-07-07 | 251 | Surface entity_policies on profiles; broaden Pricing tab; offering image |
+| `claude/project-additions-ho3s7k` | 2026-07-06 | 225 | Fix: Undo didn't retract the swipe event already queued for scoring |
+| `claude/dynamic-qr-redirect-yl413t` | 2026-07-05 | 207 | Add /:slug/profile rewrite to song-request.html |
+| `claude/supabase-images-gcr-urls-hzxqzl` | 2026-07-04 | 206 | Fix wrong loyalty SMS number on homepage |
+| `claude/repo-overview-i1n9da` | 2026-07-03 | 205 | Business profile: hero fallback + sliding event cards |
+| `claude/gcr-unified-data-gaps-xxyarl` | 2026-07-02 | 181 | Fix Policies tab: wire to entity_policies instead of a dead FAQ-category |
+| `claude/gcr-unified-api-clean-xr4029` | 2026-07-02 | 119 | Universal display + parent-child hub (read-path, additive) |
+| `codex/refactor-saved-places-management-in-appcontext` | 2026-06-11 | 64 | Unify saved places through AppContext |
+
+</details>
+
+<!-- branches:end -->
+
 ## Where it runs
 
 Vercel project `gcr-unified` serves `gulfcoastradar.com` and
