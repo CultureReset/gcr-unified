@@ -15,13 +15,15 @@ the business owner's dashboard live in `Admin-dashboard-main` and
 returns no listings, so the deal, happy-hour and event lists are empty ("0
 events"). They show the layout, not the live content.*
 
+
+
 <!-- branches:start -->
 ## Branches
 
 *Read from GitHub on 2026-09-29. 37 branches.*
 
-- **Default branch on GitHub:** `master`.
-- **`claude/repo-code-analysis-y4n1k7`** is where this README and the audit fixes live. It contains every commit on `master` and more (this README, the audit fixes and the screenshots).
+- **Default branch on GitHub:** `master`. It does **not** yet have this README or the audit fixes; those are on `claude/repo-code-analysis-y4n1k7`, which contains every commit of `master` and more, so it can be fast-forwarded without losing anything.
+- **`claude/repo-code-analysis-y4n1k7`** is where the README audit, the screenshots and the fixes were made.
 - **27 other branches hold commits that `claude/repo-code-analysis-y4n1k7` does not have.** The newest is `claude/linux-build-cleanup-dfpu0e` (last commit 2026-09-15, 1 commit not in the work branch). Check those before assuming the work branch is the whole story.
 
 <details><summary>All 37 branches</summary>
