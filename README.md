@@ -22,7 +22,7 @@ events"). They show the layout, not the live content.*
 
 *Read from GitHub on 2026-09-29. 37 branches.*
 
-- **Default branch on GitHub:** `master`. It does **not** yet have this README or the audit fixes; those are on `claude/repo-code-analysis-y4n1k7`, which contains every commit of `master` and more, so it can be fast-forwarded without losing anything.
+- **Default branch on GitHub:** `master`. On 2026-09-29 it was fast-forwarded to `claude/repo-code-analysis-y4n1k7`, so it now has this README and the audit fixes; nothing was overwritten (it previously ended at `d8e5d63`).
 - **`claude/repo-code-analysis-y4n1k7`** is where the README audit, the screenshots and the fixes were made.
 - **27 other branches hold commits that `claude/repo-code-analysis-y4n1k7` does not have.** The newest is `claude/linux-build-cleanup-dfpu0e` (last commit 2026-09-15, 1 commit not in the work branch). Check those before assuming the work branch is the whole story.
 
