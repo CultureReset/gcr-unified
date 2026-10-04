@@ -124,3 +124,12 @@ export function websiteJsonLd({ name, url, searchPath }) {
       : undefined,
   })
 }
+
+/**
+ * JSON-LD as text for a <script type="application/ld+json">: a "</" inside
+ * the data is written "<\/" so it can never close the tag. Parses back to
+ * the same value.
+ */
+export function jsonLdText(jsonLd) {
+  return JSON.stringify(jsonLd).replace(/<\//g, '<\\/')
+}

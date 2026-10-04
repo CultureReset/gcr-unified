@@ -8,7 +8,7 @@ import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { BRAND, siteUrl, API_BASE } from '../config'
 import { fetchTaxonomy, searchDirectory, fetchAvailabilityMap } from '../services/publicApi'
 import { fetchCategory } from '../services/listings'
-import { subtypeToCategory, formatSubtypeLabel, hydrateTaxonomy } from '../categoryMap'
+import { inSection, formatSubtypeLabel, hydrateTaxonomy } from '../categoryMap'
 import { itemListJsonLd, websiteJsonLd } from '../utils/schemaOrg'
 import { areaFacets } from '../utils/publicFormat'
 import PlaceCard from '../components/public/PlaceCard'
@@ -62,7 +62,7 @@ export default function Directory() {
     setResults(r => ({ status: 'loading', list: r.list, error: null }))
     const load = q
       ? searchDirectory({ query: q, city: area || undefined, signal: ctrl.signal }).then(d => d?.results || [])
-      : hydrateTaxonomy(API_BASE).then(() => fetchCategory(section)).then(list => list.filter(b => subtypeToCategory(b) === section || !subtypeToCategory(b)))
+      : hydrateTaxonomy(API_BASE).then(() => fetchCategory(section)).then(list => list.filter(b => inSection(b, section)))
     load
       .then(list => { if (!ctrl.signal.aborted) setResults({ status: 'ready', list: list.filter(b => b?.slug && b?.name), error: null }) })
       .catch(error => { if (error?.name !== 'AbortError') setResults({ status: 'error', list: [], error }) })

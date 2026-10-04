@@ -30,7 +30,7 @@ import { existsSync } from 'node:fs'
 import path from 'node:path'
 import { loadEnv } from 'vite'
 import { renderPublic, renderHtml } from '@nextgent/app-engine'
-import { businessJsonLd } from '../src/utils/schemaOrg.js'
+import { businessJsonLd, jsonLdText } from '../src/utils/schemaOrg.js'
 import { arrangeModules, moduleManifest } from '../src/utils/modules.js'
 import { isMissingRoute } from '../src/utils/missingRoute.js'
 
@@ -122,7 +122,7 @@ function buildEntityHtml(template, entity, modulesHtml = '') {
   html = html.replace(/(<meta name="description" content=")[^"]*(")/, `$1${escapeHtml(description)}$2`)
   html = html.replace(/(<meta property="og:title" content=")[^"]*(")/, `$1${escapeHtml(title)}$2`)
   html = html.replace(/(<meta property="og:description" content=")[^"]*(")/, `$1${escapeHtml(description)}$2`)
-  html = html.replace('</head>', `  <meta property="og:image" content="${escapeHtml(image)}" />\n  <meta property="og:url" content="${escapeHtml(canonicalUrl)}" />\n  <link rel="canonical" href="${escapeHtml(canonicalUrl)}" />\n  <script type="application/ld+json">${JSON.stringify(jsonLd)}</script>\n</head>`)
+  html = html.replace('</head>', `  <meta property="og:image" content="${escapeHtml(image)}" />\n  <meta property="og:url" content="${escapeHtml(canonicalUrl)}" />\n  <link rel="canonical" href="${escapeHtml(canonicalUrl)}" />\n  <script type="application/ld+json">${jsonLdText(jsonLd)}</script>\n</head>`)
   html = html.replace('<div id="root"></div>', `<div id="root">${staticContent}</div>`)
   return html
 }

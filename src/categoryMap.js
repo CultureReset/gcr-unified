@@ -172,14 +172,22 @@ export function hydrateTaxonomy(apiBase) {
 export function categoryFilter(category) {
   const subtypes = new Set()
   const types = new Set()
+  const want = String(category || '').toLowerCase()
   for (const [key, cat] of Object.entries(SUBTYPE_TO_CATEGORY)) {
-    if (cat !== category) continue
+    if (String(cat).toLowerCase() !== want) continue
     subtypes.add(key)
     subtypes.add(key.replace(/_/g, '-'))
     types.add(key)
   }
-  if (category === 'staying') LODGING_TYPES.forEach(t => types.add(t))
+  if (want === 'staying') LODGING_TYPES.forEach(t => types.add(t))
   return { subtypes: [...subtypes], types: [...types] }
+}
+
+// Does a business belong in this section? Section names compare without
+// case, and a business no map classifies stays (the API already filtered).
+export function inSection(entity, section) {
+  const cat = subtypeToCategory(entity)
+  return !cat || String(cat).toLowerCase() === String(section || '').toLowerCase()
 }
 
 export function subtypeToCategory(entity) {

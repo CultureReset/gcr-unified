@@ -3,7 +3,8 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { arrangeModules, normaliseModule, moduleManifest, keepBuiltInActions } from '../src/utils/modules.js'
 import { isMissingRoute } from '../src/utils/missingRoute.js'
-import { businessJsonLd, itemListJsonLd, offersJsonLd, schemaType } from '../src/utils/schemaOrg.js'
+import { businessJsonLd, itemListJsonLd, offersJsonLd, schemaType, jsonLdText } from '../src/utils/schemaOrg.js'
+import { categoryFilter, inSection } from '../src/categoryMap.js'
 import { money, dealPrice, whenText, isExpired, areaFacets } from '../src/utils/publicFormat.js'
 
 test('modules: order by position, drop disabled and non-public, accept snake_case', () => {
@@ -111,4 +112,21 @@ test('header actions: the built-in Call/Book/Directions stay until an action mod
   assert.equal(keepBuiltInActions(mods, { hours: true }), true)          // an inline module is not a header action
   assert.equal(keepBuiltInActions(mods, { call: true }), false)
   assert.equal(keepBuiltInActions(mods, { call: true, other: false }), false)
+})
+
+test('schema.org: JSON-LD text cannot close its <script> tag', () => {
+  const ld = businessJsonLd({ name: 'X', description: 'see </script><script>alert(1)</script>' })
+  const text = jsonLdText(ld)
+  assert.equal(text.includes('</'), false)
+  assert.deepEqual(JSON.parse(text), ld)
+  assert.equal(jsonLdText({ a: '<b>' }), '{"a":"<b>"}')
+})
+
+test('directory: the section filter ignores case', () => {
+  assert.deepEqual(categoryFilter('Restaurants'), categoryFilter('restaurants'))
+  assert.ok(categoryFilter('RESTAURANTS').subtypes.includes('seafood_restaurant'))
+  assert.ok(categoryFilter('Staying').types.includes('hotel'))
+  assert.equal(inSection({ entity_subtype: 'Seafood_Restaurant' }, 'Restaurants'), true)
+  assert.equal(inSection({ entity_subtype: 'seafood_restaurant' }, 'staying'), false)
+  assert.equal(inSection({ entity_subtype: 'never-heard-of-it' }, 'restaurants'), true)
 })
