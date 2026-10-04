@@ -140,20 +140,46 @@ const LODGING_TYPES = new Set(['hotel', 'condo', 'motel', 'lodging', 'resort', '
 // The database's subtype_taxonomy is the source of truth; the hardcoded map
 // above is the offline fallback. hydrateTaxonomy() merges server mappings in
 // at app start — server rows win, unknown subtypes stop vanishing silently.
-let _hydrated = false
-export async function hydrateTaxonomy(apiBase) {
-  if (_hydrated) return
-  try {
-    const res = await fetch(`${apiBase}/api/gcr/taxonomy`)
-    if (!res.ok) return
-    const { map } = await res.json()
-    if (map && typeof map === 'object') {
-      Object.entries(map).forEach(([subtype, section]) => {
-        SUBTYPE_TO_CATEGORY[subtype.toLowerCase()] = section
-      })
-      _hydrated = true
+// One shared request: listing pages await the same promise App.jsx starts, so
+// they build their category filter from the full map, not the fallback.
+let _hydration = null
+export function hydrateTaxonomy(apiBase) {
+  if (_hydration) return _hydration
+  _hydration = (async () => {
+    try {
+      const res = await fetch(`${apiBase}/api/gcr/taxonomy`)
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const { map } = await res.json()
+      if (map && typeof map === 'object') {
+        Object.entries(map).forEach(([subtype, section]) => {
+          SUBTYPE_TO_CATEGORY[subtype.toLowerCase()] = section
+        })
+      }
+    } catch (e) {
+      // offline/failed — hardcoded fallback map stays in effect; let a later
+      // caller try again
+      _hydration = null
     }
-  } catch (e) { /* offline/failed — hardcoded fallback map stays in effect */ }
+  })()
+  return _hydration
+}
+
+// Every entity_subtype / entity_type value that subtypeToCategory() could put
+// in this category, for the API's subtypes/types filter. It may match a few
+// businesses that land in another category (e.g. a lodging-type business with
+// a restaurant subtype) — callers re-check with subtypeToCategory() — but it
+// never leaves one out.
+export function categoryFilter(category) {
+  const subtypes = new Set()
+  const types = new Set()
+  for (const [key, cat] of Object.entries(SUBTYPE_TO_CATEGORY)) {
+    if (cat !== category) continue
+    subtypes.add(key)
+    subtypes.add(key.replace(/_/g, '-'))
+    types.add(key)
+  }
+  if (category === 'staying') LODGING_TYPES.forEach(t => types.add(t))
+  return { subtypes: [...subtypes], types: [...types] }
 }
 
 export function subtypeToCategory(entity) {

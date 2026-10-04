@@ -569,7 +569,7 @@ export default function Landing() {
 
   // Restaurants rail
   useEffect(() => {
-    fetch(`${API_BASE}/api/gcr/entities?type=restaurants&limit=50`)
+    fetch(`${API_BASE}/api/gcr/entities?type=restaurants&limit=50&view=list`)
       .then(r => r.json())
       .then(d => {
         const all = dedupeByName(d.entities || [])
@@ -584,7 +584,7 @@ export default function Landing() {
 
   // Activities / things to do rail
   useEffect(() => {
-    fetch(`${API_BASE}/api/gcr/entities?type=things-to-do&limit=50`)
+    fetch(`${API_BASE}/api/gcr/entities?type=things-to-do&limit=50&view=list`)
       .then(r => r.json())
       .then(d => {
         const all = dedupeByName(d.entities || [])
@@ -599,7 +599,7 @@ export default function Landing() {
 
   // Stays / condos rail
   useEffect(() => {
-    fetch(`${API_BASE}/api/gcr/entities?type=staying&limit=50`)
+    fetch(`${API_BASE}/api/gcr/entities?type=staying&limit=50&view=list`)
       .then(r => r.json())
       .then(d => {
         const all = dedupeByName(d.entities || [])
