@@ -1,8 +1,8 @@
 // A business's installed public modules, drawn by the shared app engine.
 //
 // Which modules a page has, in what order, shown how, comes only from
-// gcr-api-clean's runtime projection (business_app_instances): nothing here
-// knows any app by name. Each module is one of:
+// gcr-api-clean's projection of entity_modules (GET /api/public/business/
+// :slug/apps): nothing here knows any app by name. Each module is one of:
 //   inline   its public view drawn in the page
 //   button   a button to its own page, /<business>/<app>
 //   page     only on its own page (also linked from the page's module list)
@@ -40,9 +40,9 @@ export function usePageModules(slug) {
       .then(({ modules, shell }) => setState({ status: 'ready', modules, shell, error: null }))
       .catch(error => {
         if (error?.name === 'AbortError') return
-        // No projection yet (route missing or business has none): the page
-        // falls back to its own facts, cleanly.
-        setState({ status: error?.notConnected || error?.status === 404 ? 'absent' : 'error', modules: [], shell: null, error })
+        // No projection yet (route missing): the page falls back to its own
+        // facts, cleanly. A 404 with a handler's own message is an error.
+        setState({ status: error?.notConnected ? 'absent' : 'error', modules: [], shell: null, error })
       })
     return () => ctrl.abort()
   }, [slug])

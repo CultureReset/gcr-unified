@@ -7,6 +7,7 @@
 
 import { API_BASE } from '../config'
 import { cachedFetchJson } from './gcrApi'
+import { isMissingRoute } from '../utils/missingRoute.js'
 
 export class NotConnected extends Error {
   constructor(route) {
@@ -21,13 +22,6 @@ async function readJson(res) {
   const text = await res.text().catch(() => '')
   if (!text) return null
   try { return JSON.parse(text) } catch { return null }
-}
-
-// An Express "no such route" 404 has no JSON error body of our own, or says so.
-function isMissingRoute(res, body) {
-  if (![404, 405, 501].includes(res.status)) return false
-  if (!body || typeof body !== 'object') return true
-  return body.error === 'API route not found' || body.code === 'not_connected' || body.code === 'not_configured'
 }
 
 export async function request(method, path, { body, signal, notFound } = {}) {
@@ -46,7 +40,7 @@ export async function request(method, path, { body, signal, notFound } = {}) {
   }
   const data = await readJson(res)
   if (!res.ok) {
-    if (isMissingRoute(res, data)) throw new NotConnected(path)
+    if (isMissingRoute(res.status, data)) throw new NotConnected(path)
     if (res.status === 404 && notFound) throw Object.assign(new Error(notFound), { status: 404 })
     const msg = (data && (data.error || data.message)) || `Request failed (HTTP ${res.status})`
     throw Object.assign(new Error(msg), { status: res.status, body: data })
@@ -67,9 +61,12 @@ export { normaliseModule, arrangeModules } from '../utils/modules.js'
 import { arrangeModules } from '../utils/modules.js'
 
 /**
- * The business's public page: its shell and its installed public modules,
- * from gcr-api-clean's runtime projection (business_app_instances).
- * PROPOSED: GET /api/public/business/:slug/apps → { shell?, apps: [...] }.
+ * The business's installed public modules, from gcr-api-clean's projection of
+ * entity_modules (exists: GET /api/public/business/:slug/apps → [row…], the
+ * rows managed by Paperclip that are enabled and public, by position). An
+ * empty list means the business has none: callers fall back to
+ * `business.modules` from GET /api/gcr/entity/:slug. A 404 that carries a
+ * handler's own message (no such business) is an error, not "not available".
  */
 export async function fetchPageModules(slug, { signal } = {}) {
   const body = await request('GET', `/api/public/business/${enc(slug)}/apps`, { signal })

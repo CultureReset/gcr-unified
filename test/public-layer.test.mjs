@@ -2,6 +2,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { arrangeModules, normaliseModule } from '../src/utils/modules.js'
+import { isMissingRoute } from '../src/utils/missingRoute.js'
 import { businessJsonLd, itemListJsonLd, offersJsonLd, schemaType } from '../src/utils/schemaOrg.js'
 import { money, dealPrice, whenText, isExpired, areaFacets } from '../src/utils/publicFormat.js'
 
@@ -59,4 +60,33 @@ test('format: times, expiry, directions, areas', () => {
   assert.equal(isExpired('2026-10-05T11:00:00Z', now), false)
   assert.equal(isExpired(null, now), false)
   assert.deepEqual(areaFacets([{ city: 'B' }, { city: 'A' }, { city: 'B' }, {}]), [{ name: 'B', count: 2 }, { name: 'A', count: 1 }])
+})
+
+test('modules: the contract row of GET /api/public/business/:slug/apps, every render mode', () => {
+  const row = {
+    installId: 'inst_1', appKey: 'booking', version: '1.2.0', renderMode: 'action', publicLabel: 'Book',
+    position: 3, enabled: true, publicEnabled: true, config: { days: 7 }, manifest: { name: 'Booking', surfaces: [] },
+  }
+  assert.deepEqual(normaliseModule(row), row)
+  for (const mode of ['inline', 'button', 'page', 'action']) {
+    assert.equal(normaliseModule({ ...row, renderMode: mode }).renderMode, mode)
+  }
+  assert.equal(normaliseModule({ ...row, renderMode: 'popup' }).renderMode, 'inline')
+  assert.equal(normaliseModule({ ...row, renderMode: undefined }).renderMode, 'inline')
+  const out = arrangeModules([{ ...row, position: 2, installId: 'b' }, row, { ...row, installId: 'c', publicEnabled: false }])
+  assert.deepEqual(out.map(m => m.installId), ['b', 'inst_1'])
+})
+
+test('missing route: a 404 is "not available yet" only without a handler’s own message', () => {
+  assert.equal(isMissingRoute(405, null), true)
+  assert.equal(isMissingRoute(501, { error: 'x' }), true)
+  assert.equal(isMissingRoute(404, null), true)
+  assert.equal(isMissingRoute(404, 'Cannot GET /api/public/business/x/apps'), true)
+  assert.equal(isMissingRoute(404, { error: 'API route not found' }), true)
+  assert.equal(isMissingRoute(404, { code: 'not_connected' }), true)
+  assert.equal(isMissingRoute(404, { error: 'Business not found' }), false)
+  assert.equal(isMissingRoute(404, { message: 'No business with slug x' }), false)
+  assert.equal(isMissingRoute(404, { detail: 'gone' }), false)
+  assert.equal(isMissingRoute(500, null), false)
+  assert.equal(isMissingRoute(200, null), false)
 })
