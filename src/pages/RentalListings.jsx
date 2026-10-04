@@ -7,6 +7,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import { API_BASE } from '../config'
+import { fetchListing } from '../services/listings'
 import './RentalListings.css'
 
 const TYPE_TABS = [
@@ -169,16 +170,12 @@ export default function RentalListings() {
         const STAY_SUBTYPES = ['hotel','resort_hotel','motel','bed_and_breakfast','guest_house',
           'condominium_complex','condo','apartment_complex','vacation-rental','rv_park','cottage','resort']
         
-        let all = [], offset = 0
-        while (true) {
-          const res = await fetch(`${API_BASE}/api/gcr/entities?limit=1000&offset=${offset}`)
-          if (!res.ok) break
-          const data = await res.json()
-          const batch = data.entities || []
-          all = all.concat(batch)
-          if (batch.length < 1000) break
-          offset += 1000
-        }
+        // Only lodging, card columns only — the filter below still decides
+        // exactly which ones show.
+        const all = await fetchListing({
+          types: STAY_TYPES,
+          subtypes: [...STAY_SUBTYPES, 'lodging', 'apartment_building', 'private_guest_room'],
+        })
 
         const stays = all.filter(e => {
           if (e.parent_slug) return false // hub children belong in their parent's own directory, not here

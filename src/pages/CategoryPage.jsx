@@ -4,6 +4,7 @@ import { useApp } from '../context/AppContext'
 import GCRCard from '../components/GCRCard'
 import { API_BASE } from '../config'
 import { subtypeToCategory, formatSubtypeLabel } from '../categoryMap'
+import { fetchCategory } from '../services/listings'
 import './CategoryPage.css'
 
 const CATEGORY_CONFIG = {
@@ -99,19 +100,8 @@ export default function CategoryPage() {
           const data = await res.json()
           ents = data.happyHours || data.businesses || []
         } else {
-          // Fetch all entities in batches of 1000 to bypass API hard limit
-          let all = []
-          let offset = 0
-          const BATCH = 1000
-          while (true) {
-            const res = await fetch(`${API_BASE}/api/gcr/entities?limit=${BATCH}&offset=${offset}`)
-            if (!res.ok) break
-            const data = await res.json()
-            const batch = data.entities || []
-            all = all.concat(batch)
-            if (batch.length < BATCH) break
-            offset += BATCH
-          }
+          // Just this category (or everything for 'feed'), card columns only.
+          const all = await fetchCategory(category, { topLevel: category !== 'feed' })
           // feed = show everything; otherwise filter by subtype. Hub children
           // (entity.parent_slug set — e.g. a marina's individual charter
           // boats, a complex's individual restaurants) are meant to be found

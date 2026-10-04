@@ -292,3 +292,9 @@ input { outline: none; font-family: inherit; }
 .animate-fade-up { animation: fadeUp 0.4s ease forwards; }
 
 .grecaptcha-badge { visibility: hidden !important; }
+
+/* Placeholder while a page's code downloads the first time it's opened —
+   holds the space so the footer and nav don't jump up and back down. */
+.page-loading {
+  min-height: 60vh;
+}

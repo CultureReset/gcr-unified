@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import GCRCard from '../components/GCRCard'
 import { API_BASE } from '../config'
 import { subtypeToCategory, formatSubtypeLabel } from '../categoryMap'
+import { fetchCategory } from '../services/listings'
 import { useApp } from '../context/AppContext'
 import './CategoryListings.css'
 
@@ -62,17 +63,8 @@ export default function CategoryListings() {
           const data = await res.json()
           ents = data.happyHours || data.businesses || []
         } else {
-          let all = []
-          let offset = 0
-          while (true) {
-            const res = await fetch(`${API_BASE}/api/gcr/entities?limit=1000&offset=${offset}${locParams}${userParams}`)
-            if (!res.ok) break
-            const data = await res.json()
-            const batch = data.entities || []
-            all = all.concat(batch)
-            if (batch.length < 1000) break
-            offset += 1000
-          }
+          // Just this category, card columns only — not the whole catalogue.
+          const all = await fetchCategory(category, { extra: `${locParams}${userParams}` })
           // Hub children (e.g. a marina's individual charter boats) belong
           // inside their parent hub's own directory, not as a duplicate
           // standalone card here — same fix as CategoryPage.jsx.

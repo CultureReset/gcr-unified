@@ -1,53 +1,59 @@
-import { useEffect } from 'react'
+import { useEffect, lazy, Suspense } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { useApp } from './context/AppContext'
 import ErrorBoundary from './ErrorBoundary'
 import { DEFAULT_MODE, API_BASE } from './config'
 import { hydrateTaxonomy } from './categoryMap'
 import Landing from './pages/Landing'
-import LinksPage from './pages/LinksPage'
-import CategoryListings from './pages/CategoryListings'
 import NotFound from './pages/NotFound'
-import CategoryPage from './pages/CategoryPage'
-import Events from './pages/Events'
-import Search from './pages/Search'
-import Auth from './pages/Auth'
-import Reset from './pages/Reset'
-import Invite from './pages/Invite'
-import Setup from './pages/Setup'
 import Home from './pages/Home'
-import LiveFeed from './pages/LiveFeed'
-import ArtistLive from './pages/ArtistLive'
-import Swipe from './pages/Swipe'
-import BusinessDetail from './pages/BusinessDetail'
-import MyList from './pages/MyList'
-import Building from './pages/Building'
-import Itinerary from './pages/Itinerary'
-import Profile from './pages/Profile'
-import Saves from './pages/Saves'
-import Groups from './pages/Groups'
-import Group from './pages/Group'
-import Privacy from './pages/Privacy'
-import Terms from './pages/Terms'
-import ReviewUpload from './pages/ReviewUpload'
-import RestaurantMenu from './pages/RestaurantMenu'
-import ArtistListings from './pages/ArtistListings'
-import ArtistProfile from './pages/ArtistProfile'
-import RentalListings from './pages/RentalListings'
-import RentalDetail from './pages/RentalDetail'
-import BookRental from './pages/BookRental'
-import ServiceListings from './pages/ServiceListings'
-import ServiceDetail from './pages/ServiceDetail'
-import BookService from './pages/BookService'
-import Reserve from './pages/Reserve'
-import TransportationRequest from './pages/TransportationRequest'
-import Confirmation from './pages/Confirmation'
-import Deals from './pages/Deals'
-import ArHunts from './pages/ArHunts'
 import BottomNav from './components/BottomNav'
 import InstallBanner from './components/InstallBanner'
 import GCRHeader from './components/GCRHeader'
 import AiChat from './components/AiChat'
+
+// Every page used to ship in one 820 KB bundle, so opening the app meant
+// downloading all forty screens before the first one drew. Now each page is
+// fetched the first time someone visits it. The landing and home screens stay
+// in the main bundle so the first thing people see doesn't wait on a second
+// request.
+const LinksPage = lazy(() => import('./pages/LinksPage'))
+const CategoryListings = lazy(() => import('./pages/CategoryListings'))
+const CategoryPage = lazy(() => import('./pages/CategoryPage'))
+const Events = lazy(() => import('./pages/Events'))
+const Search = lazy(() => import('./pages/Search'))
+const Auth = lazy(() => import('./pages/Auth'))
+const Reset = lazy(() => import('./pages/Reset'))
+const Invite = lazy(() => import('./pages/Invite'))
+const Setup = lazy(() => import('./pages/Setup'))
+const LiveFeed = lazy(() => import('./pages/LiveFeed'))
+const ArtistLive = lazy(() => import('./pages/ArtistLive'))
+const Swipe = lazy(() => import('./pages/Swipe'))
+const BusinessDetail = lazy(() => import('./pages/BusinessDetail'))
+const MyList = lazy(() => import('./pages/MyList'))
+const Building = lazy(() => import('./pages/Building'))
+const Itinerary = lazy(() => import('./pages/Itinerary'))
+const Profile = lazy(() => import('./pages/Profile'))
+const Saves = lazy(() => import('./pages/Saves'))
+const Groups = lazy(() => import('./pages/Groups'))
+const Group = lazy(() => import('./pages/Group'))
+const Privacy = lazy(() => import('./pages/Privacy'))
+const Terms = lazy(() => import('./pages/Terms'))
+const ReviewUpload = lazy(() => import('./pages/ReviewUpload'))
+const RestaurantMenu = lazy(() => import('./pages/RestaurantMenu'))
+const ArtistListings = lazy(() => import('./pages/ArtistListings'))
+const ArtistProfile = lazy(() => import('./pages/ArtistProfile'))
+const RentalListings = lazy(() => import('./pages/RentalListings'))
+const RentalDetail = lazy(() => import('./pages/RentalDetail'))
+const BookRental = lazy(() => import('./pages/BookRental'))
+const ServiceListings = lazy(() => import('./pages/ServiceListings'))
+const ServiceDetail = lazy(() => import('./pages/ServiceDetail'))
+const BookService = lazy(() => import('./pages/BookService'))
+const Reserve = lazy(() => import('./pages/Reserve'))
+const TransportationRequest = lazy(() => import('./pages/TransportationRequest'))
+const Confirmation = lazy(() => import('./pages/Confirmation'))
+const Deals = lazy(() => import('./pages/Deals'))
+const ArHunts = lazy(() => import('./pages/ArHunts'))
 
 function RequireAuth({ children }) {
   const { userId } = useApp()
@@ -140,6 +146,7 @@ function AppRoutes() {
   return (
     <div className={`app-shell${hideHeader ? ' no-header' : ''}`}>
       {!hideHeader && <GCRHeader />}
+      <Suspense fallback={<div className="page-loading" aria-busy="true" />}>
       <Routes>
         <Route path="/" element={<Landing />} />
         <Route path="/browse" element={<Navigate to="/" replace />} />
@@ -195,6 +202,7 @@ function AppRoutes() {
 
         <Route path="*" element={<NotFound />} />
       </Routes>
+      </Suspense>
       {!hideNav && <BottomNav />}
       {!hideNav && <InstallBanner />}
       {!hideNav && <AiChat />}

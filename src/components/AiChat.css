@@ -242,3 +242,14 @@
   }
   .ai-chat-fab { bottom: calc(70px + env(safe-area-inset-bottom)); right: 14px; }
 }
+
+/* Places the concierge recommends link to their page. */
+.msg-link {
+  color: #0b7a75;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.msg-line { display: block; }
+.msg-gap { display: block; height: 0.5em; }
+.msg-bullet { padding-left: 2px; }
