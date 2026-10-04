@@ -39,3 +39,11 @@ export function arrangeModules(rows) {
     .sort((a, b) => a.position - b.position)
 }
 
+
+/**
+ * The manifest a module is drawn with: the list row carries it; when it does
+ * not, the one GET /api/public/apps/:installId returned alongside the data.
+ */
+export function moduleManifest(mod, loaded) {
+  return mod?.manifest || loaded?.manifest || null
+}

@@ -31,6 +31,8 @@ import path from 'node:path'
 import { loadEnv } from 'vite'
 import { renderPublic, renderHtml } from '@nextgent/app-engine'
 import { businessJsonLd } from '../src/utils/schemaOrg.js'
+import { arrangeModules, moduleManifest } from '../src/utils/modules.js'
+import { isMissingRoute } from '../src/utils/missingRoute.js'
 
 const env = { ...loadEnv('production', process.cwd(), ''), ...process.env }
 const API_BASE = String(env.VITE_API_BASE || '').replace(/\/$/, '')
@@ -126,33 +128,29 @@ function buildEntityHtml(template, entity, modulesHtml = '') {
 }
 
 // The business's inline public modules, drawn as static HTML by the app
-// engine. Uses the proposed gcr-api-clean routes
-//   GET /api/public/business/:slug/apps  (business_app_instances projection)
-//   GET /api/public/apps/:installId      ({ manifest?, settings, data })
-// and stops asking for the rest of the build once the first answers 404.
+// engine. Uses the gcr-api-clean routes
+//   GET /api/public/business/:slug/apps  (entity_modules projection, one row per install)
+//   GET /api/public/apps/:installId      ({ manifest, settings, data })
+// and stops asking for the rest of the build once the first proves missing
+// (the same rule as the SPA: src/utils/missingRoute.js).
 let modulesRouteMissing = false
 async function fetchModulesHtml(slug) {
   if (!PRERENDER_MODULES || modulesRouteMissing) return ''
   try {
     const res = await fetch(`${API_BASE}/api/public/business/${encodeURIComponent(slug)}/apps`)
-    if (res.status === 404 || res.status === 405 || res.status === 501) {
-      const body = await res.json().catch(() => null)
-      if (!body || body.error === 'API route not found') modulesRouteMissing = true
+    const body = await res.json().catch(() => null)
+    if (!res.ok) {
+      if (isMissingRoute(res.status, body)) modulesRouteMissing = true
       return ''
     }
-    if (!res.ok) return ''
-    const body = await res.json()
-    const rows = (Array.isArray(body) ? body : body.apps || body.modules || [])
-      .filter(r => (r.enabled ?? true) !== false && (r.publicEnabled ?? r.public_enabled ?? true) !== false && (r.renderMode ?? r.render_mode ?? 'inline') === 'inline')
-      .sort((a, b) => (Number(a.position) || 0) - (Number(b.position) || 0))
+    const rows = arrangeModules(Array.isArray(body) ? body : body?.apps || body?.modules || [])
+      .filter(m => m.renderMode === 'inline')
     const parts = []
-    for (const row of rows) {
-      const installId = row.installId ?? row.install_id
-      if (!installId) continue
-      const r = await fetch(`${API_BASE}/api/public/apps/${encodeURIComponent(installId)}`)
+    for (const mod of rows) {
+      const r = await fetch(`${API_BASE}/api/public/apps/${encodeURIComponent(mod.installId)}`)
       if (!r.ok) continue
       const app = await r.json()
-      const manifest = row.manifest || app.manifest
+      const manifest = moduleManifest(mod, app)
       if (!manifest) continue
       const blocks = renderPublic(manifest, app.settings || {}, app.data || {}, {}, {})
       parts.push(`<section>${renderHtml(blocks, { formAction: () => null })}</section>`)

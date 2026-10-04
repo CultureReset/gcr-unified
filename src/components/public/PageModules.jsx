@@ -17,6 +17,7 @@ import { EngineApp } from '@nextgent/app-engine/react'
 import { createPublicAdapter } from '@nextgent/app-engine'
 import { API_BASE } from '../../config'
 import { fetchPageModules } from '../../services/publicApi'
+import { moduleManifest } from '../../utils/modules.js'
 import { track } from '../../services/analytics'
 
 export function modulePath(slug, mod) {
@@ -79,7 +80,7 @@ function usePublicApp(mod) {
 /** One module's public view, drawn by <EngineApp surface="public">. */
 export function ModuleView({ mod, slug, compact = false, options }) {
   const { status, loaded, adapter } = usePublicApp(mod)
-  const manifest = mod.manifest || loaded?.manifest
+  const manifest = moduleManifest(mod, loaded)
 
   // EngineApp loads through the adapter; hand it what was just fetched the
   // first time instead of asking twice, and count form submissions.

@@ -1,7 +1,7 @@
 // Pure helpers of the public layer. No network, no browser.
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { arrangeModules, normaliseModule } from '../src/utils/modules.js'
+import { arrangeModules, normaliseModule, moduleManifest } from '../src/utils/modules.js'
 import { isMissingRoute } from '../src/utils/missingRoute.js'
 import { businessJsonLd, itemListJsonLd, offersJsonLd, schemaType } from '../src/utils/schemaOrg.js'
 import { money, dealPrice, whenText, isExpired, areaFacets } from '../src/utils/publicFormat.js'
@@ -89,4 +89,13 @@ test('missing route: a 404 is "not available yet" only without a handler’s own
   assert.equal(isMissingRoute(404, { detail: 'gone' }), false)
   assert.equal(isMissingRoute(500, null), false)
   assert.equal(isMissingRoute(200, null), false)
+})
+
+test('modules: the list row’s manifest first, else the one /public/apps/:installId returned', () => {
+  const fromList = { name: 'From list' }
+  const fromApp = { name: 'From app' }
+  assert.equal(moduleManifest({ manifest: fromList }, { manifest: fromApp }), fromList)
+  assert.equal(moduleManifest({ manifest: null }, { manifest: fromApp }), fromApp)
+  assert.equal(moduleManifest({ manifest: null }, { settings: {}, data: {} }), null)
+  assert.equal(moduleManifest({ manifest: null }, null), null)
 })
