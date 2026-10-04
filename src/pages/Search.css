@@ -213,8 +213,8 @@
   width: 60px;
   height: 60px;
   border-radius: 10px;
-  background-size: cover;
-  background-position: center;
+  object-fit: cover;
+  background: #e2e8f0;
   flex-shrink: 0;
 }
 
@@ -765,4 +765,11 @@
   font-size: 12px;
   color: #64748b;
   font-weight: 600;
+}
+
+/* Shown beside the result count while a newer search loads — the previous
+   results stay on screen instead of flashing back to skeletons. */
+.search-updating {
+  color: #8fa3b1;
+  font-style: italic;
 }

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { Link } from 'react-router-dom'
 import { API_BASE } from '../config'
 import './AiChat.css'
 
@@ -7,9 +8,13 @@ function getToken() {
 }
 
 // Best-effort location grab. Never blocks the chat — resolves null on denial/timeout.
+// The geolocation timeout only starts once permission is granted, so a
+// permission prompt the visitor ignores used to hold the message forever.
+// The outer timer caps the wait no matter what.
 function getLocation() {
   return new Promise((resolve) => {
     if (!navigator.geolocation) return resolve(null)
+    setTimeout(() => resolve(null), 3000)
     navigator.geolocation.getCurrentPosition(
       (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
       () => resolve(null),
@@ -34,6 +39,48 @@ async function sendMessage({ message, history, conversationId }) {
   })
   if (!res.ok) throw new Error('Chat error')
   return res.json()
+}
+
+// The concierge writes a little markdown: **bold**, "- " bullets and
+// [Business Name](/business/slug) links to the places it recommends. Render
+// just those as React elements (never as raw HTML), so a reply reads cleanly
+// and every place it names is one tap from its page.
+const INLINE = /\*\*([^*]+)\*\*|\[([^\]]+)\]\(([^)\s]+)\)/g
+
+function renderInline(text, keyBase) {
+  const out = []
+  let last = 0
+  let m
+  INLINE.lastIndex = 0
+  while ((m = INLINE.exec(text))) {
+    if (m.index > last) out.push(text.slice(last, m.index))
+    const key = `${keyBase}-${m.index}`
+    if (m[1]) {
+      out.push(<strong key={key}>{m[1]}</strong>)
+    } else if (m[3].startsWith('/')) {
+      out.push(<Link key={key} to={m[3]} className="msg-link">{m[2]}</Link>)
+    } else if (/^https?:\/\//.test(m[3])) {
+      out.push(<a key={key} href={m[3]} target="_blank" rel="noopener noreferrer" className="msg-link">{m[2]}</a>)
+    } else {
+      out.push(m[2])
+    }
+    last = INLINE.lastIndex
+  }
+  if (last < text.length) out.push(text.slice(last))
+  return out
+}
+
+function renderReply(text) {
+  return (text || '').trim().split('\n').map((line, i) => {
+    if (!line.trim()) return <span key={i} className="msg-gap" />
+    const bullet = /^\s*[-*]\s+/.test(line)
+    const body = bullet ? line.replace(/^\s*[-*]\s+/, '') : line
+    return (
+      <span key={i} className={bullet ? 'msg-line msg-bullet' : 'msg-line'}>
+        {bullet && '• '}{renderInline(body, i)}
+      </span>
+    )
+  })
 }
 
 const STARTERS = [
@@ -157,7 +204,7 @@ export default function AiChat() {
             {messages.map((m, i) => (
               <div key={i} className={`chat-msg ${m.role}`}>
                 {m.role === 'assistant' && <span className="msg-avatar">🏖️</span>}
-                <div className="msg-bubble">{m.content}</div>
+                <div className="msg-bubble">{m.role === 'assistant' ? renderReply(m.content) : m.content}</div>
               </div>
             ))}
 

@@ -244,31 +244,42 @@ export default function Search() {
 
   // ── Keyword search ────────────────────────────────────────────────────────
   useEffect(() => {
-    setSearchInput(query)
+    // Sync the box to the URL (back button, shared link, tapped suggestion),
+    // but not while it already says the same thing — the URL holds the
+    // trimmed query, so copying it back mid-typing ate the space someone had
+    // just typed and "fish tacos" came out "fishtacos".
+    setSearchInput(prev => (prev.trim() === query.trim() ? prev : query))
     if (!query.trim()) { setResults([]); setLoading(false); return }
+    // Each new query cancels the one before it. Without this, pausing mid-word
+    // left two or three full searches running at once, and a slow earlier one
+    // could land last and overwrite the results for what was actually typed.
+    const ctrl = new AbortController()
     async function load() {
       try {
         setLoading(true)
         setError(null)
-        const body = { query, limit: 100 }
+        const body = { query, limit: 40 }
         if (userLocation) { body.lat = userLocation.lat; body.lng = userLocation.lng }
         if (radius) body.radius = radius
         const res = await fetch(`${API_BASE}/api/gcr/search`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body)
+          body: JSON.stringify(body),
+          signal: ctrl.signal,
         })
         if (!res.ok) throw new Error('Search failed')
         const data = await res.json()
         setResults(data.results || [])
         setFuzzyMatch(!!data.fuzzy_match)
+        setLoading(false)
       } catch (err) {
+        if (err.name === 'AbortError') return
         setError(err.message)
-      } finally {
         setLoading(false)
       }
     }
     load()
+    return () => ctrl.abort()
   }, [query, userLocation, radius])
 
   const handleInputChange = (e) => {
@@ -528,7 +539,7 @@ export default function Search() {
 
         {/* ── KEYWORD RESULTS ── */}
         {mode === 'keyword' && (
-          loading ? (
+          loading && results.length === 0 ? (
             <div className="search-loading">
               {[...Array(3)].map((_, i) => <div key={i} className="search-skeleton-card" />)}
             </div>
@@ -566,6 +577,7 @@ export default function Search() {
                   {visibleResults.length} result{visibleResults.length !== 1 ? 's' : ''}
                   {totalItems > 0 && ` · ${totalItems} item${totalItems !== 1 ? 's' : ''}`}
                   {' '}for &ldquo;{query}&rdquo;
+                  {loading && <span className="search-updating"> · updating…</span>}
                 </span>
                 {userLocation && (
                   <div className="search-header-controls">
@@ -702,7 +714,7 @@ function SearchResultCard({ biz, navigate }) {
   return (
     <div className="sr-card">
       <div className="sr-biz-row" onClick={() => navigate(`/business/${biz.slug}`)}>
-        {photo && <div className="sr-biz-photo" style={{ backgroundImage: `url(${photo})` }} />}
+        {photo && <img className="sr-biz-photo" src={photo} alt="" loading="lazy" decoding="async" onError={e => { e.currentTarget.style.display = 'none' }} />}
         <div className="sr-biz-info">
           <div className="sr-biz-name">{biz.name}</div>
           <div className="sr-biz-meta">
