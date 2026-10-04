@@ -78,7 +78,6 @@ export default function LinksPage() {
     </div>
   )
   const useModules = page.status === 'ready' && page.modules.length > 0
-  const hasActionApps = useModules && page.modules.some(m => m.renderMode === 'action')
 
   const cityState = [business.city, business.state].filter(Boolean).join(', ')
   const avatarUrl = business.hero_image_url || business.photos?.[0]?.image_url || business.photos?.[0]?.url
@@ -135,9 +134,9 @@ export default function LinksPage() {
             {business.rating && <span className="lp-chip">⭐ {business.rating.toFixed(1)} Rating</span>}
             {openNow !== null && <span className="lp-chip">{openNow ? '🟢 Open Now' : '🔴 Closed'}</span>}
           </div>
-          {hasActionApps
-            ? <ActionRow slug={business.slug || slug} modules={page.modules} />
-            : business.phone && <a className="lp-call" href={`tel:${business.phone}`}>📞 Call Now</a>}
+          <ActionRow slug={business.slug || slug} modules={page.modules}>
+            {business.phone && <a className="lp-call" href={`tel:${business.phone}`}>📞 Call Now</a>}
+          </ActionRow>
           {socials.length > 0 && (
             <div className="lp-socials">
               {socials.map(s => <a key={s.label} href={s.url} target="_blank" rel="noreferrer" title={s.label}>#</a>)}

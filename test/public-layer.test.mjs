@@ -1,7 +1,7 @@
 // Pure helpers of the public layer. No network, no browser.
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { arrangeModules, normaliseModule, moduleManifest } from '../src/utils/modules.js'
+import { arrangeModules, normaliseModule, moduleManifest, keepBuiltInActions } from '../src/utils/modules.js'
 import { isMissingRoute } from '../src/utils/missingRoute.js'
 import { businessJsonLd, itemListJsonLd, offersJsonLd, schemaType } from '../src/utils/schemaOrg.js'
 import { money, dealPrice, whenText, isExpired, areaFacets } from '../src/utils/publicFormat.js'
@@ -98,4 +98,17 @@ test('modules: the list row’s manifest first, else the one /public/apps/:insta
   assert.equal(moduleManifest({ manifest: null }, { manifest: fromApp }), fromApp)
   assert.equal(moduleManifest({ manifest: null }, { settings: {}, data: {} }), null)
   assert.equal(moduleManifest({ manifest: null }, null), null)
+})
+
+test('header actions: the built-in Call/Book/Directions stay until an action module is actually drawn', () => {
+  const mods = arrangeModules([
+    { installId: 'call', appKey: 'call', renderMode: 'action' },
+    { installId: 'hours', appKey: 'hours', renderMode: 'inline' },
+  ])
+  assert.equal(keepBuiltInActions([], {}), true)
+  assert.equal(keepBuiltInActions(mods, {}), true)                       // still loading
+  assert.equal(keepBuiltInActions(mods, { call: false }), true)          // failed to load or no manifest
+  assert.equal(keepBuiltInActions(mods, { hours: true }), true)          // an inline module is not a header action
+  assert.equal(keepBuiltInActions(mods, { call: true }), false)
+  assert.equal(keepBuiltInActions(mods, { call: true, other: false }), false)
 })

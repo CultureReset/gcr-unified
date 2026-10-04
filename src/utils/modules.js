@@ -47,3 +47,13 @@ export function arrangeModules(rows) {
 export function moduleManifest(mod, loaded) {
   return mod?.manifest || loaded?.manifest || null
 }
+
+/**
+ * Header action row: do the page's built-in actions (Call, Book, Directions …)
+ * stay? Yes until one of the installed action modules has actually been drawn;
+ * `drawn` maps installId → whether its view rendered. A module that failed to
+ * load, or is still loading, never takes the built-in buttons away.
+ */
+export function keepBuiltInActions(modules, drawn = {}) {
+  return !(Array.isArray(modules) ? modules : []).some(m => m.renderMode === 'action' && drawn[m.installId] === true)
+}

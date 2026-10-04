@@ -112,7 +112,6 @@ export default function RestaurantDetail() {
   // projection isn't there, the page shows the business's own facts and
   // built-in buttons exactly as before.
   const page = usePageModules(slug)
-  const hasActionApps = page.status === 'ready' && page.modules.some(m => m.renderMode === 'action')
   const { savedPlaces, addSavedPlace, removeSavedPlace } = useApp()
   useEffect(() => { track('view', { slug }) }, [slug])
   useEffect(() => { setSaved(!!savedPlaces?.some(p => p.slug === slug)) }, [savedPlaces, slug])
@@ -868,8 +867,8 @@ export default function RestaurantDetail() {
         )}
 
         {/* Header action row: the installed action apps when the business has
-            them; otherwise the built-in buttons from its own facts. */}
-        {hasActionApps ? <ActionRow slug={business.slug || slug} modules={page.modules} /> : <>
+            them and they draw; otherwise the built-in buttons from its own facts. */}
+        <ActionRow slug={business.slug || slug} modules={page.modules}>
         {/* Primary CTA — type-aware labels */}
         {(() => {
           const et = (business.entity_type || '').toLowerCase()
@@ -934,7 +933,7 @@ export default function RestaurantDetail() {
             </a>
           )}
         </div>
-        </>}
+        </ActionRow>
 
         {/* Social Links */}
         {(business.social_instagram || business.social_facebook || business.social_tiktok) && (

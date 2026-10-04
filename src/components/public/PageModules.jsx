@@ -9,7 +9,8 @@
 //   action   a button in the header action row (Call, Book, Directions …)
 // A module's data comes from GET /api/public/apps/:installId through the
 // engine's public adapter; a module whose data route is missing simply
-// isn't drawn.
+// isn't drawn, and the page's built-in header actions stay until an action
+// module is.
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
@@ -17,7 +18,7 @@ import { EngineApp } from '@nextgent/app-engine/react'
 import { createPublicAdapter } from '@nextgent/app-engine'
 import { API_BASE } from '../../config'
 import { fetchPageModules } from '../../services/publicApi'
-import { moduleManifest } from '../../utils/modules.js'
+import { moduleManifest, keepBuiltInActions } from '../../utils/modules.js'
 import { track } from '../../services/analytics'
 
 export function modulePath(slug, mod) {
@@ -77,10 +78,12 @@ function usePublicApp(mod) {
   return { ...state, adapter }
 }
 
-/** One module's public view, drawn by <EngineApp surface="public">. */
-export function ModuleView({ mod, slug, compact = false, options }) {
+/** One module's public view, drawn by <EngineApp surface="public">. `onDrawn(installId, bool)` says whether it is. */
+export function ModuleView({ mod, slug, compact = false, options, onDrawn }) {
   const { status, loaded, adapter } = usePublicApp(mod)
   const manifest = moduleManifest(mod, loaded)
+  const drawn = status === 'ready' && Boolean(manifest)
+  useEffect(() => { if (status !== 'loading') onDrawn?.(mod.installId, drawn) }, [onDrawn, mod.installId, status, drawn])
 
   // EngineApp loads through the adapter; hand it what was just fetched the
   // first time instead of asking twice, and count form submissions.
@@ -114,14 +117,24 @@ export function ModuleView({ mod, slug, compact = false, options }) {
   )
 }
 
-/** Header action row: the installed action apps, in projection order. */
-export function ActionRow({ slug, modules, options }) {
+/**
+ * Header action row: the installed action apps, in projection order. The
+ * children are the page's built-in actions; they stay until an action module
+ * is actually drawn, so a module that fails to load never empties the header.
+ */
+export function ActionRow({ slug, modules, options, children = null }) {
+  const [drawn, setDrawn] = useState({})
+  const onDrawn = useCallback((installId, ok) => setDrawn(d => (d[installId] === ok ? d : { ...d, [installId]: ok })), [])
   const actions = modules.filter(m => m.renderMode === 'action')
-  if (!actions.length) return null
+  const keep = keepBuiltInActions(actions, drawn)
+  if (!actions.length) return children
   return (
-    <div className="pl-actions" aria-label="Actions">
-      {actions.map(m => <ModuleView key={m.installId} mod={m} slug={slug} compact options={options} />)}
-    </div>
+    <>
+      <div className="pl-actions" aria-label="Actions" hidden={keep}>
+        {actions.map(m => <ModuleView key={m.installId} mod={m} slug={slug} compact options={options} onDrawn={onDrawn} />)}
+      </div>
+      {keep ? children : null}
+    </>
   )
 }
 
