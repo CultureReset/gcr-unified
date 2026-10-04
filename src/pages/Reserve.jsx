@@ -3,7 +3,7 @@ import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import Toast from '../components/Toast'
 import './Reserve.css'
 
-const API_BASE = import.meta.env.VITE_API_BASE || 'https://gcr-api-clean.vercel.app'
+import { API_BASE } from '../config'
 
 const SMS_CONSENT_TEXT = 'By checking this box, you agree to receive text messages about this booking from Gulf Coast Radar and the business at the phone number provided. Msg & data rates may apply, message frequency varies. Reply STOP to opt out at any time. Consent is not a condition of purchase.'
 

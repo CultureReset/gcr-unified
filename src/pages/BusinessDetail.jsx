@@ -1,7 +1,14 @@
 import { useEffect, useState, useRef, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { API_BASE } from '../config'
-import { authFetch } from '../context/AppContext'
+import { API_BASE, siteUrl } from '../config'
+import { authFetch, useApp } from '../context/AppContext'
+import { usePageModules, ActionRow, ModuleList, shellStyle } from '../components/public/PageModules'
+import AskPanel from '../components/public/AskPanel'
+import PageMeta from '../components/public/PageMeta'
+import { askBusiness } from '../services/publicApi'
+import { track } from '../services/analytics'
+import { businessJsonLd } from '../utils/schemaOrg'
+import '../components/public/public.css'
 import ReviewsSection from '../components/ReviewsSection'
 import TeamSection from '../components/TeamSection'
 import GallerySection from '../components/GallerySection'
@@ -100,6 +107,22 @@ export default function RestaurantDetail() {
   // key insertion order, or guessing the flex parent from an arbitrary child.
   // .content-main is a flex column in BusinessDetail.css to match.
   const sectionOrderRef = useRef({})
+
+  // The page's installed public modules (business_app_instances). When the
+  // projection isn't there, the page shows the business's own facts and
+  // built-in buttons exactly as before.
+  const page = usePageModules(slug)
+  const hasActionApps = page.status === 'ready' && page.modules.some(m => m.renderMode === 'action')
+  const { savedPlaces, addSavedPlace, removeSavedPlace } = useApp()
+  useEffect(() => { track('view', { slug }) }, [slug])
+  useEffect(() => { setSaved(!!savedPlaces?.some(p => p.slug === slug)) }, [savedPlaces, slug])
+  function toggleSaved() {
+    const existing = savedPlaces?.find(p => p.slug === slug)
+    if (existing) { removeSavedPlace(existing.id); return }
+    if (!business) return
+    addSavedPlace({ id: business.id || business.slug, slug: business.slug, name: business.name, hero_image_url: business.hero_image_url, subtitle: business.subtitle || '', rating: business.rating ?? null, price_range: business.price_range || '', latitude: business.latitude, longitude: business.longitude })
+    track('click', { slug, target: 'save' })
+  }
 
   // Related profiles: same-property businesses (template: "Related profiles
   // — same-category businesses connected inside <parent>")
@@ -251,7 +274,23 @@ export default function RestaurantDetail() {
   if (error) return <div className="detail-page"><div className="error">Error: {error}</div></div>
   if (!business) return <div className="detail-page"><div className="error">Business not found</div></div>
 
-  if (business.is_hub) return <HubTemplate business={business} slug={slug} />
+  if (business.is_hub) return (
+    <div style={shellStyle(page.shell)}>
+      <PageMeta
+        title={business.name}
+        description={business.description || business.subtitle}
+        canonical={siteUrl(`/business/${business.slug || slug}`)}
+        jsonLd={businessJsonLd(business, { url: siteUrl(`/business/${business.slug || slug}`) })}
+      />
+      {page.status === 'ready' && page.modules.length > 0 && (
+        <div className="pl-embedded">
+          <ActionRow slug={business.slug || slug} modules={page.modules} />
+          <ModuleList slug={business.slug || slug} modules={page.modules} />
+        </div>
+      )}
+      <HubTemplate business={business} slug={slug} />
+    </div>
+  )
 
   const photos = business.photos || []
   const hours = (business.hours || []).sort((a, b) => (a.day_of_week ?? 0) - (b.day_of_week ?? 0))
@@ -616,12 +655,18 @@ export default function RestaurantDetail() {
   }
 
   return (
-    <div className="detail-page">
+    <div className="detail-page" style={shellStyle(page.shell)}>
+      <PageMeta
+        title={business.name}
+        description={business.description || business.subtitle}
+        canonical={siteUrl(`/business/${business.slug || slug}`)}
+        jsonLd={businessJsonLd(business, { url: siteUrl(`/business/${business.slug || slug}`) })}
+      />
       {/* Header */}
       <div className="detail-header" ref={detailHeaderRef}>
         <button className="back-btn" onClick={() => navigate(-1)}>← Back</button>
         <div style={{display:'flex',gap:8}}>
-          <button className={`save-btn-detail ${saved ? 'saved' : ''}`} onClick={() => setSaved(s => !s)} title={saved ? 'Saved' : 'Save'}>
+          <button className={`save-btn-detail ${saved ? 'saved' : ''}`} onClick={toggleSaved} title={saved ? 'Saved' : 'Save'}>
             {saved ? '❤️' : '🤍'}
           </button>
           <button className="share-btn" onClick={handleShareBusiness} title="Share this business">📤 Share</button>
@@ -822,6 +867,9 @@ export default function RestaurantDetail() {
           </div>
         )}
 
+        {/* Header action row: the installed action apps when the business has
+            them; otherwise the built-in buttons from its own facts. */}
+        {hasActionApps ? <ActionRow slug={business.slug || slug} modules={page.modules} /> : <>
         {/* Primary CTA — type-aware labels */}
         {(() => {
           const et = (business.entity_type || '').toLowerCase()
@@ -886,6 +934,7 @@ export default function RestaurantDetail() {
             </a>
           )}
         </div>
+        </>}
 
         {/* Social Links */}
         {(business.social_instagram || business.social_facebook || business.social_tiktok) && (
@@ -908,6 +957,13 @@ export default function RestaurantDetail() {
           </div>
         )}
       </div>
+
+      {/* Installed public modules, in the order the business set */}
+      {page.status === 'ready' && page.modules.length > 0 && (
+        <div className="pl-embedded">
+          <ModuleList slug={business.slug || slug} modules={page.modules} />
+        </div>
+      )}
 
       {/* Sticky Tabs */}
       <div className="sticky-tabs">
@@ -2437,6 +2493,20 @@ export default function RestaurantDetail() {
 
           {/* Claim this listing. Carries the slug, so the lead that reaches
               the admin dashboard is already tied to this business. */}
+          <div className="sidebar-card">
+            <AskPanel
+              title={`Ask ${business.name}`}
+              intro="Answers come from what this business has published."
+              send={args => askBusiness(business.slug || slug, args)}
+              unavailable={
+                <>
+                  <p className="pl-state-body">Questions aren't switched on for this page yet.</p>
+                  {business.phone && <a className="pl-btn" href={`tel:${business.phone}`}>Call {business.name}</a>}
+                </>
+              }
+            />
+          </div>
+
           <ClaimBusiness slug={business.slug || slug} businessName={business.name} />
         </aside>
       </div>

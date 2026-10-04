@@ -22,7 +22,7 @@ export default function Confirmation() {
       ],
     },
     service: {
-      title: 'Service Booking Confirmed!',
+      title: 'Service Booking Requested',
       subtitle: 'Your booking request has been sent',
       status: 'Awaiting Confirmation',
       nextStep: 'Service provider will confirm your booking',

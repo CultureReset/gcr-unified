@@ -8,7 +8,9 @@
     "build": "vite build",
     "postbuild": "node scripts/prerender.mjs",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "node --test \"test/*.test.mjs\"",
+    "check:literals": "node scripts/check-literals.mjs"
   },
   "dependencies": {
     "@react-spring/web": "^10.0.3",
@@ -18,7 +20,8 @@
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
     "react-router-dom": "^7.14.1",
-    "react-tinder-card": "^1.6.4"
+    "react-tinder-card": "^1.6.4",
+    "@nextgent/app-engine": "file:../App-build-/packages/engine"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

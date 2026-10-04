@@ -11,7 +11,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import './Deals.css'
 
-const API_BASE = import.meta.env.VITE_API_BASE || 'https://gcr-api-clean.vercel.app'
+import { API_BASE } from '../config'
 
 // ── deal type config ──────────────────────────────────────────────────────────
 const DEAL_TYPES = {

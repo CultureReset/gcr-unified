@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import GCRHeader from '../components/GCRHeader'
-import { API_BASE, SMS_NUMBER } from '../config'
+import { API_BASE, SMS_NUMBER, SUPABASE_URL as SUPABASE_PROJECT_URL } from '../config'
 import './Landing.css'
 
 // Same duplicate-entity-row problem CategoryPage.jsx guards against — a
@@ -26,7 +26,7 @@ function dedupeByName(entities) {
 }
 
 const HERO_IMG = 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1400&q=80'
-const SUPABASE_URL = 'https://mkepugvdlktfsossumox.supabase.co/storage/v1/object/public/entity-photos'
+const SUPABASE_URL = `${SUPABASE_PROJECT_URL}/storage/v1/object/public/entity-photos`
 
 const WX_ICON  = {
   0:'☀️', 1:'🌤️', 2:'⛅', 3:'☁️',

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useApp, authFetch } from '../context/AppContext'
-import { API_BASE } from '../config'
+import { API_BASE, siteUrl } from '../config'
 import Toast from '../components/Toast'
 import './Profile.css'
 
@@ -67,7 +67,7 @@ export default function Profile() {
   const [offersFor, setOffersFor] = useState(null)   // { slug, business, offers } | null
   const [redeemedCode, setRedeemedCode] = useState(null)
 
-  const shareUrl = share?.ref_code ? `https://gulfcoastradar.com/u/${share.ref_code}` : null
+  const shareUrl = share?.ref_code ? siteUrl(`/u/${share.ref_code}`) : null
 
   async function toggleShare() {
     if (!share) return

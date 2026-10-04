@@ -1,6 +1,11 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { API_BASE } from '../config'
+import { API_BASE, BRAND, siteUrl } from '../config'
+import { usePageModules, ActionRow, ModuleList, shellStyle } from '../components/public/PageModules'
+import PageMeta from '../components/public/PageMeta'
+import { businessJsonLd } from '../utils/schemaOrg'
+import { track } from '../services/analytics'
+import '../components/public/public.css'
 import SectionRenderer from '../components/SectionRenderer'
 import './LinksPage.css'
 
@@ -48,6 +53,12 @@ export default function LinksPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [openModal, setOpenModal] = useState(null)
+  // The Link Hub: when the business has installed public modules, the link
+  // page is those modules in the owner's order (inline ones drawn, the rest
+  // as buttons) with its action apps on top. Without them it keeps the
+  // built-in list below.
+  const page = usePageModules(slug)
+  useEffect(() => { track('view', { slug, target: 'links' }) }, [slug])
 
   useEffect(() => {
     let cancelled = false
@@ -59,8 +70,15 @@ export default function LinksPage() {
     return () => { cancelled = true }
   }, [slug])
 
-  if (loading) return <div className="lp-loading">Loading…</div>
-  if (error || !business) return <div className="lp-loading">Business not found</div>
+  if (loading) return <div className="lp-loading" role="status" aria-busy="true">Loading…</div>
+  if (error || !business) return (
+    <div className="lp-loading" role="alert">
+      <p>{error && error !== 'Not found' ? 'This page could not be loaded.' : 'Business not found'}</p>
+      {error && error !== 'Not found' && <button className="pl-btn" onClick={() => window.location.reload()}>Try again</button>}
+    </div>
+  )
+  const useModules = page.status === 'ready' && page.modules.length > 0
+  const hasActionApps = useModules && page.modules.some(m => m.renderMode === 'action')
 
   const cityState = [business.city, business.state].filter(Boolean).join(', ')
   const avatarUrl = business.hero_image_url || business.photos?.[0]?.image_url || business.photos?.[0]?.url
@@ -98,7 +116,13 @@ export default function LinksPage() {
   ].filter(Boolean)
 
   return (
-    <div className="lp-page">
+    <div className="lp-page" style={shellStyle(page.shell)}>
+      <PageMeta
+        title={business.name}
+        description={business.subtitle || business.description}
+        canonical={siteUrl(`/links/${business.slug || slug}`)}
+        jsonLd={businessJsonLd(business, { url: siteUrl(`/business/${business.slug || slug}`) })}
+      />
       <button className="lp-back" onClick={() => navigate(-1)}>← Back</button>
       <main className="lp-shell">
         <section className="lp-hero" style={avatarUrl ? { backgroundImage: `url(${avatarUrl})` } : undefined}>
@@ -111,7 +135,9 @@ export default function LinksPage() {
             {business.rating && <span className="lp-chip">⭐ {business.rating.toFixed(1)} Rating</span>}
             {openNow !== null && <span className="lp-chip">{openNow ? '🟢 Open Now' : '🔴 Closed'}</span>}
           </div>
-          {business.phone && <a className="lp-call" href={`tel:${business.phone}`}>📞 Call Now</a>}
+          {hasActionApps
+            ? <ActionRow slug={business.slug || slug} modules={page.modules} />
+            : business.phone && <a className="lp-call" href={`tel:${business.phone}`}>📞 Call Now</a>}
           {socials.length > 0 && (
             <div className="lp-socials">
               {socials.map(s => <a key={s.label} href={s.url} target="_blank" rel="noreferrer" title={s.label}>#</a>)}
@@ -119,6 +145,11 @@ export default function LinksPage() {
           )}
         </section>
 
+        {useModules ? (
+          <section className="lp-links lp-links--modules">
+            <ModuleList slug={business.slug || slug} modules={page.modules} />
+          </section>
+        ) : (
         <section className="lp-links">
           {links.map(l => (
             <div
@@ -135,8 +166,9 @@ export default function LinksPage() {
             </div>
           ))}
         </section>
+        )}
 
-        <div className="lp-footer">Powered by CyberCheck</div>
+        {BRAND.platformName && <div className="lp-footer">Powered by {BRAND.platformName}</div>}
       </main>
 
       {openModal === 'about' && (

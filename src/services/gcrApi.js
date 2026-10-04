@@ -200,7 +200,7 @@ export async function fetchBusinesses({ limit = 50 } = {}) {
   const clean = dedupeBusinesses(entities.filter(e => e && e.id && e.name && !isTestEntity(e)))
   const cards = clean.map(e => toCard(e, e.photos || []))
 
-  const API = import.meta.env.VITE_API_BASE || 'https://gcr-api-clean.vercel.app'
+  const API = API_BASE
 
   // Merge TripSwipe-specific overrides and fetch tonight cards in parallel
   let mergedCards = cards

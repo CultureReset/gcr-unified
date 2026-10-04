@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import './ArtistProfile.css'
 
-const API_BASE = import.meta.env.VITE_API_BASE || 'https://gcr-api-clean.vercel.app'
+import { API_BASE } from '../config'
 
 export default function ArtistProfile() {
   const { slug } = useParams()

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import './AvailabilityCalendar.css'
 
-const API_BASE = import.meta.env.VITE_API_BASE || 'https://gcr-api-clean.vercel.app'
+import { API_BASE } from '../config'
 const WEEKDAYS = ['S', 'M', 'T', 'W', 'T', 'F', 'S']
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December']
 

@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import Toast from '../components/Toast'
 import './TransportationRequest.css'
 
-const API_BASE = import.meta.env.VITE_API_BASE || 'https://gcr-api-clean.vercel.app'
+import { API_BASE } from '../config'
 
 function todayISO() {
   const d = new Date()

@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import AvailabilityCalendar from '../components/AvailabilityCalendar'
 import './Dashboard.css'
 
-const API_BASE = import.meta.env.VITE_API_BASE || 'https://gcr-api-clean.vercel.app'
+import { API_BASE } from '../config'
 
 export default function Dashboard() {
   const { userId } = useApp()

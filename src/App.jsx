@@ -54,6 +54,14 @@ const TransportationRequest = lazy(() => import('./pages/TransportationRequest')
 const Confirmation = lazy(() => import('./pages/Confirmation'))
 const Deals = lazy(() => import('./pages/Deals'))
 const ArHunts = lazy(() => import('./pages/ArHunts'))
+// The public layer: directory, concierge, results and trip links, openings,
+// and a business's modules on their own pages.
+const Directory = lazy(() => import('./pages/Directory'))
+const Concierge = lazy(() => import('./pages/Concierge'))
+const SharedResults = lazy(() => import('./pages/SharedResults'))
+const TripPlan = lazy(() => import('./pages/TripPlan'))
+const Openings = lazy(() => import('./pages/Openings'))
+const ModulePage = lazy(() => import('./pages/ModulePage'))
 
 function RequireAuth({ children }) {
   const { userId } = useApp()
@@ -102,7 +110,7 @@ function AppRoutes() {
     function onUnauth() {
       logout()
       const publicPaths = ['/', '/auth', '/reset', '/join', '/privacy', '/terms']
-      const publicPrefixes = ['/business/', '/category/', '/restaurants', '/coffee', '/happy-hours', '/things-to-do', '/services', '/public-spots', '/feed', '/shopping', '/staying', '/events', '/swipe/', '/search', '/nightlife', '/wellness', '/artist/']
+      const publicPrefixes = ['/directory', '/concierge', '/openings', '/trip', '/r/', '/business/', '/category/', '/restaurants', '/coffee', '/happy-hours', '/things-to-do', '/services', '/public-spots', '/feed', '/shopping', '/staying', '/events', '/swipe/', '/search', '/nightlife', '/wellness', '/artist/']
       const isPublic = publicPaths.includes(location.pathname) || publicPrefixes.some(p => location.pathname.startsWith(p))
       if (!isPublic) {
         navigate('/auth', { replace: true, state: { from: location.pathname + location.search } })
@@ -126,7 +134,7 @@ function AppRoutes() {
 
   // Track route changes — fires on every page navigation
   useEffect(() => {
-    const API = import.meta.env.VITE_API_BASE || 'https://gcr-api-clean.vercel.app'
+    const API = API_BASE
     let sess = sessionStorage.getItem('ts_sess_id')
     if (!sess) { sess = Math.random().toString(36).slice(2) + Date.now().toString(36); sessionStorage.setItem('ts_sess_id', sess) }
     const qs = new URLSearchParams(location.search)
@@ -200,12 +208,23 @@ function AppRoutes() {
         <Route path="/wellness" element={<CategoryPage />} />
         <Route path="/marinas" element={<CategoryPage />} />
 
+        <Route path="/directory" element={<Directory />} />
+        <Route path="/directory/:section" element={<Directory />} />
+        <Route path="/concierge" element={<Concierge />} />
+        <Route path="/openings" element={<Openings />} />
+        <Route path="/trip" element={<TripPlan />} />
+        <Route path="/r/c/:code" element={<SharedResults kind="results" />} />
+        <Route path="/r/t/:code" element={<SharedResults kind="trip" />} />
+        {/* /<business>/<app>: an installed module on its own page. Every
+            fixed two-segment route above outranks it. */}
+        <Route path="/:business/:app" element={<ModulePage />} />
+
         <Route path="*" element={<NotFound />} />
       </Routes>
       </Suspense>
       {!hideNav && <BottomNav />}
       {!hideNav && <InstallBanner />}
-      {!hideNav && <AiChat />}
+      {!hideNav && location.pathname !== '/concierge' && <AiChat />}
     </div>
   )
 }

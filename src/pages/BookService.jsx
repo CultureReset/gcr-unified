@@ -3,7 +3,7 @@ import { useParams, useSearchParams, useNavigate } from 'react-router-dom'
 import Toast from '../components/Toast'
 import './BookService.css'
 
-const API_BASE = import.meta.env.VITE_API_BASE || 'https://gcr-api-clean.vercel.app'
+import { API_BASE } from '../config'
 
 export default function BookService() {
   const { slug } = useParams()

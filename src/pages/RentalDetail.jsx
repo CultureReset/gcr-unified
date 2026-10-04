@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import AvailabilityCalendar from '../components/AvailabilityCalendar'
 import './RentalDetail.css'
 
-const API_BASE = import.meta.env.VITE_API_BASE || 'https://gcr-api-clean.vercel.app'
+import { API_BASE } from '../config'
 
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 
