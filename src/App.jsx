@@ -48,6 +48,8 @@ import BottomNav from './components/BottomNav'
 import InstallBanner from './components/InstallBanner'
 import GCRHeader from './components/GCRHeader'
 import AiChat from './components/AiChat'
+import StandaloneBusinessPage from './platform/StandaloneBusinessPage'
+import { EntityPageProvider } from './platform/EntityPageContext'
 
 function RequireAuth({ children }) {
   const { userId } = useApp()
@@ -82,7 +84,9 @@ function AppRoutes() {
     location.pathname.startsWith('/rental/') ||
     location.pathname.startsWith('/service/') ||
     location.pathname.startsWith('/links/') ||
-    location.pathname.startsWith('/swipe/')
+    location.pathname.startsWith('/swipe/') ||
+    location.pathname.startsWith('/site/') ||
+    location.pathname.startsWith('/site/')
   const hideHeader = ['/', '/auth'].some(p => location.pathname === p) ||
     location.pathname.startsWith('/setup') ||
     location.pathname.startsWith('/artist/') ||
@@ -96,7 +100,7 @@ function AppRoutes() {
     function onUnauth() {
       logout()
       const publicPaths = ['/', '/auth', '/reset', '/join', '/privacy', '/terms']
-      const publicPrefixes = ['/business/', '/category/', '/restaurants', '/coffee', '/happy-hours', '/things-to-do', '/services', '/public-spots', '/feed', '/shopping', '/staying', '/events', '/swipe/', '/search', '/nightlife', '/wellness', '/artist/']
+      const publicPrefixes = ['/business/', '/site/', '/category/', '/restaurants', '/coffee', '/happy-hours', '/things-to-do', '/services', '/public-spots', '/feed', '/shopping', '/staying', '/events', '/swipe/', '/search', '/nightlife', '/wellness', '/artist/']
       const isPublic = publicPaths.includes(location.pathname) || publicPrefixes.some(p => location.pathname.startsWith(p))
       if (!isPublic) {
         navigate('/auth', { replace: true, state: { from: location.pathname + location.search } })
@@ -169,6 +173,7 @@ function AppRoutes() {
         <Route path="/swipe/:category" element={<Swipe />} />
         <Route path="/artist/:slug/live" element={<ArtistLive />} />
         <Route path="/business/:slug" element={<BusinessDetail />} />
+        <Route path="/site/:slug" element={<StandaloneBusinessPage />} />
         <Route path="/links/:slug" element={<LinksPage />} />
         <Route path="/list" element={<RequireAuth><MyList /></RequireAuth>} />
         <Route path="/building" element={<RequireAuth><Building /></RequireAuth>} />
@@ -207,7 +212,9 @@ export default function App() {
   return (
     <ErrorBoundary>
       <BrowserRouter>
-        <AppRoutes />
+        <EntityPageProvider host="gcr">
+          <AppRoutes />
+        </EntityPageProvider>
       </BrowserRouter>
     </ErrorBoundary>
   )
