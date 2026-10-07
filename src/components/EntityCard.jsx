@@ -1,11 +1,13 @@
 import { useNavigate } from 'react-router-dom'
+import { useEntityPageContext } from '../platform/EntityPageContext'
 import '../styles/EntityCard.css'
 
 export default function EntityCard({ entity, category }) {
   const navigate = useNavigate()
+  const { entityHref } = useEntityPageContext()
   const imageUrl = entity.hero_image_url || entity.photos?.[0]?.image_url || entity.photos?.[0]?.url || null
 
-  const handleClick = () => navigate(`/business/${entity.slug}`)
+  const handleClick = () => navigate(entityHref(entity.slug))
 
   return (
     <div className="entity-card" onClick={handleClick}>
